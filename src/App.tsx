@@ -13,7 +13,7 @@ function App() {
       <div style={{ 
         width: '200px', 
         height: '200px', 
-        backgroundColor: '#646cff' 
+        backgroundColor: '#1a1a1a'
       }}></div>
     </div>
   );
