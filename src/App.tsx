@@ -1,22 +1,19 @@
-// src/App.tsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import MainPage from './pages/MainPage';
+import DocumentPage from './pages/DocumentPage';
+import MyPage from './pages/MyPage';
 
-function App() {
+const App: React.FC = () => {
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '100vh', 
-      backgroundColor: '#f0f0f0' 
-    }}>
-      {/* PM이 요청한 바로 그 정사각형 */}
-      <div style={{ 
-        width: '200px', 
-        height: '200px', 
-        backgroundColor: '#393e9a'
-      }}></div>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/document" element={<DocumentPage />} />
+        <Route path="/mypage" element={<MyPage />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
