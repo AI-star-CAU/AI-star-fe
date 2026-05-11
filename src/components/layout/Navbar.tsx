@@ -5,13 +5,13 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="w-full h-20 bg-white border-b border-gray-100 px-12 flex items-center justify-between sticky top-0 z-50">
+    <nav className="w-full h-20 bg-[#1E293B] border-b border-slate-800 px-6 sm:px-12 flex items-center justify-between sticky top-0 z-50 shadow-md">
       {/* 왼쪽 로고 */}
       <div 
         onClick={() => navigate('/')} 
-        className="text-2xl font-[900] text-blue-600 cursor-pointer tracking-tighter"
+        className="text-2xl font-[900] text-white cursor-pointer tracking-tighter flex items-center gap-1.5"
       >
-        AI-STAR
+        <span className="text-blue-400">A</span>IT
       </div>
 
       {/* 오른쪽 프로필 (클릭 시 마이페이지) */}
@@ -20,10 +20,10 @@ const Navbar: React.FC = () => {
         className="flex items-center gap-4 cursor-pointer group"
       >
         <div className="text-right hidden sm:block">
-          <p className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">주원님</p>
-          <p className="text-[11px] text-gray-400">02juw@cau.ac.kr</p>
+          <p className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">주원님</p>
+          <p className="text-[11px] text-slate-400">02juw@cau.ac.kr</p>
         </div>
-        <div className="w-11 h-11 bg-blue-600 rounded-2xl shadow-lg shadow-blue-100 flex items-center justify-center text-white font-bold text-lg">
+        <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-black/30 flex items-center justify-center text-white font-bold text-lg border border-slate-700/50 group-hover:shadow-blue-500/20 transition-all">
           주
         </div>
       </div>
