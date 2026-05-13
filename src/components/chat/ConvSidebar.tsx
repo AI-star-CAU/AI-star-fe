@@ -4,6 +4,8 @@ import type { Conversation, Message } from '../../api/ait';
 import GraphPanel, { type NodeAction } from './GraphPanel';
 import GraphLegend from './GraphLegend';
 import ResizeHandle from './ResizeHandle';
+import { useBranchMessages } from '../../hooks/useBranchMessages';
+import { useMessages } from '../../hooks/useMessages';
 import { useResizeDrag } from '../../hooks/useResizeDrag';
 import ConversationList from './ConversationList';
 
@@ -38,6 +40,17 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     [activeId, conversations],
   );
   const visibleExpandedId = expandedId === undefined ? activeParentId : expandedId;
+  const graphConversation = useMemo(
+    () => conversations.find(conversation => conversation.id === activeParentId),
+    [activeParentId, conversations],
+  );
+  const branchIds = useMemo(
+    () => graphConversation?.branches.map(branch => branch.id) ?? [],
+    [graphConversation],
+  );
+  const { data: rootMessages = [] } = useMessages(graphConversation?.id ?? '');
+  const branchMessagesById = useBranchMessages(branchIds);
+  const graphMessages = activeId === graphConversation?.id ? messages : rootMessages;
 
   const handleCreateConversation = useCallback(() => {
     navigate('/chat/new');
@@ -62,12 +75,17 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 
   const handleNodeClick = useCallback((action: NodeAction) => {
     if (action.type === 'scroll') {
-      document.getElementById(`msg-${action.messageId}`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const target = document.getElementById(`msg-${action.messageId}`);
+
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (action.chatId) {
+        navigate(`/chat/${action.chatId}`);
+      }
     } else {
-      handleSelectBranch(action.branchId);
+      navigate(`/chat/${action.chatId}`);
     }
-  }, [handleSelectBranch]);
+  }, [navigate]);
 
   return (
     <aside
@@ -92,7 +110,13 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
           <p className="section-label">분기 구조</p>
         </div>
         <div className="flex-1 overflow-auto px-4 pb-3">
-          <GraphPanel messages={messages} conv={conv} onNodeClick={handleNodeClick} />
+          <GraphPanel
+            messages={graphMessages}
+            conv={graphConversation ?? conv}
+            branchMessagesById={branchMessagesById}
+            activeId={activeId}
+            onNodeClick={handleNodeClick}
+          />
         </div>
         <GraphLegend />
       </div>

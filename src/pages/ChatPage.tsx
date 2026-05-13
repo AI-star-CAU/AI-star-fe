@@ -11,6 +11,29 @@ import MessageList from '../components/chat/MessageList';
 import ChatInput from '../components/chat/ChatInput';
 import ResizeHandle from '../components/chat/ResizeHandle';
 import { useResizeDrag } from '../hooks/useResizeDrag';
+import type { Message } from '../api/ait';
+
+function getMessagesThroughFork(messages: Message[], forkAtTurnIndex: number): Message[] {
+  const prefixMessages: Message[] = [];
+  let userTurnCount = 0;
+
+  for (const message of messages) {
+    if (message.role === 'user') {
+      userTurnCount += 1;
+      if (userTurnCount > forkAtTurnIndex) break;
+    }
+
+    prefixMessages.push(message);
+  }
+
+  return prefixMessages;
+}
+
+function removePreTurnAssistantMessages(messages: Message[]): Message[] {
+  const firstUserMessageIndex = messages.findIndex(message => message.role === 'user');
+  if (firstUserMessageIndex < 0) return [];
+  return messages.slice(firstUserMessageIndex);
+}
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,6 +55,48 @@ const ChatPage: React.FC = () => {
     () => conversations.find(c => c.id === activeConvId),
     [conversations, activeConvId],
   );
+  const activeBranch = useMemo(
+    () => conversations.flatMap(c => c.branches).find(branch => branch.id === activeConvId),
+    [conversations, activeConvId],
+  );
+  const activeParentConv = useMemo(
+    () => conversations.find(conversation => conversation.id === activeBranch?.parentConvId),
+    [activeBranch, conversations],
+  );
+  const activeBranchNumber = useMemo(
+    () => {
+      if (!activeBranch || !activeParentConv) return null;
+      const index = activeParentConv.branches.findIndex(branch => branch.id === activeBranch.id);
+      return index >= 0 ? index + 1 : null;
+    },
+    [activeBranch, activeParentConv],
+  );
+  const { data: parentMessages = [], isLoading: parentMsgsLoading } = useMessages(
+    activeBranch?.parentConvId ?? '',
+  );
+  const visibleMessages = useMemo(
+    () => {
+      const normalizedMessages = removePreTurnAssistantMessages(messages);
+      if (!activeBranch) {
+        return {
+          messages: normalizedMessages,
+          branchStartIndex: undefined,
+        };
+      }
+
+      const parentPrefixMessages = getMessagesThroughFork(
+        removePreTurnAssistantMessages(parentMessages),
+        activeBranch.forkAtTurnIndex,
+      );
+
+      return {
+        messages: [...parentPrefixMessages, ...normalizedMessages],
+        branchStartIndex: parentPrefixMessages.length,
+      };
+    },
+    [activeBranch, parentMessages, messages],
+  );
+  const isMessagesLoading = msgsLoading || (!!activeBranch && parentMsgsLoading);
 
   const isNewChatEmpty = activeConvId === 'new' && !msgsLoading && messages.length === 0;
 
@@ -98,9 +163,11 @@ const ChatPage: React.FC = () => {
           ) : (
             <>
               <MessageList
-                messages={messages}
-                isLoading={msgsLoading}
+                messages={visibleMessages.messages}
+                isLoading={isMessagesLoading}
                 userName={user?.name ?? '나'}
+                branchMarkerLabel={activeBranchNumber ? `B${activeBranchNumber}` : undefined}
+                branchStartIndex={visibleMessages.branchStartIndex}
               />
               <ChatInput
                 value={input}

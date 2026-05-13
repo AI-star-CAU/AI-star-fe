@@ -1,7 +1,8 @@
 import type React from 'react';
 
 const LEGEND_ITEMS = [
-  { className: 'bg-cyan-600', label: '현재 위치' },
+  { className: 'bg-rose-700 border border-rose-400', label: '선택한 노드' },
+  { className: 'bg-teal-700 border border-teal-300', label: '선택한 흐름' },
   { className: 'bg-slate-600', label: 'root' },
   { className: 'bg-slate-800 border border-slate-700', label: '턴(Q+A)' },
   { className: 'bg-amber-600', label: '분기 지점' },
