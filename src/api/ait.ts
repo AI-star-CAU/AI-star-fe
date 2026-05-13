@@ -339,11 +339,12 @@ export const api = {
     ];
   },
 
-  async sendMessage(_convId: string, _content: string): Promise<Message> {
+  async sendMessage(conversationId: string, content: string): Promise<Message> {
+    void content;
     await delay(1200);
     return {
       id: `ai-${Date.now()}`,
-      conversationId: _convId,
+      conversationId,
       role: 'assistant',
       content: '백엔드가 아직 연결되지 않았습니다. API 연결 후 실제 응답이 표시됩니다.',
       createdAt: new Date().toISOString(),

@@ -1,71 +1,52 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import type { User } from '../api/ait';
+import {
+  AUTH_STORAGE_KEY,
+  AuthContext,
+  INITIAL_AUTH_STATE,
+  MOCK_USER,
+  authReducer,
+  type AuthLoginProvider,
+} from './auth';
 
-interface AuthState {
-  user: User | null;
-  isLoading: boolean;
-}
+function readSavedUser(): User | null {
+  const saved = localStorage.getItem(AUTH_STORAGE_KEY);
+  if (!saved) return null;
 
-type AuthAction =
-  | { type: 'LOGIN'; user: User }
-  | { type: 'LOGOUT' }
-  | { type: 'RESTORE'; user: User | null };
-
-interface AuthContextValue extends AuthState {
-  login: (provider: 'google' | 'github' | 'email') => Promise<void>;
-  logout: () => void;
-}
-
-const MOCK_USER: User = {
-  id: 'u1',
-  name: '정주원',
-  email: '02juw@cau.ac.kr',
-  plan: 'free',
-};
-
-const AuthContext = createContext<AuthContextValue | null>(null);
-
-function authReducer(state: AuthState, action: AuthAction): AuthState {
-  switch (action.type) {
-    case 'LOGIN':
-      return { user: action.user, isLoading: false };
-    case 'LOGOUT':
-      return { user: null, isLoading: false };
-    case 'RESTORE':
-      return { user: action.user, isLoading: false };
-    default:
-      return state;
+  try {
+    return JSON.parse(saved) as User;
+  } catch {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    return null;
   }
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, { user: null, isLoading: true });
+  const [state, dispatch] = useReducer(authReducer, INITIAL_AUTH_STATE);
 
   useEffect(() => {
-    const saved = localStorage.getItem('ait_user');
-    dispatch({ type: 'RESTORE', user: saved ? (JSON.parse(saved) as User) : null });
+    dispatch({ type: 'RESTORE', user: readSavedUser() });
   }, []);
 
-  const login = async (_provider: 'google' | 'github' | 'email') => {
-    // TODO: real OAuth flow
+  const login = useCallback(async (provider: AuthLoginProvider) => {
+    void provider;
     dispatch({ type: 'LOGIN', user: MOCK_USER });
-    localStorage.setItem('ait_user', JSON.stringify(MOCK_USER));
-  };
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(MOCK_USER));
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     dispatch({ type: 'LOGOUT' });
-    localStorage.removeItem('ait_user');
-  };
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }, []);
+
+  const value = useMemo(
+    () => ({ ...state, login, logout }),
+    [state, login, logout],
+  );
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = (): AuthContextValue => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
 };

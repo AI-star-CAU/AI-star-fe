@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 /**
  * 레이아웃 라우트 패턴: 이미 로그인된 사용자가 공개 페이지(로그인 등)에

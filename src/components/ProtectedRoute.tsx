@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const LoadingScreen: React.FC = () => (
   <div className="min-h-screen bg-slate-950 flex items-center justify-center">
