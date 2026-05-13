@@ -1,19 +1,18 @@
 export const ENDPOINTS = {
   auth: {
-    login: '/auth/login',
     signup: '/auth/signup',
-    logout: '/auth/logout',
-    refresh: '/auth/refresh',
-    me: '/auth/me',
+    login: '/auth/login',
+  },
+  member: {
+    me: '/members/me',
   },
   chat: {
     list: '/chats',
-    detail: (chatId: string) => `/chats/${chatId}`,
-    messages: (chatId: string) => `/chats/${chatId}/messages`,
-    send: (chatId: string) => `/chats/${chatId}/messages`,
-  },
-  user: {
-    me: '/users/me',
-    delete: '/users/me',
+    create: '/chats',
+    detail: (chatId: number) => `/chats/${chatId}`,
+    turns: (chatId: number) => `/chats/${chatId}/turns`,
+    messages: (chatId: number) => `/chats/${chatId}/messages`,
+    cancelMessage: (chatId: number, messageId: number) =>
+      `/chats/${chatId}/messages/${messageId}/cancel`,
   },
 } as const;

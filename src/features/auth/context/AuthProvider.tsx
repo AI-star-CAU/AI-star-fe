@@ -50,7 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'LOGOUT' });
     clearSavedUser();
     clearAuthToken();
-    void authApi.logout();
   }, []);
 
   const value = useMemo(
