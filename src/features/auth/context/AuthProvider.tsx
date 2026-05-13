@@ -1,8 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { AuthContext, INITIAL_AUTH_STATE, authReducer } from './AuthContext';
 import { authApi } from '../api/authApi';
-import { clearSavedUser, readSavedUser, saveUser } from '../utils/authStorage';
-import type { AuthLoginProvider } from '../types';
+import {
+  clearAuthToken,
+  clearSavedUser,
+  readSavedUser,
+  saveAuthToken,
+  saveUser,
+} from '../utils/authStorage';
+import {
+  mapAuthResponseToUser,
+  type AuthResponse,
+  type LoginCredentials,
+  type SignupCredentials,
+} from '../types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, INITIAL_AUTH_STATE);
@@ -11,21 +22,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'RESTORE', user: readSavedUser() });
   }, []);
 
-  const login = useCallback(async (provider: AuthLoginProvider) => {
-    const user = await authApi.login(provider);
-    dispatch({ type: 'LOGIN', user });
+  const acceptAuthResponse = useCallback((response: AuthResponse) => {
+    const user = mapAuthResponseToUser(response);
+    saveAuthToken(response.accessToken);
     saveUser(user);
+    dispatch({ type: 'LOGIN', user });
   }, []);
+
+  const login = useCallback(
+    async (credentials: LoginCredentials) => {
+      const response = await authApi.login(credentials);
+      acceptAuthResponse(response);
+    },
+    [acceptAuthResponse],
+  );
+
+  const signup = useCallback(
+    async (credentials: SignupCredentials) => {
+      const response = await authApi.signup(credentials);
+      acceptAuthResponse(response);
+    },
+    [acceptAuthResponse],
+  );
 
   const logout = useCallback(() => {
     dispatch({ type: 'LOGOUT' });
     clearSavedUser();
+    clearAuthToken();
     void authApi.logout();
   }, []);
 
   const value = useMemo(
-    () => ({ ...state, login, logout }),
-    [state, login, logout],
+    () => ({ ...state, login, signup, logout }),
+    [state, login, signup, logout],
   );
 
   return (

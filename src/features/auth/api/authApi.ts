@@ -1,22 +1,34 @@
-import type { AuthLoginProvider, User } from '../types';
+import { apiClient } from '../../../shared/api/client';
+import { ENDPOINTS } from '../../../shared/api/endpoints';
+import type { AuthResponse, LoginCredentials, SignupCredentials } from '../types';
 
-const MOCK_USER: User = {
-  id: 'u1',
-  name: '정주원',
-  email: '02juw@cau.ac.kr',
-  plan: 'free',
-};
-
-const delay = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
+interface ApiEnvelope<T> {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: T;
+}
 
 export const authApi = {
-  async login(provider: AuthLoginProvider): Promise<User> {
-    void provider;
-    await delay(400);
-    return MOCK_USER;
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    const res = await apiClient.post<ApiEnvelope<AuthResponse>>(
+      ENDPOINTS.auth.login,
+      credentials,
+      { auth: false },
+    );
+    return res.result;
+  },
+
+  async signup(credentials: SignupCredentials): Promise<AuthResponse> {
+    const res = await apiClient.post<ApiEnvelope<AuthResponse>>(
+      ENDPOINTS.auth.signup,
+      credentials,
+      { auth: false },
+    );
+    return res.result;
   },
 
   async logout(): Promise<void> {
-    await delay(100);
+    await apiClient.post<ApiEnvelope<null>>(ENDPOINTS.auth.logout).catch(() => undefined);
   },
 };

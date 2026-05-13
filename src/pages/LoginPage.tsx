@@ -1,8 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
-import SocialLoginButtons from '../features/auth/components/SocialLoginButtons';
+import EmailLoginForm from '../features/auth/components/EmailLoginForm';
+import EmailSignupForm from '../features/auth/components/EmailSignupForm';
 import { PATHS } from '../app/router/routes';
+
+type AuthMode = 'login' | 'signup';
 
 const HERO_FEATURES = [
   { icon: '◎', title: '분기 관리', desc: '대화 흐름을 DAG 구조로 관리' },
@@ -13,6 +16,7 @@ const HERO_FEATURES = [
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
+  const [mode, setMode] = useState<AuthMode>('login');
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -21,6 +25,9 @@ const LoginPage: React.FC = () => {
   }, [user, isLoading, navigate]);
 
   if (isLoading) return null;
+
+  const onSuccess = () => navigate(PATHS.CHAT_NEW, { replace: true });
+  const isLoginMode = mode === 'login';
 
   return (
     <div className="min-h-screen bg-slate-950 flex">
@@ -62,11 +69,30 @@ const LoginPage: React.FC = () => {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-1.5">시작하기</h2>
-            <p className="text-slate-500 text-sm">계정으로 계속하세요</p>
+            <h2 className="text-2xl font-bold text-white mb-1.5">
+              {isLoginMode ? '시작하기' : '계정 만들기'}
+            </h2>
+            <p className="text-slate-500 text-sm">
+              {isLoginMode ? '계정으로 계속하세요' : '이메일로 새 계정을 만드세요'}
+            </p>
           </div>
 
-          <SocialLoginButtons onSuccess={() => navigate(PATHS.CHAT_NEW, { replace: true })} />
+          {isLoginMode ? (
+            <EmailLoginForm onSuccess={onSuccess} />
+          ) : (
+            <EmailSignupForm onSuccess={onSuccess} />
+          )}
+
+          <p className="text-center text-slate-500 text-xs mt-6">
+            {isLoginMode ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'}{' '}
+            <button
+              type="button"
+              onClick={() => setMode(isLoginMode ? 'signup' : 'login')}
+              className="text-cyan-400 hover:text-cyan-300 font-semibold transition"
+            >
+              {isLoginMode ? '회원가입' : '로그인'}
+            </button>
+          </p>
 
           <p className="text-center text-slate-700 text-xs mt-6 leading-relaxed">
             계속 진행하면{' '}

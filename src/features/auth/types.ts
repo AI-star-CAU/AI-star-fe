@@ -1,4 +1,13 @@
-export type AuthLoginProvider = 'google' | 'github' | 'email';
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface SignupCredentials {
+  email: string;
+  password: string;
+  name: string;
+}
 
 export interface User {
   id: string;
@@ -32,7 +41,8 @@ export type AuthAction =
   | { type: 'RESTORE'; user: User | null };
 
 export interface AuthContextValue extends AuthState {
-  login: (provider: AuthLoginProvider) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  signup: (credentials: SignupCredentials) => Promise<void>;
   logout: () => void;
 }
 
