@@ -41,3 +41,5 @@ npm install
 
 ### Step 2: 개발 서버 실행 (Run)
 npm run dev
+
+연습해요
