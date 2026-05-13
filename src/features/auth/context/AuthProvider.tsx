@@ -4,7 +4,6 @@ import { authApi } from '../api/authApi';
 import {
   clearAuthToken,
   clearSavedUser,
-  readSavedUser,
   saveAuthToken,
   saveUser,
 } from '../utils/authStorage';
@@ -19,7 +18,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [state, dispatch] = useReducer(authReducer, INITIAL_AUTH_STATE);
 
   useEffect(() => {
-    dispatch({ type: 'RESTORE', user: readSavedUser() });
+    clearSavedUser();
+    clearAuthToken();
+    dispatch({ type: 'RESTORE', user: null });
   }, []);
 
   const acceptAuthResponse = useCallback((response: AuthResponse) => {
