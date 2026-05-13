@@ -61,7 +61,7 @@ function buildMainNodes(messages: Message[], conv: Conversation | undefined) {
   return mainNodes;
 }
 
-// root: 첫 AI 멘트 / T_n: n번째 (사용자 질문 + AI 응답) 쌍
+// root: 첫 assistant 멘트 / T_n: n번째 (사용자 질문 + assistant 응답) 쌍
 function buildGraph(
   messages: Message[],
   conv: Conversation | undefined,
