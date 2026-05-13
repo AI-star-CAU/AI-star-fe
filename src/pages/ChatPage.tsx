@@ -1,39 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { useConversations } from '../hooks/useConversations';
-import { useMessages } from '../hooks/useMessages';
-import { useSendMessage } from '../hooks/useSendMessage';
-import { isKnownId } from '../api/ait';
-import ChatHeader from '../components/chat/ChatHeader';
-import ConvSidebar from '../components/chat/ConvSidebar';
-import MessageList from '../components/chat/MessageList';
-import ChatInput from '../components/chat/ChatInput';
-import ResizeHandle from '../components/chat/ResizeHandle';
-import { useResizeDrag } from '../hooks/useResizeDrag';
-import type { Message } from '../api/ait';
-
-function getMessagesThroughFork(messages: Message[], forkAtTurnIndex: number): Message[] {
-  const prefixMessages: Message[] = [];
-  let userTurnCount = 0;
-
-  for (const message of messages) {
-    if (message.role === 'user') {
-      userTurnCount += 1;
-      if (userTurnCount > forkAtTurnIndex) break;
-    }
-
-    prefixMessages.push(message);
-  }
-
-  return prefixMessages;
-}
-
-function removePreTurnAssistantMessages(messages: Message[]): Message[] {
-  const firstUserMessageIndex = messages.findIndex(message => message.role === 'user');
-  if (firstUserMessageIndex < 0) return [];
-  return messages.slice(firstUserMessageIndex);
-}
+import { useAuth } from '../features/auth/hooks/useAuth';
+import { useConversations } from '../features/chat/hooks/useConversations';
+import { useMessages } from '../features/chat/hooks/useMessages';
+import { useSendMessage } from '../features/chat/hooks/useSendMessage';
+import { isKnownId } from '../features/chat/api/chatApi';
+import {
+  getMessagesThroughFork,
+  removePreTurnAssistantMessages,
+} from '../features/chat/utils/messageHelpers';
+import ChatHeader from '../features/chat/components/ChatHeader';
+import ConvSidebar from '../features/chat/components/ConvSidebar';
+import MessageList from '../features/chat/components/MessageList';
+import ChatInput from '../features/chat/components/ChatInput';
+import ResizeHandle from '../shared/components/layout/ResizeHandle';
+import { useResizeDrag } from '../shared/hooks/useResizeDrag';
+import { chatPath } from '../app/router/routes';
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -102,7 +84,7 @@ const ChatPage: React.FC = () => {
 
   useEffect(() => {
     if (!convsLoading && conversations.length > 0 && activeConvId !== 'new' && !isKnownId(activeConvId)) {
-      navigate(`/chat/${conversations[0].id}`, { replace: true });
+      navigate(chatPath(conversations[0].id), { replace: true });
     }
   }, [convsLoading, conversations, activeConvId, navigate]);
 
