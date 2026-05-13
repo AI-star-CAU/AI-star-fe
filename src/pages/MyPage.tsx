@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useConversations } from '../hooks/useConversations';
 import Button from '../components/ui/Button';
 
@@ -29,6 +29,19 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, sub, loading }) => (
     {sub && <p className="text-xs text-slate-600 mt-1">{sub}</p>}
   </div>
 );
+
+const MINUTE_MS = 60_000;
+const HOUR_MS = MINUTE_MS * 60;
+const DAY_MS = HOUR_MS * 24;
+
+function formatRelativeDate(iso: string, now: number): string {
+  if (now === 0) return '방금 전';
+
+  const diff = Math.max(0, now - new Date(iso).getTime());
+  if (diff < HOUR_MS) return `${Math.floor(diff / MINUTE_MS)}분 전`;
+  if (diff < DAY_MS) return `${Math.floor(diff / HOUR_MS)}시간 전`;
+  return `${Math.floor(diff / DAY_MS)}일 전`;
+}
 
 interface DeleteModalProps {
   onConfirm: () => void;
@@ -81,6 +94,15 @@ const MyPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(user?.name ?? '');
+  const [now, setNow] = useState(0);
+
+  useEffect(() => {
+    const updateNow = () => setNow(Date.now());
+
+    updateNow();
+    const intervalId = window.setInterval(updateNow, MINUTE_MS);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const stats = useMemo(() => ({
     totalConversations: conversations.length,
@@ -99,16 +121,6 @@ const MyPage: React.FC = () => {
   const handleDeleteAccount = () => {
     logout();
     navigate('/');
-  };
-
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    const diff = Date.now() - d.getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}분 전`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}시간 전`;
-    return `${Math.floor(hrs / 24)}일 전`;
   };
 
   return (
@@ -315,7 +327,9 @@ const MyPage: React.FC = () => {
                             분기 {conv.branches.length}
                           </span>
                         )}
-                        <span className="text-[10px] text-slate-600">{formatDate(conv.createdAt)}</span>
+                        <span className="text-[10px] text-slate-600">
+                          {formatRelativeDate(conv.createdAt, now)}
+                        </span>
                         <svg className="w-3.5 h-3.5 text-slate-700 group-hover:text-slate-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>

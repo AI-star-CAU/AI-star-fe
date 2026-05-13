@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useConversations } from '../hooks/useConversations';
 import { useMessages } from '../hooks/useMessages';
 import { useSendMessage } from '../hooks/useSendMessage';
 import { isKnownId } from '../api/ait';
 import ChatHeader from '../components/chat/ChatHeader';
 import ConvSidebar from '../components/chat/ConvSidebar';
-import ChatAreaHeader from '../components/chat/ChatAreaHeader';
 import MessageList from '../components/chat/MessageList';
 import ChatInput from '../components/chat/ChatInput';
 import ResizeHandle from '../components/chat/ResizeHandle';
@@ -32,11 +31,6 @@ const ChatPage: React.FC = () => {
   const activeConv = useMemo(
     () => conversations.find(c => c.id === activeConvId),
     [conversations, activeConvId],
-  );
-
-  const userTurnCount = useMemo(
-    () => messages.filter(m => m.role === 'user' && !m.isPending).length,
-    [messages],
   );
 
   const isNewChatEmpty = activeConvId === 'new' && !msgsLoading && messages.length === 0;
@@ -81,12 +75,6 @@ const ChatPage: React.FC = () => {
         )}
 
         <div className="flex-1 flex flex-col min-w-0">
-          <ChatAreaHeader
-            title={activeConv?.title ?? '새 채팅'}
-            turnCount={userTurnCount}
-            branchCount={activeConv?.branches.length ?? 0}
-          />
-
           {isNewChatEmpty ? (
             <div className="flex-1 flex items-center justify-center px-5 pb-20">
               <div className="w-full max-w-2xl">
