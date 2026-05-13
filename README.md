@@ -16,6 +16,8 @@
 
 ### 1. Windows
 1.  Node.js 설치: [Node.js 공식 홈페이지](https://nodejs.org/)에서 **LTS(v24.14.0)** 버전을 다운로드하여 설치합니다.
+Note: window버전인 경우: docker 권장됨. 
+버전 issue: LTS(v24.15.0)
 
 2.  확인: 터미널에서 아래 명령어로 설치 여부를 확인합니다.
     node -v  # v24.14.0 출력 확인
