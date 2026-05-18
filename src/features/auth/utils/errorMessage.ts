@@ -8,6 +8,7 @@ interface ApiErrorBody {
 const FALLBACK_BY_STATUS: Record<number, string> = {
   400: '입력값이 올바르지 않습니다.',
   401: '이메일 또는 비밀번호가 일치하지 않습니다.',
+  404: 'API 요청 경로를 찾을 수 없습니다. 서버 주소 설정을 확인해주세요.',
   409: '이미 존재하는 이메일입니다.',
 };
 
