@@ -42,7 +42,13 @@ const ChatPage: React.FC = () => {
   const activeConvId = convId ?? 'new';
 
   const { data: conversations = [], isLoading: convsLoading } = useConversations();
-  const { data: messages = [], isLoading: msgsLoading } = useMessages(activeConvId);
+  const {
+    data: history = [],
+    isLoading: msgsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMessages(activeConvId);
   const onConversationCreated = useCallback(
     (newChatId: string) => navigate(chatPath(newChatId), { replace: true }),
     [navigate],
@@ -52,6 +58,7 @@ const ChatPage: React.FC = () => {
     cancel,
     isPending: isSending,
     isCanceling,
+    liveMessages,
   } = useSendMessage(activeConvId, {
     onConversationCreated,
     chatOptions: {
@@ -102,6 +109,11 @@ const ChatPage: React.FC = () => {
   const { data: parentMessages = [], isLoading: parentMsgsLoading } = useMessages(
     activeBranch?.parentConvId ?? '',
   );
+  // 히스토리(§2.4 무한스크롤) + 진행 중인 스트리밍 턴(liveMessages)을 합친다.
+  const messages = useMemo(
+    () => [...history, ...liveMessages],
+    [history, liveMessages],
+  );
   const visibleMessages = useMemo(
     () => {
       const normalizedMessages = removePreTurnAssistantMessages(messages);
@@ -126,7 +138,13 @@ const ChatPage: React.FC = () => {
   );
   const isMessagesLoading = msgsLoading || (!!activeBranch && parentMsgsLoading);
 
-  const isNewChatEmpty = activeConvId === 'new' && !msgsLoading && messages.length === 0;
+  const isNewChatEmpty =
+    activeConvId === 'new' && !msgsLoading && messages.length === 0;
+
+  // 명세 §2.4: 위로 스크롤 시 과거 턴 페이지를 잇는다.
+  const handleLoadOlder = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const isKnownConvId = useMemo(
     () =>
@@ -220,6 +238,9 @@ const ChatPage: React.FC = () => {
                 userName={user?.name ?? '나'}
                 branchMarkerLabel={activeBranchNumber ? `B${activeBranchNumber}` : undefined}
                 branchStartIndex={visibleMessages.branchStartIndex}
+                hasOlder={hasNextPage && !activeBranch}
+                isLoadingOlder={isFetchingNextPage}
+                onLoadOlder={handleLoadOlder}
               />
               <ChatInput
                 value={input}

@@ -13,9 +13,13 @@ interface UseSendMessageOptions {
 }
 
 /**
- * 명세 §4.1 / Phase 2 §2.5 SSE 스트리밍으로 메시지를 전송한다.
- * chunk 이벤트를 받을 때마다 react-query 캐시의 assistant 메시지에
- * 실시간으로 누적 반영한다(실시간 토큰 스트리밍).
+ * 명세 §2.5 SSE 스트리밍으로 메시지를 전송한다.
+ *
+ * 메시지 히스토리(useMessages)는 명세 §2.4 cursor 무한스크롤 캐시
+ * (InfiniteData)라서 여기서 그 캐시를 직접 건드리지 않는다. 대신
+ * 진행 중인 턴(사용자 + 스트리밍 AI)을 로컬 state(liveMessages)로 들고
+ * 있다가, 스트림이 끝나면 ['messages', id] 를 무효화해 서버 읽기 경로에서
+ * 실제 값을 다시 받아 확정한다(부분 깜빡임 방지를 위해 refetch 후 정리).
  */
 export const useSendMessage = (
   conversationId: string,
@@ -23,12 +27,14 @@ export const useSendMessage = (
 ) => {
   const queryClient = useQueryClient();
   const [isPending, setIsPending] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
+  /** 진행 중인 턴의 임시 메시지(0개 또는 [user, ai]). 히스토리 뒤에 붙인다. */
+  const [liveMessages, setLiveMessages] = useState<Message[]>([]);
   // 명세 §2.6: 스트리밍 중 cancel 호출에 필요한 현재 chat/aiMessage 식별자.
   const activeStreamRef = useRef<{
     chatId: number;
     aiMessageId: number | null;
   } | null>(null);
-  const [isCanceling, setIsCanceling] = useState(false);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -36,7 +42,7 @@ export const useSendMessage = (
       setIsPending(true);
       setIsCanceling(false);
 
-      // 1) 'new' 화면이면 먼저 chat 을 생성한다 (명세 §6.1 2단계 패턴).
+      // 1) 'new' 화면이면 먼저 chat 을 생성한다 (명세 §0.2.1 2단계 패턴).
       let targetId = conversationId;
       if (conversationId === 'new') {
         try {
@@ -48,16 +54,12 @@ export const useSendMessage = (
         }
       }
 
-      const key = ['messages', targetId] as const;
       const now = new Date().toISOString();
       const optUserId = `opt-user-${Date.now()}`;
       const optAiId = `opt-ai-${Date.now() + 1}`;
 
-      const previous = queryClient.getQueryData<Message[]>(key);
-
-      // 2) 사용자 메시지 + 응답 대기 메시지를 낙관적으로 추가.
-      queryClient.setQueryData<Message[]>(key, old => [
-        ...(old ?? []),
+      // 2) 사용자 메시지 + 응답 대기 메시지를 로컬에 낙관적으로 표시.
+      setLiveMessages([
         {
           id: optUserId,
           conversationId: targetId,
@@ -76,23 +78,18 @@ export const useSendMessage = (
       ]);
 
       const patchAi = (patch: Partial<Message>) =>
-        queryClient.setQueryData<Message[]>(key, old =>
-          (old ?? []).map(m => (m.id === optAiId ? { ...m, ...patch } : m)),
+        setLiveMessages(prev =>
+          prev.map(m => (m.id === optAiId ? { ...m, ...patch } : m)),
         );
 
       let accumulated = '';
-      let realUserMessageId: number | null = null;
-      let realAiMessageId: number | null = null;
       let cancelled = false;
-
       const numericChatId = Number(targetId);
       activeStreamRef.current = { chatId: numericChatId, aiMessageId: null };
 
       try {
         await streamMessage(numericChatId, content, {
           onTurnStarted: d => {
-            realUserMessageId = d.userMessageId;
-            realAiMessageId = d.aiMessageId;
             if (activeStreamRef.current) {
               activeStreamRef.current.aiMessageId = d.aiMessageId;
             }
@@ -101,43 +98,26 @@ export const useSendMessage = (
             accumulated += d.text;
             patchAi({ content: accumulated });
           },
-          onTurnCompleted: d => {
-            realAiMessageId = d.aiMessageId;
+          onTurnCompleted: () => {
+            /* 확정은 서버 refetch 로 처리 */
           },
           // 명세 §2.5: cancelled 는 정상 종료 경로. 부분 content 보존.
           onCancelled: d => {
             cancelled = true;
-            realAiMessageId = d.aiMessageId;
             if (d.content != null) accumulated = d.content;
           },
         });
 
-        // 3) 스트림 완료 → 낙관적 id 를 서버 id 로 확정.
-        queryClient.setQueryData<Message[]>(key, old =>
-          (old ?? []).map(m => {
-            if (m.id === optUserId && realUserMessageId != null) {
-              return { ...m, id: String(realUserMessageId) };
-            }
-            if (m.id === optAiId) {
-              return {
-                ...m,
-                id:
-                  realAiMessageId != null ? String(realAiMessageId) : m.id,
-                content: accumulated,
-                status: cancelled ? 'CANCELED' : 'COMPLETED',
-                isPending: false,
-              };
-            }
-            return m;
-          }),
-        );
-
-        // 스트림이 끝나면 서버 읽기 경로(GET /chats/{id}/turns, §2.4)에서
-        // 실제 값을 다시 가져온다. 낙관적 캐시는 refetch 동안만 표시되고,
-        // 백엔드가 더미를 돌려줘도 그 값으로 교체된다.
-        queryClient.invalidateQueries({ queryKey: ['messages', targetId] });
+        // 3) 스트림 정상 종료(성공/취소) → 서버 읽기 경로(GET /chats/{id}/turns,
+        //    §2.4)에서 실제 값을 다시 받아 히스토리에 확정한 뒤 임시 메시지 제거.
+        //    refetch 가 끝난 다음 비워야 메시지가 잠깐 사라지는 깜빡임이 없다.
+        await queryClient.invalidateQueries({
+          queryKey: ['messages', targetId],
+        });
+        setLiveMessages([]);
         // 사이드바 미리보기/turnCount 갱신.
         queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        void cancelled;
       } catch (err) {
         if (accumulated) {
           // 일부라도 받았으면 받은 내용 + 실패 상태 유지 (명세 §2.5 FAILED).
@@ -146,10 +126,8 @@ export const useSendMessage = (
             status: 'FAILED',
             isPending: false,
           });
-        } else if (previous !== undefined) {
-          // 한 글자도 못 받았으면 낙관적 추가를 롤백.
-          queryClient.setQueryData(key, previous);
         } else {
+          // 한 글자도 못 받았으면: 메시지가 있으면 에러 표시, 아니면 롤백.
           patchAi({
             content:
               err instanceof ApiError
@@ -185,5 +163,5 @@ export const useSendMessage = (
     }
   }, [isCanceling]);
 
-  return { sendMessage, cancel, isPending, isCanceling };
+  return { sendMessage, cancel, isPending, isCanceling, liveMessages };
 };
