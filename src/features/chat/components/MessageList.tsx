@@ -9,6 +9,8 @@ interface MessageListProps {
   branchMarkerLabel?: string;
   branchStartIndex?: number;
   onBranch?: (messageId: string) => void;
+  onRegenerate?: (messageId: string) => void;
+  onEdit?: (messageId: string, content: string) => void;
 }
 
 const BranchMarker: React.FC<{ label: string }> = ({ label }) => (
@@ -28,6 +30,8 @@ const MessageList: React.FC<MessageListProps> = ({
   branchMarkerLabel,
   branchStartIndex,
   onBranch,
+  onRegenerate,
+  onEdit,
 }) => {
   const endRef = useRef<HTMLDivElement>(null);
   const shouldShowBranchMarker = branchMarkerLabel !== undefined && branchStartIndex !== undefined;
@@ -49,7 +53,7 @@ const MessageList: React.FC<MessageListProps> = ({
               {shouldShowBranchMarker && index === branchStartIndex && (
                 <BranchMarker label={branchMarkerLabel} />
               )}
-              <MessageBubble message={msg} userName={userName} onBranch={onBranch} />
+              <MessageBubble message={msg} userName={userName} onBranch={onBranch} onRegenerate={onRegenerate} onEdit={onEdit} />
             </React.Fragment>
           ))}
           {shouldShowBranchMarker && branchStartIndex === messages.length && (

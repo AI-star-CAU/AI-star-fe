@@ -41,5 +41,10 @@ export function mapMessageResponseToMessage(response: ChatMessageResponse): Mess
 }
 
 export function mapTurnListToMessages(turns: TurnListItemResponse[]): Message[] {
-  return turns.flatMap(turn => turn.messages.map(mapMessageResponseToMessage));
+  return turns.flatMap(turn =>
+    turn.messages.map(msg => ({
+      ...mapMessageResponseToMessage(msg),
+      turnId: turn.turnId,
+    }))
+  );
 }

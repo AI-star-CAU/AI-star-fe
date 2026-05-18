@@ -4,7 +4,10 @@ import { useAuth } from '../features/auth/hooks/useAuth';
 import { useConversations } from '../features/chat/hooks/useConversations';
 import { useMessages } from '../features/chat/hooks/useMessages';
 import { useSendMessage } from '../features/chat/hooks/useSendMessage';
+import { useRegenerate } from '../features/chat/hooks/useRegenerate';
+import { useEditMessage } from '../features/chat/hooks/useEditMessage';
 import { isKnownId } from '../features/chat/api/chatApi';
+import { branchApi } from '../features/branch/api/branchApi';
 import {
   getMessagesThroughFork,
   removePreTurnAssistantMessages,
@@ -32,6 +35,8 @@ const ChatPage: React.FC = () => {
   const { data: conversations = [], isLoading: convsLoading } = useConversations();
   const { data: messages = [], isLoading: msgsLoading } = useMessages(activeConvId);
   const { mutate: sendMessage, isPending: isSending } = useSendMessage(activeConvId);
+  const { regenerate } = useRegenerate(activeConvId);
+  const { editMessage } = useEditMessage(activeConvId);
 
   const activeConv = useMemo(
     () => conversations.find(c => c.id === activeConvId),
@@ -87,6 +92,17 @@ const ChatPage: React.FC = () => {
       navigate(chatPath(conversations[0].id), { replace: true });
     }
   }, [convsLoading, conversations, activeConvId, navigate]);
+
+  const handleBranch = useCallback(async (messageId: string) => {
+    const message = visibleMessages.messages.find(m => m.id === messageId);
+    if (!message?.turnId) return;
+    const numericChatId = Number(activeConvId);
+    if (isNaN(numericChatId)) return;
+    const result = await branchApi.createBranch(numericChatId, {
+      branchPointTurnId: message.turnId,
+    });
+    navigate(chatPath(String(result.chatId)));
+  }, [visibleMessages.messages, activeConvId, navigate]);
 
   const handleSend = useCallback(() => {
     const content = input.trim();
@@ -150,6 +166,9 @@ const ChatPage: React.FC = () => {
                 userName={user?.name ?? '나'}
                 branchMarkerLabel={activeBranchNumber ? `B${activeBranchNumber}` : undefined}
                 branchStartIndex={visibleMessages.branchStartIndex}
+                onBranch={handleBranch}
+                onRegenerate={regenerate}
+                onEdit={editMessage}
               />
               <ChatInput
                 value={input}

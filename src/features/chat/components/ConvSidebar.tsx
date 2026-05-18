@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import ConversationList from './ConversationList';
 import GraphPanel from '../../branch/components/GraphPanel';
 import GraphLegend from '../../branch/components/GraphLegend';
+import { branchApi } from '../../branch/api/branchApi';
 import { useBranchMessages } from '../../branch/hooks/useBranchMessages';
+import { useGraph } from '../../branch/hooks/useGraph';
 import { useMessages } from '../hooks/useMessages';
 import { useResizeDrag } from '../../../shared/hooks/useResizeDrag';
 import ResizeHandle from '../../../shared/components/layout/ResizeHandle';
@@ -52,6 +54,39 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   const { data: rootMessages = [] } = useMessages(graphConversation?.id ?? '');
   const branchMessagesById = useBranchMessages(branchIds);
   const graphMessages = activeId === graphConversation?.id ? messages : rootMessages;
+
+  const numericChatId = graphConversation ? Number(graphConversation.id) : null;
+  const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
+  const { data: baseGraphData } = useGraph(validChatId);
+  const [mergedGraphData, setMergedGraphData] = React.useState<typeof baseGraphData>(undefined);
+
+  React.useEffect(() => {
+    setMergedGraphData(baseGraphData);
+  }, [baseGraphData]);
+
+  const handleRestore = useCallback(async (chatId: string) => {
+    const numericChatId = Number(chatId);
+    if (isNaN(numericChatId)) return;
+    await branchApi.restoreBranch(numericChatId);
+    if (validChatId) {
+      setMergedGraphData(undefined);
+    }
+  }, [validChatId]);
+
+  const handleExpand = useCallback(async (fromTurnId: number, direction: 'UP' | 'DOWN') => {
+    if (!validChatId) return;
+    const result = await branchApi.expandGraph(validChatId, { fromTurnId, direction });
+    setMergedGraphData(prev => {
+      if (!prev) return prev;
+      const existingIds = new Set(prev.turns.map(t => t.turnId));
+      const newTurns = result.turns.filter(t => !existingIds.has(t.turnId));
+      const updatedFrontier = {
+        up: direction === 'UP' ? result.frontier.up : prev.frontier.up,
+        down: direction === 'DOWN' ? result.frontier.down : prev.frontier.down,
+      };
+      return { ...prev, turns: [...prev.turns, ...newTurns], frontier: updatedFrontier };
+    });
+  }, [validChatId]);
 
   const handleCreateConversation = useCallback(() => {
     navigate('/chat/new');
@@ -117,6 +152,9 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
             branchMessagesById={branchMessagesById}
             activeId={activeId}
             onNodeClick={handleNodeClick}
+            graphData={mergedGraphData}
+            onExpand={handleExpand}
+            onRestore={handleRestore}
           />
         </div>
         <GraphLegend />

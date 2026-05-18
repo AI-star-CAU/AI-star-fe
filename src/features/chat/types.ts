@@ -10,6 +10,7 @@ export interface Message {
   content: string;
   createdAt: string;
   isPending?: boolean;
+  turnId?: number;
 }
 
 export interface Conversation {
