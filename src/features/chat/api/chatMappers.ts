@@ -30,16 +30,30 @@ export function mapChatListItemToConversation(item: ChatListItemResponse): Conve
   };
 }
 
-export function mapMessageResponseToMessage(response: ChatMessageResponse): Message {
+/**
+ * 명세 §2.4: MessageDto 에는 chatId 가 없으므로(부모 turn/chat 에 포함)
+ * 호출 측이 path 로 알고 있는 chatId 를 주입한다.
+ */
+export function mapMessageResponseToMessage(
+  response: ChatMessageResponse,
+  chatId: string,
+): Message {
   return {
     id: String(response.messageId),
-    conversationId: String(response.chatId),
+    conversationId: chatId,
     role: mapSenderTypeToRole(response.senderType),
-    content: response.content,
+    // 명세 §2.4: 취소/실패 시 content 가 null 일 수 있다.
+    content: response.content ?? '',
+    status: response.status,
     createdAt: response.createdAt,
   };
 }
 
-export function mapTurnListToMessages(turns: TurnListItemResponse[]): Message[] {
-  return turns.flatMap(turn => turn.messages.map(mapMessageResponseToMessage));
+export function mapTurnListToMessages(
+  turns: TurnListItemResponse[],
+  chatId: string,
+): Message[] {
+  return turns.flatMap(turn =>
+    turn.messages.map(m => mapMessageResponseToMessage(m, chatId)),
+  );
 }

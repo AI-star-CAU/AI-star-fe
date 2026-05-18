@@ -59,6 +59,18 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
           )}
         </div>
 
+        {/* 명세 §2.4: 취소/실패 메시지 구분 표시 */}
+        {!isUser && message.status === 'CANCELED' && (
+          <span className="pl-1 text-[11px] text-amber-500/80">
+            응답이 취소되었습니다
+          </span>
+        )}
+        {!isUser && message.status === 'FAILED' && (
+          <span className="pl-1 text-[11px] text-red-400/80">
+            응답 생성에 실패했습니다
+          </span>
+        )}
+
         {!isUser && !message.isPending && (
           <div className="flex items-center gap-1.5 pl-1">
             <Button

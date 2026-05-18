@@ -12,6 +12,7 @@ interface ConversationListProps {
   onCreateConversation: () => void;
   onSelectConversation: (conversationId: string) => void;
   onSelectBranch: (branchId: string) => void;
+  onDeleteConversation: (conversationId: string) => void;
 }
 
 interface ConversationRowProps {
@@ -20,6 +21,7 @@ interface ConversationRowProps {
   isExpanded: boolean;
   onSelectConversation: (conversationId: string) => void;
   onSelectBranch: (branchId: string) => void;
+  onDeleteConversation: (conversationId: string) => void;
 }
 
 interface BranchRowProps {
@@ -69,11 +71,12 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
   isExpanded,
   onSelectConversation,
   onSelectBranch,
+  onDeleteConversation,
 }) => {
   const hasBranches = conversation.branches.length > 0;
 
   return (
-    <div>
+    <div className="group/conv relative">
       <button
         type="button"
         onClick={() => onSelectConversation(conversation.id)}
@@ -81,7 +84,7 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
       >
         <div className="flex items-start justify-between gap-1">
           <div className="min-w-0">
-            <p className="text-sm font-semibold truncate">{conversation.title}</p>
+            <p className="text-sm font-semibold truncate pr-6">{conversation.title}</p>
             <p className="text-xs text-slate-600 truncate mt-0.5">{conversation.preview}</p>
           </div>
           {hasBranches && (
@@ -90,6 +93,18 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
             </span>
           )}
         </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onDeleteConversation(conversation.id)}
+        aria-label="대화 삭제"
+        className="absolute top-2 right-2 opacity-0 group-hover/conv:opacity-100 transition text-slate-600 hover:text-red-400 p-1 rounded-md hover:bg-slate-800"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
       </button>
 
       {hasBranches && isExpanded && (
@@ -117,6 +132,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   onCreateConversation,
   onSelectConversation,
   onSelectBranch,
+  onDeleteConversation,
 }) => (
   <>
     <div className="p-3 flex-shrink-0">
@@ -144,6 +160,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
             isExpanded={expandedId === conversation.id}
             onSelectConversation={onSelectConversation}
             onSelectBranch={onSelectBranch}
+            onDeleteConversation={onDeleteConversation}
           />
         ))
       )}

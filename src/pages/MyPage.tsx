@@ -15,10 +15,12 @@ import { PATHS } from '../app/router/routes';
 
 const MyPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
   const { data: conversations = [], isLoading: convsLoading } = useConversations();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [now, setNow] = useState(0);
 
   useEffect(() => {
@@ -43,9 +45,20 @@ const MyPage: React.FC = () => {
     [conversations],
   );
 
-  const handleDeleteAccount = () => {
-    logout();
-    navigate(PATHS.LOGIN);
+  const handleDeleteAccount = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      // 명세 §1.3: DELETE /members/me 실호출 후 세션 정리.
+      await deleteAccount();
+      navigate(PATHS.LOGIN);
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : '계정 삭제에 실패했습니다.',
+      );
+      setIsDeleting(false);
+    }
   };
 
   const plan = user?.plan ?? 'free';
@@ -128,6 +141,8 @@ const MyPage: React.FC = () => {
         <DeleteAccountModal
           onConfirm={handleDeleteAccount}
           onCancel={() => setShowDeleteModal(false)}
+          isDeleting={isDeleting}
+          error={deleteError}
         />
       )}
     </div>

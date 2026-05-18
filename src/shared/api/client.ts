@@ -41,7 +41,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => undefined);
-    throw new ApiError(response.status, response.statusText, errorBody);
+    // 명세 §0.3: 에러도 ApiResponse<T> 래퍼이므로 사람이 읽는 message 를 우선 사용.
+    const message =
+      errorBody &&
+      typeof errorBody === 'object' &&
+      'message' in errorBody &&
+      typeof (errorBody as { message: unknown }).message === 'string'
+        ? (errorBody as { message: string }).message
+        : response.statusText;
+    throw new ApiError(response.status, message, errorBody);
   }
 
   if (response.status === 204) return undefined as T;

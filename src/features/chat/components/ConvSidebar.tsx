@@ -5,6 +5,7 @@ import GraphPanel from '../../branch/components/GraphPanel';
 import GraphLegend from '../../branch/components/GraphLegend';
 import { useBranchMessages } from '../../branch/hooks/useBranchMessages';
 import { useMessages } from '../hooks/useMessages';
+import { useDeleteChat } from '../hooks/useDeleteChat';
 import { useResizeDrag } from '../../../shared/hooks/useResizeDrag';
 import ResizeHandle from '../../../shared/components/layout/ResizeHandle';
 import type { Conversation, Message } from '../types';
@@ -52,6 +53,25 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   const { data: rootMessages = [] } = useMessages(graphConversation?.id ?? '');
   const branchMessagesById = useBranchMessages(branchIds);
   const graphMessages = activeId === graphConversation?.id ? messages : rootMessages;
+
+  const { mutate: deleteChat } = useDeleteChat();
+
+  const handleDeleteConversation = useCallback(
+    (conversationId: string) => {
+      const target = conversations.find(c => c.id === conversationId);
+      const label = target ? `"${target.title}"` : '이 대화';
+      if (!window.confirm(`${label}를 삭제할까요? 되돌릴 수 없습니다.`)) {
+        return;
+      }
+      deleteChat(Number(conversationId), {
+        onSuccess: () => {
+          // 명세 §2.7: 현재 보고 있던 대화를 지웠으면 새 채팅으로 이동.
+          if (conversationId === activeId) navigate('/chat/new');
+        },
+      });
+    },
+    [conversations, deleteChat, activeId, navigate],
+  );
 
   const handleCreateConversation = useCallback(() => {
     navigate('/chat/new');
@@ -102,6 +122,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
         onCreateConversation={handleCreateConversation}
         onSelectConversation={handleSelectConversation}
         onSelectBranch={handleSelectBranch}
+        onDeleteConversation={handleDeleteConversation}
       />
 
       <ResizeHandle direction="y" onMouseDown={onVerticalDrag} />

@@ -27,8 +27,4 @@ export const authApi = {
     );
     return res.result;
   },
-
-  async logout(): Promise<void> {
-    await apiClient.post<ApiEnvelope<null>>(ENDPOINTS.auth.logout).catch(() => undefined);
-  },
 };
