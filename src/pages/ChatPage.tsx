@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { useConversations } from '../features/chat/hooks/useConversations';
+import { useChatMeta } from '../features/chat/hooks/useChatMeta';
 import { useMessages } from '../features/chat/hooks/useMessages';
 import { useSendMessage } from '../features/chat/hooks/useSendMessage';
-import { isKnownId } from '../features/chat/api/chatApi';
 import {
   getMessagesThroughFork,
   removePreTurnAssistantMessages,
@@ -13,6 +13,9 @@ import ChatHeader from '../features/chat/components/ChatHeader';
 import ConvSidebar from '../features/chat/components/ConvSidebar';
 import MessageList from '../features/chat/components/MessageList';
 import ChatInput from '../features/chat/components/ChatInput';
+import LlmModelSelect from '../features/chat/components/LlmModelSelect';
+import { LLM_OPTIONS, DEFAULT_LLM_OPTION } from '../features/chat/constants/llm';
+import type { LlmModel } from '../features/chat/types';
 import ResizeHandle from '../shared/components/layout/ResizeHandle';
 import { useResizeDrag } from '../shared/hooks/useResizeDrag';
 import { chatPath } from '../app/router/routes';
@@ -24,6 +27,15 @@ const ChatPage: React.FC = () => {
 
   const [input, setInput] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // 명세 §2.1 / FR-10.1: 새 대화 생성 시 사용할 모델 선택.
+  const [selectedModel, setSelectedModel] = useState<LlmModel>(
+    DEFAULT_LLM_OPTION.model,
+  );
+  const selectedLlm = useMemo(
+    () =>
+      LLM_OPTIONS.find(o => o.model === selectedModel) ?? DEFAULT_LLM_OPTION,
+    [selectedModel],
+  );
 
   const { size: sidebarWidth, onMouseDown: onSidebarResize } = useResizeDrag(240, 'x', 160, 480);
 
@@ -31,12 +43,46 @@ const ChatPage: React.FC = () => {
 
   const { data: conversations = [], isLoading: convsLoading } = useConversations();
   const { data: messages = [], isLoading: msgsLoading } = useMessages(activeConvId);
-  const { mutate: sendMessage, isPending: isSending } = useSendMessage(activeConvId);
+  const onConversationCreated = useCallback(
+    (newChatId: string) => navigate(chatPath(newChatId), { replace: true }),
+    [navigate],
+  );
+  const {
+    sendMessage,
+    cancel,
+    isPending: isSending,
+    isCanceling,
+  } = useSendMessage(activeConvId, {
+    onConversationCreated,
+    chatOptions: {
+      llmProvider: selectedLlm.provider,
+      llmModel: selectedLlm.model,
+    },
+  });
 
-  const activeConv = useMemo(
+  const listConv = useMemo(
     () => conversations.find(c => c.id === activeConvId),
     [conversations, activeConvId],
   );
+  // 명세 §2.3: 목록에 아직 없는(갓 생성된) chat 은 메타 조회로 보강.
+  const { data: chatMeta } = useChatMeta(
+    listConv || activeConvId === 'new' ? '' : activeConvId,
+  );
+  const activeConv = useMemo<typeof listConv>(() => {
+    if (listConv) return listConv;
+    if (!chatMeta) return undefined;
+    return {
+      id: String(chatMeta.chatId),
+      title: chatMeta.title,
+      preview: '아직 메시지가 없습니다.',
+      createdAt: chatMeta.createdAt,
+      turnCount: 0,
+      lastMessageAt: null,
+      llmProvider: chatMeta.llmProvider,
+      llmModel: chatMeta.llmModel,
+      branches: [],
+    };
+  }, [listConv, chatMeta]);
   const activeBranch = useMemo(
     () => conversations.flatMap(c => c.branches).find(branch => branch.id === activeConvId),
     [conversations, activeConvId],
@@ -82,11 +128,26 @@ const ChatPage: React.FC = () => {
 
   const isNewChatEmpty = activeConvId === 'new' && !msgsLoading && messages.length === 0;
 
+  const isKnownConvId = useMemo(
+    () =>
+      conversations.some(
+        c =>
+          c.id === activeConvId ||
+          c.branches.some(b => b.id === activeConvId),
+      ),
+    [conversations, activeConvId],
+  );
+
   useEffect(() => {
-    if (!convsLoading && conversations.length > 0 && activeConvId !== 'new' && !isKnownId(activeConvId)) {
+    if (
+      !convsLoading &&
+      conversations.length > 0 &&
+      activeConvId !== 'new' &&
+      !isKnownConvId
+    ) {
       navigate(chatPath(conversations[0].id), { replace: true });
     }
-  }, [convsLoading, conversations, activeConvId, navigate]);
+  }, [convsLoading, conversations, activeConvId, isKnownConvId, navigate]);
 
   const handleSend = useCallback(() => {
     const content = input.trim();
@@ -133,11 +194,20 @@ const ChatPage: React.FC = () => {
                     오늘은 어떤 대화를 시작해볼까요?
                   </p>
                 </div>
+                <div className="mb-3 flex justify-center">
+                  <LlmModelSelect
+                    value={selectedModel}
+                    onChange={setSelectedModel}
+                    disabled={isSending}
+                  />
+                </div>
                 <ChatInput
                   value={input}
                   onChange={setInput}
                   onSend={handleSend}
                   isSending={isSending}
+                  onCancel={cancel}
+                  isCanceling={isCanceling}
                   variant="floating"
                 />
               </div>
@@ -156,6 +226,8 @@ const ChatPage: React.FC = () => {
                 onChange={setInput}
                 onSend={handleSend}
                 isSending={isSending}
+                onCancel={cancel}
+                isCanceling={isCanceling}
               />
             </>
           )}

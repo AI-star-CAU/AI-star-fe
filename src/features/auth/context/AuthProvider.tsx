@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { AuthContext, INITIAL_AUTH_STATE, authReducer } from './AuthContext';
 import { authApi } from '../api/authApi';
+import { memberApi } from '../api/memberApi';
 import {
   clearAuthToken,
   clearSavedUser,
@@ -9,6 +10,7 @@ import {
 } from '../utils/authStorage';
 import {
   mapAuthResponseToUser,
+  mapMemberMeToUser,
   type AuthResponse,
   type LoginCredentials,
   type SignupCredentials,
@@ -52,9 +54,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearAuthToken();
   }, []);
 
+  // 명세 §1.4: 서버 최신 내 정보로 동기화.
+  const refreshMe = useCallback(async () => {
+    const user = mapMemberMeToUser(await memberApi.getMe());
+    saveUser(user);
+    dispatch({ type: 'RESTORE', user });
+  }, []);
+
+  // 명세 §1.3: 회원 탈퇴 후 로컬 세션 정리.
+  const deleteAccount = useCallback(async () => {
+    await memberApi.deleteMe();
+    dispatch({ type: 'LOGOUT' });
+    clearSavedUser();
+    clearAuthToken();
+  }, []);
+
   const value = useMemo(
-    () => ({ ...state, login, signup, logout }),
-    [state, login, signup, logout],
+    () => ({ ...state, login, signup, logout, refreshMe, deleteAccount }),
+    [state, login, signup, logout, refreshMe, deleteAccount],
   );
 
   return (

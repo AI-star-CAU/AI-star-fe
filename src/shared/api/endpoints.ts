@@ -10,6 +10,7 @@ export const ENDPOINTS = {
     list: '/chats',
     create: '/chats',
     detail: (chatId: number) => `/chats/${chatId}`,
+    delete: (chatId: number) => `/chats/${chatId}`,
     turns: (chatId: number) => `/chats/${chatId}/turns`,
     messages: (chatId: number) => `/chats/${chatId}/messages`,
     cancelMessage: (chatId: number, messageId: number) =>

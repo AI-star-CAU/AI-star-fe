@@ -4,11 +4,18 @@ import Button from '../../../shared/components/ui/Button';
 interface DeleteAccountModalProps {
   onConfirm: () => void;
   onCancel: () => void;
+  isDeleting?: boolean;
+  error?: string | null;
 }
 
-const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onConfirm, onCancel }) => {
+const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
+  onConfirm,
+  onCancel,
+  isDeleting = false,
+  error = null,
+}) => {
   const [confirmText, setConfirmText] = useState('');
-  const canDelete = confirmText === '계정 삭제';
+  const canDelete = confirmText === '계정 삭제' && !isDeleting;
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -25,8 +32,18 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onConfirm, onCa
           placeholder="계정 삭제"
           className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-4 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
         />
+        {error && (
+          <p className="text-xs text-red-400 mb-3" role="alert">
+            {error}
+          </p>
+        )}
         <div className="flex gap-3">
-          <Button onClick={onCancel} variant="ghost" fullWidth>
+          <Button
+            onClick={onCancel}
+            variant="ghost"
+            fullWidth
+            disabled={isDeleting}
+          >
             취소
           </Button>
           <Button
@@ -36,7 +53,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onConfirm, onCa
             fullWidth
             className="bg-red-600 text-white hover:bg-red-700 disabled:bg-slate-700 disabled:text-slate-500 disabled:border-slate-700"
           >
-            계정 삭제
+            {isDeleting ? '삭제 중…' : '계정 삭제'}
           </Button>
         </div>
       </div>

@@ -6,6 +6,9 @@ interface ChatInputProps {
   onChange: (value: string) => void;
   onSend: () => void;
   isSending: boolean;
+  /** 명세 §2.6: 스트리밍 중 응답 생성 취소. */
+  onCancel?: () => void;
+  isCanceling?: boolean;
   variant?: 'dock' | 'floating';
 }
 
@@ -14,6 +17,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onChange,
   onSend,
   isSending,
+  onCancel,
+  isCanceling = false,
   variant = 'dock',
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -56,22 +61,39 @@ const ChatInput: React.FC<ChatInputProps> = ({
           className="flex-1 input-dark resize-none leading-relaxed disabled:opacity-60"
           style={{ minHeight: '48px', maxHeight: '160px' }}
         />
-        <Button
-          onClick={onSend}
-          disabled={!value.trim() || isSending}
-          variant="primary"
-          size="icon"
-          className="flex-shrink-0 disabled:bg-slate-800 disabled:text-slate-500"
-          aria-label="메시지 보내기"
-        >
-          {isSending ? (
-            <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          )}
-        </Button>
+        {isSending && onCancel ? (
+          <Button
+            onClick={onCancel}
+            disabled={isCanceling}
+            variant="primary"
+            size="icon"
+            className="flex-shrink-0 bg-red-600 hover:bg-red-700 text-white disabled:bg-slate-800 disabled:text-slate-500"
+            aria-label="응답 생성 취소"
+          >
+            {isCanceling ? (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span className="w-3 h-3 bg-white rounded-[2px]" />
+            )}
+          </Button>
+        ) : (
+          <Button
+            onClick={onSend}
+            disabled={!value.trim() || isSending}
+            variant="primary"
+            size="icon"
+            className="flex-shrink-0 disabled:bg-slate-800 disabled:text-slate-500"
+            aria-label="메시지 보내기"
+          >
+            {isSending ? (
+              <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            )}
+          </Button>
+        )}
       </div>
       {!isFloating && (
         <p className="text-[10px] text-slate-700 mt-2 text-center">
