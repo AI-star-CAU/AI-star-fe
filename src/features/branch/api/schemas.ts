@@ -60,7 +60,7 @@ export const CreateBranchResponseSchema = z.object({
   rootChatId: z.number(),
   parentId: z.number(),
   branchPointTurnId: z.number(),
-  title: z.string(),
+  title: z.string().nullable(),
   titleStatus: TitleStatusSchema,
   llmProvider: z.string(),
   llmModel: z.string(),

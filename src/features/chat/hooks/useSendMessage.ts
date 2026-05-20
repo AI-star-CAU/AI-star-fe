@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '../api/chatApi';
 import { streamMessage } from '../api/messageStream';
 import { ApiError } from '../../../shared/api/client';
-import { deriveChatTitle } from '../utils/title';
 import type { CreateChatRequest, Message } from '../types';
 
 interface UseSendMessageOptions {
@@ -45,15 +44,35 @@ export const useSendMessage = (
 
       // 1) 'new' 화면이면 먼저 chat 을 생성한다 (명세 §0.2.1 2단계 패턴).
       let targetId = conversationId;
+      const isNewConversation = conversationId === 'new';
       if (conversationId === 'new') {
         try {
           targetId = String(await chatApi.createChat({
             ...options?.chatOptions,
-            title: options?.chatOptions?.title ?? deriveChatTitle(content),
           }));
-          options?.onConversationCreated?.(targetId);
         } catch (err) {
           console.error('[sendMessage] chat creation failed:', err);
+          const now = new Date().toISOString();
+          setLiveMessages([
+            {
+              id: `failed-user-${Date.now()}`,
+              conversationId,
+              role: 'user',
+              content,
+              createdAt: now,
+            },
+            {
+              id: `failed-ai-${Date.now() + 1}`,
+              conversationId,
+              role: 'assistant',
+              content:
+                err instanceof ApiError
+                  ? `⚠️ ${err.message}`
+                  : '⚠️ 대화 생성에 실패했습니다.',
+              createdAt: now,
+              status: 'FAILED',
+            },
+          ]);
           setIsPending(false);
           return;
         }
@@ -139,6 +158,9 @@ export const useSendMessage = (
         setLiveMessages([]);
         queryClient.invalidateQueries({ queryKey: ['conversations'] });
         queryClient.invalidateQueries({ queryKey: ['graph'] });
+        if (isNewConversation) {
+          options?.onConversationCreated?.(targetId);
+        }
         void cancelled;
       } catch (err) {
         if (accumulated) {

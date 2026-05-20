@@ -12,7 +12,6 @@ import {
   getMessagesThroughFork,
   removePreTurnAssistantMessages,
 } from '../features/chat/utils/messageHelpers';
-import { deriveChatTitle } from '../features/chat/utils/title';
 import ChatHeader from '../features/chat/components/ChatHeader';
 import ConvSidebar from '../features/chat/components/ConvSidebar';
 import MessageList from '../features/chat/components/MessageList';
@@ -86,7 +85,7 @@ const ChatPage: React.FC = () => {
     if (!chatMeta) return undefined;
     return {
       id: String(chatMeta.chatId),
-      title: chatMeta.title,
+      title: chatMeta.title ?? '제목없음',
       preview: '아직 메시지가 없습니다.',
       createdAt: chatMeta.createdAt,
       turnCount: 0,
@@ -188,7 +187,7 @@ const ChatPage: React.FC = () => {
     try {
       const result = await branchApi.createBranch(numericChatId, {
         branchPointTurnId: message.turnId,
-        title: deriveChatTitle(message.content, 'Branch'),
+        title: null,
       });
       navigate(chatPath(String(result.chatId)));
     } catch (err) {

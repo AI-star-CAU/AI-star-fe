@@ -24,6 +24,7 @@ export const useEditMessage = (conversationId: string) => {
       for await (const { event, data } of streamSSE(
         ENDPOINTS.chat.editMessage(numericChatId, numericMessageId),
         { content },
+        'PATCH',
       )) {
         if (event === 'branch_created') {
           const parsed = JSON.parse(data) as { newChatId: number };

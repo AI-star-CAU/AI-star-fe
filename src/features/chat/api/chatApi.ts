@@ -23,10 +23,9 @@ import type {
 } from '../types';
 
 const DEFAULT_CHAT_OPTIONS = {
-  title: 'New chat',
   llmProvider: 'OPENAI',
   llmModel: 'gpt-4o-mini',
-} as const satisfies CreateChatRequest;
+} as const satisfies Pick<CreateChatRequest, 'llmProvider' | 'llmModel'>;
 
 export const chatApi = {
   async getConversations(): Promise<Conversation[]> {

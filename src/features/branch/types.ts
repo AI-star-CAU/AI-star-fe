@@ -78,7 +78,7 @@ export interface CreateBranchResponse {
   rootChatId: number;
   parentId: number;
   branchPointTurnId: number;
-  title: string;
+  title: string | null;
   titleStatus: TitleStatus;
   llmProvider: string;
   llmModel: string;

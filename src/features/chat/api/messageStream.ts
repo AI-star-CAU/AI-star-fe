@@ -18,11 +18,12 @@ export interface ChunkData {
   text: string;
 }
 
-/** 명세 §2.5: {aiMessageId, summary, answerToken} */
+/** Phase 3 명세 §4.1: {turnId, aiMessageId, answerToken, summaryStatus} */
 export interface TurnCompletedData {
+  turnId: number;
   aiMessageId: number;
-  summary: string;
-  answerToken?: number;
+  answerToken: number;
+  summaryStatus: 'PENDING';
 }
 
 /** 명세 §2.5: {aiMessageId, status:"CANCELED", content?, answerToken?} */

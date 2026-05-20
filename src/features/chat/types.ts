@@ -39,7 +39,7 @@ export interface Conversation {
 
 export interface ChatListItemResponse {
   chatId: number;
-  title: string;
+  title: string | null;
   lastMessagePreview: string | null;
   turnCount: number;
   lastMessageAt: string | null;
@@ -61,7 +61,8 @@ export interface CreateChatResponse {
   chatId: number;
   rootChatId: number;
   parentId: number | null;
-  title: string;
+  title: string | null;
+  titleStatus?: 'PENDING' | 'GENERATED' | 'USER_EDITED';
   llmProvider: LlmProvider;
   llmModel: LlmModel;
   createdAt: string;
@@ -86,7 +87,8 @@ export type ChatMetaResponse = CreateChatResponse;
 export interface TurnListItemResponse {
   turnId: number;
   turnSequence: number;
-  summary: string;
+  summary: string | null;
+  summaryStatus?: 'PENDING' | 'GENERATED';
   messages: ChatMessageResponse[];
   createdAt: string;
 }

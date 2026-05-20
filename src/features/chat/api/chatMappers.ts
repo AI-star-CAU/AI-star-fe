@@ -19,7 +19,7 @@ export function mapRoleToSenderType(role: MessageRole): SenderType {
 export function mapChatListItemToConversation(item: ChatListItemResponse): Conversation {
   return {
     id: String(item.chatId),
-    title: item.title,
+    title: item.title ?? '제목없음',
     preview: item.lastMessagePreview ?? '아직 메시지가 없습니다.',
     createdAt: item.createdAt,
     turnCount: item.turnCount,

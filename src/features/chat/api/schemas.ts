@@ -18,7 +18,8 @@ export const ChatMessageResponseSchema = z.object({
 export const TurnListItemResponseSchema = z.object({
   turnId: z.number(),
   turnSequence: z.number(),
-  summary: z.string(),
+  summary: z.string().nullable(),
+  summaryStatus: z.enum(['PENDING', 'GENERATED']).optional(),
   messages: z.array(ChatMessageResponseSchema),
   createdAt: z.string(),
 });
@@ -31,7 +32,7 @@ export const TurnPageResponseSchema = z.object({
 
 export const ChatListItemResponseSchema = z.object({
   chatId: z.number(),
-  title: z.string(),
+  title: z.string().nullable(),
   lastMessagePreview: z.string().nullable(),
   turnCount: z.number(),
   lastMessageAt: z.string().nullable(),
@@ -45,7 +46,8 @@ export const CreateChatResponseSchema = z.object({
   chatId: z.number(),
   rootChatId: z.number(),
   parentId: z.number().nullable(),
-  title: z.string(),
+  title: z.string().nullable(),
+  titleStatus: z.enum(['PENDING', 'GENERATED', 'USER_EDITED']).optional(),
   llmProvider: LlmProviderSchema,
   llmModel: LlmModelSchema,
   createdAt: z.string(),
