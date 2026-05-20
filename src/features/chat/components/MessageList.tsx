@@ -87,6 +87,11 @@ const MessageList: React.FC<MessageListProps> = ({
   const prependAnchorRef = useRef<number | null>(null);
   const shouldShowBranchMarker =
     branchMarkerLabel !== undefined && branchStartIndex !== undefined;
+  // 재생성은 가장 마지막(leaf) assistant 메시지에서만 노출한다.
+  let lastAssistantIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'assistant') { lastAssistantIndex = i; break; }
+  }
 
   const handleScroll = () => {
     const el = containerRef.current;
@@ -134,7 +139,7 @@ const MessageList: React.FC<MessageListProps> = ({
               {shouldShowBranchMarker && index === branchStartIndex && (
                 <BranchMarker label={branchMarkerLabel} />
               )}
-              <MessageBubble message={msg} userName={userName} onBranch={onBranch} onRegenerate={onRegenerate} onEdit={onEdit} />
+              <MessageBubble message={msg} userName={userName} onBranch={onBranch} onRegenerate={onRegenerate} onEdit={onEdit} canRegenerate={index === lastAssistantIndex} />
             </React.Fragment>
           ))}
           {shouldShowBranchMarker && branchStartIndex === messages.length && (

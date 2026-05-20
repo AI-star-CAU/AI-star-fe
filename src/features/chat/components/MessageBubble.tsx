@@ -8,6 +8,8 @@ interface MessageBubbleProps {
   onBranch?: (messageId: string) => void;
   onRegenerate?: (messageId: string) => void;
   onEdit?: (messageId: string, content: string) => void;
+  /** 마지막(leaf) assistant 메시지에서만 재생성 버튼을 노출한다. */
+  canRegenerate?: boolean;
 }
 
 const CopyIcon: React.FC = () => (
@@ -24,7 +26,7 @@ const BranchIcon: React.FC = () => (
   </svg>
 );
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBranch, onRegenerate, onEdit }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBranch, onRegenerate, onEdit, canRegenerate = false }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -150,7 +152,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
                 분기
               </Button>
             )}
-            {!!message.turnId && (
+            {!!message.turnId && canRegenerate && (
               <Button
                 onClick={() => onRegenerate?.(message.id)}
                 variant="custom"
