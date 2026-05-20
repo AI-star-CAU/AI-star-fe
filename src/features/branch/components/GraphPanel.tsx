@@ -9,10 +9,10 @@ interface GraphNode {
   label: string;
   isBranch: boolean;
   isRoot: boolean;
+  turnId?: number;
   turnIndex?: number;
   chatId?: string;
   groupId?: string;
-  messageId?: string;
   isDeleted?: boolean;
 }
 
@@ -49,10 +49,10 @@ function buildMainNodes(messages: Message[], conv: Conversation | undefined) {
       label: turnNumber === 1 ? 'root' : `T${turnNumber}`,
       isBranch: false,
       isRoot: turnNumber === 1,
+      turnId: message.turnId,
       turnIndex: turnNumber,
       chatId: conv?.id,
       groupId: conv?.id,
-      messageId: message.id,
     });
   });
 
@@ -106,9 +106,9 @@ function buildGraph(
         label: `B${branchNumber}-T${turnNumber}`,
         isBranch: false,
         isRoot: false,
+        turnId: message.turnId,
         chatId: branch.id,
         groupId: branch.id,
-        messageId: message.id,
       });
       branchEdges.push({
         from: turnNumber === 1 ? branchRootId : `b${branchIndex}-t${turnNumber - 1}`,
@@ -131,11 +131,7 @@ function buildGraph(
   return { nodes: allNodes, edges: [...mainEdges, ...branchEdges], vw, vh };
 }
 
-function buildGraphFromApiData(
-  graphData: GraphResponse,
-  rootMessages: Message[] = [],
-  branchMessagesById: Record<string, Message[]> = {},
-): ReturnType<typeof buildGraph> {
+function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buildGraph> {
   const { chats, turns } = graphData;
   if (turns.length === 0) return { nodes: [], edges: [], vw: 160, vh: 80 };
 
@@ -144,19 +140,6 @@ function buildGraphFromApiData(
 
   // 노드 클릭 시 해당 turn 의 user 메시지(`msg-{id}`)로 스크롤하려면
   // graphData 에 없는 messageId 를 로컬 messages 로부터 turnId 로 역인덱스해 둔다.
-  const turnIdToMessageId = new Map<number, string>();
-  const indexUserMessages = (msgs: Message[]) => {
-    for (const m of msgs) {
-      if (m.role === 'user' && m.turnId != null && !turnIdToMessageId.has(m.turnId)) {
-        turnIdToMessageId.set(m.turnId, m.id);
-      }
-    }
-  };
-  indexUserMessages(rootMessages);
-  for (const branchMsgs of Object.values(branchMessagesById)) {
-    indexUserMessages(branchMsgs);
-  }
-
   const sortedChats = [...chats].sort((a, b) => a.depth - b.depth || a.chatId - b.chatId);
   const chatColumnMap = new Map<number, number>();
   chatColumnMap.set(rootChat.chatId, 0);
@@ -182,10 +165,10 @@ function buildGraphFromApiData(
       label: i === 0 ? 'root' : label,
       isBranch: false,
       isRoot: i === 0,
+      turnId: turn.turnId,
       turnIndex: turn.turnSequence,
       chatId: String(turn.chatId),
       groupId: String(turn.chatId),
-      messageId: turnIdToMessageId.get(turn.turnId),
     };
     nodes.push(node);
     turnNodeMap.set(turn.turnId, node);
@@ -235,10 +218,10 @@ function buildGraphFromApiData(
         label,
         isBranch: false,
         isRoot: false,
+        turnId: turn.turnId,
         turnIndex: turn.turnSequence,
         chatId: String(turn.chatId),
         groupId: String(turn.chatId),
-        messageId: turnIdToMessageId.get(turn.turnId),
       };
       nodes.push(node);
       turnNodeMap.set(turn.turnId, node);
@@ -295,7 +278,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const graph = useMemo(
     () => graphData && graphData.turns.length > 0
-      ? buildGraphFromApiData(graphData, messages, branchMessagesById)
+      ? buildGraphFromApiData(graphData)
       : buildGraph(messages, conv, branchMessagesById),
     [graphData, messages, conv, branchMessagesById],
   );
@@ -339,8 +322,13 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
     setSelectedNodeId(node.id);
 
     if (!onNodeClick) return;
-    if (node.messageId) {
-      onNodeClick({ type: 'scroll', messageId: node.messageId, chatId: node.chatId });
+    if (node.turnId != null && node.chatId) {
+      onNodeClick({
+        type: 'turn',
+        turnId: node.turnId,
+        chatId: node.chatId,
+        turnSequence: node.turnIndex,
+      });
     } else if (node.chatId) {
       onNodeClick({ type: 'navigate', chatId: node.chatId });
     }

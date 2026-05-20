@@ -14,6 +14,8 @@ interface MessageListProps {
   onLoadOlder?: () => void;
   onRegenerate?: (messageId: string, originChatId: string) => void;
   onEdit?: (messageId: string, content: string, originChatId: string) => void;
+  targetTurnId?: number;
+  onTargetTurnReached?: () => void;
 }
 
 const BranchMarker: React.FC<{ label: string }> = ({ label }) => (
@@ -80,6 +82,8 @@ const MessageList: React.FC<MessageListProps> = ({
   onLoadOlder,
   onRegenerate,
   onEdit,
+  targetTurnId,
+  onTargetTurnReached,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -108,6 +112,7 @@ const MessageList: React.FC<MessageListProps> = ({
   useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    if (targetTurnId != null) return;
     if (prependAnchorRef.current != null) {
       el.scrollTop = el.scrollHeight - prependAnchorRef.current;
       prependAnchorRef.current = null;
@@ -118,10 +123,36 @@ const MessageList: React.FC<MessageListProps> = ({
 
   // 대화 전환/초기 로딩 종료 시 맨 아래에서 시작.
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && targetTurnId == null) {
       endRef.current?.scrollIntoView({ behavior: 'auto' });
     }
   }, [isLoading]);
+
+  useEffect(() => {
+    if (targetTurnId == null || isLoading) return;
+
+    const target = containerRef.current?.querySelector<HTMLElement>(
+      `[data-turn-id="${targetTurnId}"]`,
+    );
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      onTargetTurnReached?.();
+      return;
+    }
+
+    if (hasOlder && !isLoadingOlder && onLoadOlder) {
+      prependAnchorRef.current = containerRef.current?.scrollHeight ?? null;
+      onLoadOlder();
+    }
+  }, [
+    targetTurnId,
+    messages,
+    isLoading,
+    hasOlder,
+    isLoadingOlder,
+    onLoadOlder,
+    onTargetTurnReached,
+  ]);
 
   return (
     <div

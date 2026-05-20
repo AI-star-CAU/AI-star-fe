@@ -79,6 +79,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>();
+  const [graphCenterTurnId, setGraphCenterTurnId] = useState<number | undefined>();
 
   const { size: convListHeight, onMouseDown: onVerticalDrag } = useResizeDrag(240, 'y', 80, 520);
 
@@ -166,7 +167,10 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   const graphRequestId = graphQueryId ?? activeParentId;
   const numericChatId = graphRequestId ? Number(graphRequestId) : null;
   const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
-  const { data: baseGraphData, isFetching: isGraphFetching } = useGraph(validChatId);
+  const { data: baseGraphData, isFetching: isGraphFetching } = useGraph(
+    validChatId,
+    graphCenterTurnId,
+  );
   const [mergedGraphData, setMergedGraphData] = React.useState<typeof baseGraphData>(undefined);
 
   React.useEffect(() => {
@@ -203,10 +207,12 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   }, [validChatId]);
 
   const handleCreateConversation = useCallback(() => {
+    setGraphCenterTurnId(undefined);
     navigate('/chat/new');
   }, [navigate]);
 
   const handleSelectConversation = useCallback((conversationId: string) => {
+    setGraphCenterTurnId(undefined);
     navigate(`/chat/${conversationId}`);
     setExpandedId(currentId => {
       const currentExpandedId = currentId === undefined ? activeParentId : currentId;
@@ -220,29 +226,19 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     );
 
     if (parent) setExpandedId(parent.id);
+    setGraphCenterTurnId(undefined);
     navigate(`/chat/${branchId}`);
   }, [conversations, navigate]);
 
   const handleNodeClick = useCallback((action: NodeAction) => {
-    if (action.type === 'scroll') {
-      // 클릭한 노드가 현재 활성 chat 과 다르면 스크롤 대신 해당 chat 으로 이동한다.
-      // 부모 prefix 로 인해 다른 chat 의 메시지가 화면에 보일 수 있는데,
-      // 이때 스크롤만 하면 activeId 가 바뀌지 않아 다음 턴이 엉뚱한 분기에 붙는다.
-      if (action.chatId && action.chatId !== activeId) {
-        navigate(`/chat/${action.chatId}`);
-        return;
-      }
-      const target = document.getElementById(`msg-${action.messageId}`);
-
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else if (action.chatId) {
-        navigate(`/chat/${action.chatId}`);
-      }
+    if (action.type === 'turn') {
+      setGraphCenterTurnId(action.turnId);
+      navigate(`/chat/${action.chatId}?turnId=${action.turnId}`);
     } else {
+      setGraphCenterTurnId(undefined);
       navigate(`/chat/${action.chatId}`);
     }
-  }, [navigate, activeId]);
+  }, [navigate]);
 
   return (
     <aside

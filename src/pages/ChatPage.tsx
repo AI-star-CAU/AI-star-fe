@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { useConversations } from '../features/chat/hooks/useConversations';
 import { useChatMeta } from '../features/chat/hooks/useChatMeta';
@@ -32,6 +32,7 @@ const ChatPage: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { convId } = useParams<{ convId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, logout } = useAuth();
 
   const [input, setInput] = useState('');
@@ -50,6 +51,12 @@ const ChatPage: React.FC = () => {
   const { size: sidebarWidth, onMouseDown: onSidebarResize } = useResizeDrag(240, 'x', 160, 480);
 
   const activeConvId = convId ?? 'new';
+  const targetTurnId = useMemo(() => {
+    const raw = searchParams.get('turnId');
+    if (!raw) return undefined;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : undefined;
+  }, [searchParams]);
 
   const { data: conversations = [], isLoading: convsLoading } = useConversations();
   const {
@@ -265,6 +272,14 @@ const ChatPage: React.FC = () => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const handleTargetTurnReached = useCallback(() => {
+    setSearchParams(current => {
+      const next = new URLSearchParams(current);
+      next.delete('turnId');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   const isKnownConvId = useMemo(
     () =>
       activeConvId === 'new' ||
@@ -408,12 +423,14 @@ const ChatPage: React.FC = () => {
                 userName={user?.name ?? '나'}
                 branchMarkerLabel={activeBranchMarkerLabel}
                 branchStartIndex={visibleMessages.branchStartIndex}
-                hasOlder={hasNextPage && !activeBranch}
+                hasOlder={hasNextPage}
                 isLoadingOlder={isFetchingNextPage}
                 onLoadOlder={handleLoadOlder}
                 onBranch={handleBranch}
                 onRegenerate={handleRegenerate}
                 onEdit={editMessage}
+                targetTurnId={targetTurnId}
+                onTargetTurnReached={handleTargetTurnReached}
               />
               <ChatInput
                 value={input}

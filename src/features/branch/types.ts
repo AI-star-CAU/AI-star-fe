@@ -6,7 +6,7 @@ export interface Branch {
 }
 
 export type NodeAction =
-  | { type: 'scroll'; messageId: string; chatId?: string }
+  | { type: 'turn'; turnId: number; chatId: string; turnSequence?: number }
   | { type: 'navigate'; chatId: string };
 
 export type TitleStatus = 'PENDING' | 'GENERATED' | 'USER_EDITED';

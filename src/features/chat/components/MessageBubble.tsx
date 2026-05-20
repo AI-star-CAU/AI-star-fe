@@ -58,7 +58,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
   }, [editContent, message.content, message.id, onEdit]);
 
   return (
-    <div id={`msg-${message.id}`} className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+    <div
+      id={`msg-${message.id}`}
+      data-turn-id={message.turnId}
+      className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
+    >
       <div
         className={`w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
           isUser ? 'bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950' : 'bg-cyan-700'
