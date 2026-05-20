@@ -131,12 +131,31 @@ function buildGraph(
   return { nodes: allNodes, edges: [...mainEdges, ...branchEdges], vw, vh };
 }
 
-function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buildGraph> {
+function buildGraphFromApiData(
+  graphData: GraphResponse,
+  rootMessages: Message[] = [],
+  branchMessagesById: Record<string, Message[]> = {},
+): ReturnType<typeof buildGraph> {
   const { chats, turns } = graphData;
   if (turns.length === 0) return { nodes: [], edges: [], vw: 160, vh: 80 };
 
   const rootChat = chats.find(c => c.parentChatId === null);
   if (!rootChat) return { nodes: [], edges: [], vw: 160, vh: 80 };
+
+  // 노드 클릭 시 해당 turn 의 user 메시지(`msg-{id}`)로 스크롤하려면
+  // graphData 에 없는 messageId 를 로컬 messages 로부터 turnId 로 역인덱스해 둔다.
+  const turnIdToMessageId = new Map<number, string>();
+  const indexUserMessages = (msgs: Message[]) => {
+    for (const m of msgs) {
+      if (m.role === 'user' && m.turnId != null && !turnIdToMessageId.has(m.turnId)) {
+        turnIdToMessageId.set(m.turnId, m.id);
+      }
+    }
+  };
+  indexUserMessages(rootMessages);
+  for (const branchMsgs of Object.values(branchMessagesById)) {
+    indexUserMessages(branchMsgs);
+  }
 
   const sortedChats = [...chats].sort((a, b) => a.depth - b.depth || a.chatId - b.chatId);
   const chatColumnMap = new Map<number, number>();
@@ -166,6 +185,7 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
       turnIndex: turn.turnSequence,
       chatId: String(turn.chatId),
       groupId: String(turn.chatId),
+      messageId: turnIdToMessageId.get(turn.turnId),
     };
     nodes.push(node);
     turnNodeMap.set(turn.turnId, node);
@@ -218,6 +238,7 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
         turnIndex: turn.turnSequence,
         chatId: String(turn.chatId),
         groupId: String(turn.chatId),
+        messageId: turnIdToMessageId.get(turn.turnId),
       };
       nodes.push(node);
       turnNodeMap.set(turn.turnId, node);
@@ -274,7 +295,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const graph = useMemo(
     () => graphData && graphData.turns.length > 0
-      ? buildGraphFromApiData(graphData)
+      ? buildGraphFromApiData(graphData, messages, branchMessagesById)
       : buildGraph(messages, conv, branchMessagesById),
     [graphData, messages, conv, branchMessagesById],
   );
