@@ -289,15 +289,18 @@ const ChatPage: React.FC = () => {
     }
   }, [convsLoading, chatMetaLoading, conversations, activeConvId, isKnownConvId, navigate]);
 
-  const handleBranch = useCallback(async (messageId: string) => {
+  // 명세 §2.1: POST /chats/{chatId}/branches 의 chatId 는 분기점 turn 이
+  // 실제로 속한 chat 의 id 여야 한다. 부모 chat 의 메시지를 자식 분기에서
+  // 클릭한 경우 activeConvId 로 보내면 BRANCH_4001 이 발생한다.
+  const handleBranch = useCallback(async (messageId: string, originChatId: string) => {
     const message = visibleMessages.messages.find(m => m.id === messageId);
     if (!message?.turnId) {
       console.warn('[handleBranch] turnId 없음 — 서버에서 아직 확정되지 않은 메시지:', messageId);
       return;
     }
-    const numericChatId = Number(activeConvId);
+    const numericChatId = Number(originChatId);
     if (isNaN(numericChatId)) {
-      console.warn('[handleBranch] invalid chat id:', activeConvId);
+      console.warn('[handleBranch] invalid chat id:', originChatId);
       return;
     }
     try {
@@ -318,7 +321,7 @@ const ChatPage: React.FC = () => {
           : '분기 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
       );
     }
-  }, [visibleMessages.messages, activeConvId, queryClient, navigate]);
+  }, [visibleMessages.messages, queryClient, navigate]);
 
   const handleSend = useCallback(() => {
     const content = input.trim();
@@ -327,14 +330,15 @@ const ChatPage: React.FC = () => {
     sendMessage(content);
   }, [input, isSending, sendMessage]);
 
-  const handleRegenerate = useCallback((messageId: string) => {
+  // 명세 §4.1: 재생성 경로는 messageId 가 속한 chat 의 id 를 써야 한다.
+  const handleRegenerate = useCallback((messageId: string, originChatId: string) => {
     const messageIndex = visibleMessages.messages.findIndex(message => message.id === messageId);
     const userMessage = [...visibleMessages.messages]
       .slice(0, Math.max(messageIndex, 0))
       .reverse()
       .find(message => message.role === 'user');
 
-    regenerate(messageId, userMessage?.content ?? '');
+    regenerate(messageId, originChatId, userMessage?.content ?? '');
   }, [visibleMessages.messages, regenerate]);
 
   return (

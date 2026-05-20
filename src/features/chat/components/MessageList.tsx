@@ -8,12 +8,12 @@ interface MessageListProps {
   userName: string;
   branchMarkerLabel?: string;
   branchStartIndex?: number;
-  onBranch?: (messageId: string) => void;
+  onBranch?: (messageId: string, originChatId: string) => void;
   hasOlder?: boolean;
   isLoadingOlder?: boolean;
   onLoadOlder?: () => void;
-  onRegenerate?: (messageId: string) => void;
-  onEdit?: (messageId: string, content: string) => void;
+  onRegenerate?: (messageId: string, originChatId: string) => void;
+  onEdit?: (messageId: string, content: string, originChatId: string) => void;
 }
 
 const BranchMarker: React.FC<{ label: string }> = ({ label }) => (

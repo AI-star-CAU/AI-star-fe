@@ -51,8 +51,11 @@ export const useEditMessage = (conversationId: string) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const editMessage = useCallback(async (messageId: string, content: string) => {
-    const numericChatId = Number(conversationId);
+  // 명세 §4.2: PATCH 경로는 "messageId 가 속한 chat" 의 id 를 써야 한다.
+  // 부모(루트) chat 의 user 메시지를 분기 화면에서 수정해도 옳은 chat 으로
+  // 보내려면 호출 측이 메시지의 원본 chatId(message.conversationId)를 넘긴다.
+  const editMessage = useCallback(async (messageId: string, content: string, originChatId?: string) => {
+    const numericChatId = Number(originChatId ?? conversationId);
     const numericMessageId = Number(messageId);
     if (isNaN(numericChatId) || isNaN(numericMessageId)) return;
 

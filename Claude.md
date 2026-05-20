@@ -1,34 +1,65 @@
-# Codex와 Claude Code를 위한 규칙
+# CLAUDE.md
 
-이 파일은 `AI-star-fe`에서 작업하는 Codex와 Claude Code 공통 규칙이다. 이 프로젝트에서 프론트엔드 작업을 할 때는 아래 규칙을 우선 적용한다.
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
-## 1. 작업 범위
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-- 수정 가능한 범위는 `AI-star-fe/` 내부 파일뿐이다.
-- `AI-star-be/` 내부 파일은 읽기 전용이다.
-- 백엔드 Java, Gradle, DB, migration, resource, test 파일을 수정하지 않는다.
-- 루트 파일이나 백엔드 문서는 사용자가 명시적으로 요청하지 않는 한 수정하지 않는다.
+## 1. Think Before Coding
 
-## 2. 백엔드 이슈 처리
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-백엔드 동작이 의심되면 수정하지 말고 보고한다.
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
 
-보고할 때는 다음을 포함한다.
-- 실패한 endpoint
-- 실제 응답 또는 에러 메시지
-- 명세서 기준 기대 동작
-- 참고한 명세 파일과 위치
+## 2. Simplicity First
 
-백엔드 오류를 피하려고 Phase 3 명세와 다른 프론트 요청을 만들지 않는다.
+**Minimum code that solves the problem. Nothing speculative.**
 
-## 3. 검증
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
 
-프론트 수정 후 가능하면 다음을 실행한다.
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-```powershell
-npm.cmd run build
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
 ```
 
-실행 위치는 `AI-star-fe/`이다.
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-백엔드 API를 직접 호출해 볼 수는 있지만, 실패를 고치기 위해 백엔드 파일을 수정하지 않는다.
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

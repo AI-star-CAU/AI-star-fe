@@ -53,8 +53,11 @@ export const useRegenerate = (conversationId: string) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const regenerate = useCallback(async (messageId: string, userContent = '') => {
-    const numericChatId = Number(conversationId);
+  // 명세 §4.1: 재생성 경로는 "messageId 가 속한 chat" 의 id 를 써야 한다.
+  // 부모(루트) chat 의 메시지를 분기에서 클릭해도 옳은 chat 으로 보내려면
+  // 호출 측이 메시지의 원본 chatId(message.conversationId)를 명시해야 한다.
+  const regenerate = useCallback(async (messageId: string, originChatId?: string, userContent = '') => {
+    const numericChatId = Number(originChatId ?? conversationId);
     const numericMessageId = Number(messageId);
     if (isNaN(numericChatId) || isNaN(numericMessageId)) return;
 

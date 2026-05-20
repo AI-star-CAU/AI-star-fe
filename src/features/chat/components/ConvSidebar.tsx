@@ -225,6 +225,13 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 
   const handleNodeClick = useCallback((action: NodeAction) => {
     if (action.type === 'scroll') {
+      // 클릭한 노드가 현재 활성 chat 과 다르면 스크롤 대신 해당 chat 으로 이동한다.
+      // 부모 prefix 로 인해 다른 chat 의 메시지가 화면에 보일 수 있는데,
+      // 이때 스크롤만 하면 activeId 가 바뀌지 않아 다음 턴이 엉뚱한 분기에 붙는다.
+      if (action.chatId && action.chatId !== activeId) {
+        navigate(`/chat/${action.chatId}`);
+        return;
+      }
       const target = document.getElementById(`msg-${action.messageId}`);
 
       if (target) {
@@ -235,7 +242,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     } else {
       navigate(`/chat/${action.chatId}`);
     }
-  }, [navigate]);
+  }, [navigate, activeId]);
 
   return (
     <aside

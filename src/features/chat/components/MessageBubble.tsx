@@ -5,9 +5,9 @@ import type { Message } from '../types';
 interface MessageBubbleProps {
   message: Message;
   userName: string;
-  onBranch?: (messageId: string) => void;
-  onRegenerate?: (messageId: string) => void;
-  onEdit?: (messageId: string, content: string) => void;
+  onBranch?: (messageId: string, originChatId: string) => void;
+  onRegenerate?: (messageId: string, originChatId: string) => void;
+  onEdit?: (messageId: string, content: string, originChatId: string) => void;
   /** 마지막(leaf) assistant 메시지에서만 재생성 버튼을 노출한다. */
   canRegenerate?: boolean;
 }
@@ -53,7 +53,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
   const handleEditSubmit = useCallback(() => {
     const trimmed = editContent.trim();
     if (!trimmed || trimmed === message.content) { setEditing(false); return; }
-    onEdit?.(message.id, trimmed);
+    onEdit?.(message.id, trimmed, message.conversationId);
     setEditing(false);
   }, [editContent, message.content, message.id, onEdit]);
 
@@ -143,7 +143,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
             </Button>
             {!!message.turnId && (
               <Button
-                onClick={() => onBranch?.(message.id)}
+                onClick={() => onBranch?.(message.id, message.conversationId)}
                 variant="custom"
                 size="sm"
                 className="gap-1 px-2 py-1 rounded-lg text-[11px] text-slate-500 hover:text-amber-400 hover:bg-slate-800"
@@ -154,7 +154,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
             )}
             {!!message.turnId && canRegenerate && (
               <Button
-                onClick={() => onRegenerate?.(message.id)}
+                onClick={() => onRegenerate?.(message.id, message.conversationId)}
                 variant="custom"
                 size="sm"
                 className="gap-1 px-2 py-1 rounded-lg text-[11px] text-slate-500 hover:text-cyan-400 hover:bg-slate-800"
