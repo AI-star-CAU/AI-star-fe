@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '../api/chatApi';
 import { streamMessage } from '../api/messageStream';
 import { ApiError } from '../../../shared/api/client';
+import { deriveChatTitle } from '../utils/title';
 import type { CreateChatRequest, Message } from '../types';
 
 interface UseSendMessageOptions {
@@ -46,9 +47,13 @@ export const useSendMessage = (
       let targetId = conversationId;
       if (conversationId === 'new') {
         try {
-          targetId = String(await chatApi.createChat(options?.chatOptions));
+          targetId = String(await chatApi.createChat({
+            ...options?.chatOptions,
+            title: options?.chatOptions?.title ?? deriveChatTitle(content),
+          }));
           options?.onConversationCreated?.(targetId);
-        } catch {
+        } catch (err) {
+          console.error('[sendMessage] chat creation failed:', err);
           setIsPending(false);
           return;
         }

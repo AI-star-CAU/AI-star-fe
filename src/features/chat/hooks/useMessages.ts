@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { chatApi } from '../api/chatApi';
 import { mapTurnListToMessages } from '../api/chatMappers';
-import type { Message, TurnPageResponse } from '../types';
+import type { TurnPageResponse } from '../types';
 
 const PAGE_LIMIT = 20;
 const EMPTY_PAGE: TurnPageResponse = {

@@ -12,6 +12,7 @@ import {
   getMessagesThroughFork,
   removePreTurnAssistantMessages,
 } from '../features/chat/utils/messageHelpers';
+import { deriveChatTitle } from '../features/chat/utils/title';
 import ChatHeader from '../features/chat/components/ChatHeader';
 import ConvSidebar from '../features/chat/components/ConvSidebar';
 import MessageList from '../features/chat/components/MessageList';
@@ -187,6 +188,7 @@ const ChatPage: React.FC = () => {
     try {
       const result = await branchApi.createBranch(numericChatId, {
         branchPointTurnId: message.turnId,
+        title: deriveChatTitle(message.content, 'Branch'),
       });
       navigate(chatPath(String(result.chatId)));
     } catch (err) {

@@ -9,6 +9,7 @@ import {
   CancelMessageResponseSchema,
   ChatListItemResponseSchema,
   CreateChatResponseSchema,
+  pageResponseSchema,
   TurnPageResponseSchema,
 } from './schemas';
 import type {
@@ -22,15 +23,19 @@ import type {
 } from '../types';
 
 const DEFAULT_CHAT_OPTIONS = {
+  title: 'New chat',
   llmProvider: 'OPENAI',
   llmModel: 'gpt-4o-mini',
-} as const satisfies Pick<CreateChatRequest, 'llmProvider' | 'llmModel'>;
+} as const satisfies CreateChatRequest;
 
 export const chatApi = {
   async getConversations(): Promise<Conversation[]> {
     const raw = await apiClient.get<unknown>(ENDPOINTS.chat.list);
-    const parsed = apiEnvelope(ChatListItemResponseSchema.array()).parse(raw);
-    return parsed.result.map(mapChatListItemToConversation);
+    const parsed = apiEnvelope(
+      ChatListItemResponseSchema.array().or(pageResponseSchema(ChatListItemResponseSchema)),
+    ).parse(raw);
+    const items = Array.isArray(parsed.result) ? parsed.result : parsed.result.content;
+    return items.map(mapChatListItemToConversation);
   },
 
   /** 명세 §2.3: 대화 메타정보(제목/모델 등)만 조회. 턴은 미포함. */
