@@ -5,6 +5,7 @@ import { memberApi } from '../api/memberApi';
 import {
   clearAuthToken,
   clearSavedUser,
+  readSavedUser,
   saveAuthToken,
   saveUser,
 } from '../utils/authStorage';
@@ -19,10 +20,10 @@ import {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, INITIAL_AUTH_STATE);
 
+  // 새로고침 시 localStorage 에 저장된 토큰/유저로 세션 복원.
+  // token 은 client.ts 에서 localStorage 로부터 직접 읽어 Authorization 헤더에 붙인다.
   useEffect(() => {
-    clearSavedUser();
-    clearAuthToken();
-    dispatch({ type: 'RESTORE', user: null });
+    dispatch({ type: 'RESTORE', user: readSavedUser() });
   }, []);
 
   const acceptAuthResponse = useCallback((response: AuthResponse) => {
