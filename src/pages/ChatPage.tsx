@@ -10,6 +10,7 @@ import { useRegenerate } from '../features/chat/hooks/useRegenerate';
 import { useEditMessage } from '../features/chat/hooks/useEditMessage';
 import { branchApi } from '../features/branch/api/branchApi';
 import {
+  getForkTurnIndexByTurnId,
   getMessagesThroughFork,
   removePreTurnAssistantMessages,
 } from '../features/chat/utils/messageHelpers';
@@ -24,7 +25,7 @@ import ResizeHandle from '../shared/components/layout/ResizeHandle';
 import { useResizeDrag } from '../shared/hooks/useResizeDrag';
 import { ApiError } from '../shared/api/client';
 import { chatPath } from '../app/router/routes';
-import type { CreateBranchResponse } from '../features/branch/types';
+import type { Branch, CreateBranchResponse } from '../features/branch/types';
 
 const ChatPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -89,7 +90,7 @@ const ChatPage: React.FC = () => {
   );
   // 명세 §2.3: 목록에 아직 없는(갓 생성된) chat 은 메타 조회로 보강.
   const { data: chatMeta, isLoading: chatMetaLoading } = useChatMeta(
-    listConv || activeConvId === 'new' ? '' : activeConvId,
+    activeConvId === 'new' ? '' : activeConvId,
   );
   const activeConv = useMemo<typeof listConv>(() => {
     if (listConv) return listConv;
@@ -120,24 +121,77 @@ const ChatPage: React.FC = () => {
     }
     return activeConvId;
   }, [activeConvId, optimisticBranch, chatMeta]);
-  const activeBranch = useMemo(
+  const graphQueryId = activeConvId === 'new' ? null : activeConvId;
+  const listedActiveBranch = useMemo(
     () => conversations.flatMap(c => c.branches).find(branch => branch.id === activeConvId),
     [conversations, activeConvId],
   );
+  const metaBranchParentId = useMemo(() => {
+    if (listedActiveBranch) return listedActiveBranch.parentConvId;
+    if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {
+      return String(optimisticBranch.parentId);
+    }
+    if (
+      chatMeta &&
+      String(chatMeta.chatId) === activeConvId &&
+      chatMeta.parentId != null
+    ) {
+      return String(chatMeta.parentId);
+    }
+    return null;
+  }, [listedActiveBranch, optimisticBranch, activeConvId, chatMeta]);
+  const metaBranchPointTurnId = useMemo(() => {
+    if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {
+      return optimisticBranch.branchPointTurnId;
+    }
+    if (
+      chatMeta &&
+      String(chatMeta.chatId) === activeConvId &&
+      chatMeta.branchPointTurnId != null
+    ) {
+      return chatMeta.branchPointTurnId;
+    }
+    return null;
+  }, [optimisticBranch, activeConvId, chatMeta]);
+  const { data: parentMessages = [], isLoading: parentMsgsLoading } = useMessages(
+    metaBranchParentId ?? '',
+  );
+  const activeBranch = useMemo<Branch | undefined>(() => {
+    if (listedActiveBranch) return listedActiveBranch;
+    if (!metaBranchParentId || metaBranchPointTurnId == null) return undefined;
+
+    const parentForkIndex =
+      getForkTurnIndexByTurnId(
+        removePreTurnAssistantMessages(parentMessages),
+        metaBranchPointTurnId,
+      ) ?? 1;
+
+    return {
+      id: activeConvId,
+      parentConvId: metaBranchParentId,
+      title: activeConv?.title ?? '제목없음',
+      forkAtTurnIndex: parentForkIndex,
+    };
+  }, [
+    listedActiveBranch,
+    metaBranchParentId,
+    metaBranchPointTurnId,
+    parentMessages,
+    activeConvId,
+    activeConv,
+  ]);
   const activeParentConv = useMemo(
     () => conversations.find(conversation => conversation.id === activeBranch?.parentConvId),
     [activeBranch, conversations],
   );
   const activeBranchNumber = useMemo(
     () => {
-      if (!activeBranch || !activeParentConv) return null;
+      if (!activeBranch) return null;
+      if (!activeParentConv) return 1;
       const index = activeParentConv.branches.findIndex(branch => branch.id === activeBranch.id);
-      return index >= 0 ? index + 1 : null;
+      return index >= 0 ? index + 1 : 1;
     },
     [activeBranch, activeParentConv],
-  );
-  const { data: parentMessages = [], isLoading: parentMsgsLoading } = useMessages(
-    activeBranch?.parentConvId ?? '',
   );
   // 히스토리(§2.4 무한스크롤) + 진행 중인 스트리밍 턴(liveMessages)을 합친다.
   // 'new' → /chat/{id} 직후 useMessages 가 진행 중 턴을 history 로 가져오면
@@ -278,6 +332,7 @@ const ChatPage: React.FC = () => {
           isOpen={sidebarOpen}
           width={sidebarWidth}
           graphRootId={graphRootId}
+          graphQueryId={graphQueryId}
           optimisticBranch={optimisticBranch}
         />
 

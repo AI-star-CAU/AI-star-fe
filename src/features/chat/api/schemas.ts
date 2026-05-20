@@ -46,6 +46,7 @@ export const CreateChatResponseSchema = z.object({
   chatId: z.number(),
   rootChatId: z.number(),
   parentId: z.number().nullable(),
+  branchPointTurnId: z.number().nullable().optional(),
   title: z.string().nullable(),
   titleStatus: z.enum(['PENDING', 'GENERATED', 'USER_EDITED']).optional(),
   llmProvider: LlmProviderSchema,

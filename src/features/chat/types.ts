@@ -61,6 +61,7 @@ export interface CreateChatResponse {
   chatId: number;
   rootChatId: number;
   parentId: number | null;
+  branchPointTurnId?: number | null;
   title: string | null;
   titleStatus?: 'PENDING' | 'GENERATED' | 'USER_EDITED';
   llmProvider: LlmProvider;

@@ -16,6 +16,21 @@ export function getMessagesThroughFork(messages: Message[], forkAtTurnIndex: num
   return prefixMessages;
 }
 
+export function getForkTurnIndexByTurnId(
+  messages: Message[],
+  branchPointTurnId: number,
+): number | null {
+  let userTurnCount = 0;
+
+  for (const message of messages) {
+    if (message.role !== 'user') continue;
+    userTurnCount += 1;
+    if (message.turnId === branchPointTurnId) return userTurnCount;
+  }
+
+  return null;
+}
+
 export function removePreTurnAssistantMessages(messages: Message[]): Message[] {
   const firstUserMessageIndex = messages.findIndex(message => message.role === 'user');
   if (firstUserMessageIndex < 0) return [];

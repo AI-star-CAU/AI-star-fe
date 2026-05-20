@@ -21,6 +21,7 @@ interface ConvSidebarProps {
   isOpen: boolean;
   width: number;
   graphRootId?: string | null;
+  graphQueryId?: string | null;
   optimisticBranch?: CreateBranchResponse | null;
 }
 
@@ -73,6 +74,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   isOpen,
   width,
   graphRootId,
+  graphQueryId,
   optimisticBranch,
 }) => {
   const navigate = useNavigate();
@@ -161,7 +163,8 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     [conversations, deleteChat, activeId, navigate],
   );
 
-  const numericChatId = activeParentId ? Number(activeParentId) : null;
+  const graphRequestId = graphQueryId ?? activeParentId;
+  const numericChatId = graphRequestId ? Number(graphRequestId) : null;
   const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
   const { data: baseGraphData, isFetching: isGraphFetching } = useGraph(validChatId);
   const [mergedGraphData, setMergedGraphData] = React.useState<typeof baseGraphData>(undefined);

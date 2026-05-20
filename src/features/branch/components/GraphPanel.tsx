@@ -273,7 +273,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
 }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const graph = useMemo(
-    () => graphData
+    () => graphData && graphData.turns.length > 0
       ? buildGraphFromApiData(graphData)
       : buildGraph(messages, conv, branchMessagesById),
     [graphData, messages, conv, branchMessagesById],
