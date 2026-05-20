@@ -174,13 +174,21 @@ const ChatPage: React.FC = () => {
 
   const handleBranch = useCallback(async (messageId: string) => {
     const message = visibleMessages.messages.find(m => m.id === messageId);
-    if (!message?.turnId) return;
+    if (!message?.turnId) {
+      console.warn('[handleBranch] turnId 없음 — 서버에서 아직 확정되지 않은 메시지:', messageId);
+      return;
+    }
     const numericChatId = Number(activeConvId);
     if (isNaN(numericChatId)) return;
-    const result = await branchApi.createBranch(numericChatId, {
-      branchPointTurnId: message.turnId,
-    });
-    navigate(chatPath(String(result.chatId)));
+    try {
+      const result = await branchApi.createBranch(numericChatId, {
+        branchPointTurnId: message.turnId,
+      });
+      navigate(chatPath(String(result.chatId)));
+    } catch (err) {
+      console.error('[handleBranch] 분기 생성 실패:', err);
+      alert('분기 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    }
   }, [visibleMessages.messages, activeConvId, navigate]);
 
   const handleSend = useCallback(() => {
