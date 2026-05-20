@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ConversationList from './ConversationList';
 import GraphPanel from '../../branch/components/GraphPanel';
-import GraphLegend from '../../branch/components/GraphLegend';
 import { branchApi } from '../../branch/api/branchApi';
 import { useBranchMessages } from '../../branch/hooks/useBranchMessages';
 import { useGraph } from '../../branch/hooks/useGraph';
@@ -76,7 +75,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 
   const numericChatId = graphConversation ? Number(graphConversation.id) : null;
   const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
-  const { data: baseGraphData } = useGraph(validChatId);
+  const { data: baseGraphData, isFetching: isGraphFetching } = useGraph(validChatId);
   const [mergedGraphData, setMergedGraphData] = React.useState<typeof baseGraphData>(undefined);
 
   React.useEffect(() => {
@@ -172,12 +171,11 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
             branchMessagesById={branchMessagesById}
             activeId={activeId}
             onNodeClick={handleNodeClick}
-            graphData={mergedGraphData}
+            graphData={isGraphFetching ? undefined : mergedGraphData}
             onExpand={handleExpand}
             onRestore={handleRestore}
           />
         </div>
-        <GraphLegend />
       </div>
     </aside>
   );

@@ -115,8 +115,8 @@ export const useSendMessage = (
           queryKey: ['messages', targetId],
         });
         setLiveMessages([]);
-        // 사이드바 미리보기/turnCount 갱신.
         queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        queryClient.invalidateQueries({ queryKey: ['graph'] });
         void cancelled;
       } catch (err) {
         if (accumulated) {

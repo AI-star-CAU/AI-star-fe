@@ -6,5 +6,5 @@ export const useGraph = (chatId: number | null, centerTurnId?: number) =>
     queryKey: ['graph', chatId, centerTurnId],
     queryFn: () => branchApi.getGraph(chatId!, { centerTurnId }),
     enabled: chatId !== null,
-    staleTime: 1000 * 30,
+    staleTime: 0,
   });

@@ -124,7 +124,7 @@ const MessageList: React.FC<MessageListProps> = ({
       onScroll={handleScroll}
       className="flex-1 scroll-area p-6 space-y-6"
     >
-      {isLoading ? (
+      {isLoading && messages.length === 0 ? (
         <MessageListSkeleton />
       ) : (
         <>
