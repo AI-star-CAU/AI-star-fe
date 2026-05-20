@@ -77,9 +77,11 @@ export const useSendMessage = (
         },
       ]);
 
+      // turn_started 후에는 AI 메시지 id 가 서버 id 로 교체되므로 role 로 식별한다.
+      // (liveMessages 에는 동시에 최대 1개의 assistant 메시지만 존재)
       const patchAi = (patch: Partial<Message>) =>
         setLiveMessages(prev =>
-          prev.map(m => (m.id === optAiId ? { ...m, ...patch } : m)),
+          prev.map(m => (m.role === 'assistant' ? { ...m, ...patch } : m)),
         );
 
       let accumulated = '';
@@ -93,6 +95,21 @@ export const useSendMessage = (
             if (activeStreamRef.current) {
               activeStreamRef.current.aiMessageId = d.aiMessageId;
             }
+            // 명세 §2.5: 서버가 부여한 진짜 id 로 교체.
+            // 'new' → /chat/{id} 전환 직후 useMessages 가 진행 중인 턴을
+            // history 로 가져와 liveMessages 와 중복으로 보이는 race 를
+            // 해소하려면 id 가 서버 id 와 일치해야 ChatPage 의 dedupe 가 동작한다.
+            setLiveMessages(prev =>
+              prev.map(m => {
+                if (m.id === optUserId) {
+                  return { ...m, id: String(d.userMessageId), turnId: d.turnId };
+                }
+                if (m.id === optAiId || m.role === 'assistant') {
+                  return { ...m, id: String(d.aiMessageId), turnId: d.turnId };
+                }
+                return m;
+              }),
+            );
           },
           onChunk: d => {
             accumulated += d.text;

@@ -31,6 +31,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
   const [editContent, setEditContent] = useState(message.content);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // assistant 메시지가 아직 저장 중(STREAMING)이거나, 종료됐는데 content가 비어 있고
+  // 에러 상태도 아닌 백엔드 race window 동안은 pending UI 로 표시한다.
+  const isAssistantLoading =
+    !isUser &&
+    (message.status === 'STREAMING' ||
+      (!message.content &&
+        message.status !== 'FAILED' &&
+        message.status !== 'CANCELED'));
+  const showPending = message.isPending || isAssistantLoading;
+
   const handleCopy = useCallback(async () => {
     if (!message.content) return;
     await navigator.clipboard.writeText(message.content);
@@ -57,7 +67,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
 
       <div className="flex flex-col gap-1.5 min-w-0">
         <div className={isUser ? 'bubble-user' : 'bubble-ai'}>
-          {message.isPending ? (
+          {showPending ? (
             <div className="flex items-center gap-2 text-slate-400">
               <div className="flex gap-1">
                 <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" />
@@ -71,6 +81,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
               <textarea
                 ref={textareaRef}
                 autoFocus
+                aria-label="메시지 수정"
                 value={editContent}
                 onChange={e => setEditContent(e.target.value)}
                 onKeyDown={e => {
@@ -100,7 +111,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
             응답 생성에 실패했습니다
           </span>
         )}
-        {isUser && !message.isPending && !editing && (
+        {isUser && !showPending && !editing && (
           <div className="flex items-center gap-1.5 pr-1 justify-end">
             <Button
               onClick={() => { setEditing(true); setEditContent(message.content); }}
@@ -117,7 +128,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
           </div>
         )}
 
-        {!isUser && !message.isPending && (
+        {!isUser && !showPending && (
           <div className="flex items-center gap-1.5 pl-1">
             <Button
               onClick={handleCopy}

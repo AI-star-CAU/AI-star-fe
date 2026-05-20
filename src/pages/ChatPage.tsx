@@ -115,10 +115,14 @@ const ChatPage: React.FC = () => {
     activeBranch?.parentConvId ?? '',
   );
   // 히스토리(§2.4 무한스크롤) + 진행 중인 스트리밍 턴(liveMessages)을 합친다.
-  const messages = useMemo(
-    () => [...history, ...liveMessages],
-    [history, liveMessages],
-  );
+  // 'new' → /chat/{id} 직후 useMessages 가 진행 중 턴을 history 로 가져오면
+  // liveMessages 와 중복으로 보이므로, turn_started 이후 매칭되는 id 는 제거한다.
+  const messages = useMemo(() => {
+    if (liveMessages.length === 0) return history;
+    const liveIds = new Set(liveMessages.map(m => m.id));
+    const dedupedHistory = history.filter(h => !liveIds.has(h.id));
+    return [...dedupedHistory, ...liveMessages];
+  }, [history, liveMessages]);
   const visibleMessages = useMemo(
     () => {
       const normalizedMessages = removePreTurnAssistantMessages(messages);
