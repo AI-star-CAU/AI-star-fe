@@ -290,7 +290,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
     () => conv?.branches.find(branch => branch.id === activeId),
     [conv, activeId],
   );
-  const highlightedGroupId = selectedNode?.groupId ?? activeBranch?.id;
+  const highlightedGroupId = selectedNode?.groupId ?? activeBranch?.id ?? activeId;
   const highlightedBranch = useMemo(
     () => conv?.branches.find(branch => branch.id === highlightedGroupId),
     [conv, highlightedGroupId],

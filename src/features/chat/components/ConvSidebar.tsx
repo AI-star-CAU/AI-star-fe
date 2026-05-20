@@ -10,7 +10,7 @@ import { useDeleteChat } from '../hooks/useDeleteChat';
 import { useResizeDrag } from '../../../shared/hooks/useResizeDrag';
 import ResizeHandle from '../../../shared/components/layout/ResizeHandle';
 import type { Conversation, Message } from '../types';
-import type { NodeAction } from '../../branch/types';
+import type { CreateBranchResponse, GraphResponse, NodeAction } from '../../branch/types';
 
 interface ConvSidebarProps {
   conversations: Conversation[];
@@ -20,6 +20,48 @@ interface ConvSidebarProps {
   conv: Conversation | undefined;
   isOpen: boolean;
   width: number;
+  graphRootId?: string | null;
+  optimisticBranch?: CreateBranchResponse | null;
+}
+
+function mergeOptimisticBranch(
+  graphData: GraphResponse,
+  optimisticBranch?: CreateBranchResponse | null,
+): GraphResponse {
+  if (
+    !optimisticBranch ||
+    graphData.rootChatId !== optimisticBranch.rootChatId ||
+    graphData.chats.some(chat => chat.chatId === optimisticBranch.chatId)
+  ) {
+    return graphData;
+  }
+
+  const parentChat = graphData.chats.find(
+    chat => chat.chatId === optimisticBranch.parentId,
+  );
+
+  return {
+    ...graphData,
+    chats: [
+      ...graphData.chats,
+      {
+        chatId: optimisticBranch.chatId,
+        title: optimisticBranch.title ?? '제목없음',
+        titleStatus: optimisticBranch.titleStatus,
+        parentChatId: optimisticBranch.parentId,
+        branchPointTurnId: optimisticBranch.branchPointTurnId,
+        depth: (parentChat?.depth ?? 0) + 1,
+        isDeleted: false,
+        lastTurnId: null,
+        updatedAt: optimisticBranch.updatedAt,
+      },
+    ],
+    turns: graphData.turns.map(turn =>
+      turn.turnId === optimisticBranch.branchPointTurnId
+        ? { ...turn, isBranchPoint: true }
+        : turn,
+    ),
+  };
 }
 
 const ConvSidebar: React.FC<ConvSidebarProps> = ({
@@ -30,30 +72,76 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   conv,
   isOpen,
   width,
+  graphRootId,
+  optimisticBranch,
 }) => {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>();
 
   const { size: convListHeight, onMouseDown: onVerticalDrag } = useResizeDrag(240, 'y', 80, 520);
 
-  const activeParentId = useMemo(
+  const activeParentIdFromList = useMemo(
     () => conversations.find(conversation =>
       conversation.id === activeId || conversation.branches.some(branch => branch.id === activeId)
     )?.id ?? null,
     [activeId, conversations],
   );
+  const activeParentId = graphRootId ?? activeParentIdFromList;
   const visibleExpandedId = expandedId === undefined ? activeParentId : expandedId;
   const graphConversation = useMemo(
     () => conversations.find(conversation => conversation.id === activeParentId),
     [activeParentId, conversations],
   );
-  const branchIds = useMemo(
-    () => graphConversation?.branches.map(branch => branch.id) ?? [],
-    [graphConversation],
-  );
-  const { data: rootMessages = [] } = useMessages(graphConversation?.id ?? '');
+  const { data: rootMessages = [] } = useMessages(activeParentId ?? '');
+  const rootMessagesSource = activeId === graphConversation?.id ? messages : rootMessages;
+  const optimisticForkTurnIndex = useMemo(() => {
+    if (!optimisticBranch) return 1;
+
+    const userTurns = rootMessagesSource.filter(
+      message => !message.isPending && message.role === 'user',
+    );
+    const index = userTurns.findIndex(
+      message => message.turnId === optimisticBranch.branchPointTurnId,
+    );
+
+    return index >= 0 ? index + 1 : Math.max(1, userTurns.length);
+  }, [rootMessagesSource, optimisticBranch]);
+  const graphConversationWithOptimisticBranch = useMemo(() => {
+    if (
+      !graphConversation ||
+      !optimisticBranch ||
+      String(optimisticBranch.rootChatId) !== activeParentId ||
+      graphConversation.branches.some(branch => branch.id === String(optimisticBranch.chatId))
+    ) {
+      return graphConversation;
+    }
+
+    return {
+      ...graphConversation,
+      branches: [
+        ...graphConversation.branches,
+        {
+          id: String(optimisticBranch.chatId),
+          parentConvId: String(optimisticBranch.parentId),
+          title: optimisticBranch.title ?? '제목없음',
+          forkAtTurnIndex: optimisticForkTurnIndex,
+        },
+      ],
+    };
+  }, [graphConversation, optimisticBranch, activeParentId, optimisticForkTurnIndex]);
+  const branchIds = useMemo(() => {
+    const ids = graphConversationWithOptimisticBranch?.branches.map(branch => branch.id) ?? [];
+    if (
+      optimisticBranch &&
+      String(optimisticBranch.rootChatId) === activeParentId &&
+      !ids.includes(String(optimisticBranch.chatId))
+    ) {
+      return [...ids, String(optimisticBranch.chatId)];
+    }
+    return ids;
+  }, [graphConversationWithOptimisticBranch, optimisticBranch, activeParentId]);
   const branchMessagesById = useBranchMessages(branchIds);
-  const graphMessages = activeId === graphConversation?.id ? messages : rootMessages;
+  const graphMessages = activeId === graphConversationWithOptimisticBranch?.id ? messages : rootMessages;
 
   const { mutate: deleteChat } = useDeleteChat();
 
@@ -73,14 +161,19 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     [conversations, deleteChat, activeId, navigate],
   );
 
-  const numericChatId = graphConversation ? Number(graphConversation.id) : null;
+  const numericChatId = activeParentId ? Number(activeParentId) : null;
   const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
   const { data: baseGraphData, isFetching: isGraphFetching } = useGraph(validChatId);
   const [mergedGraphData, setMergedGraphData] = React.useState<typeof baseGraphData>(undefined);
 
   React.useEffect(() => {
-    setMergedGraphData(baseGraphData);
-  }, [baseGraphData]);
+    if (!baseGraphData) {
+      setMergedGraphData(undefined);
+      return;
+    }
+
+    setMergedGraphData(mergeOptimisticBranch(baseGraphData, optimisticBranch));
+  }, [baseGraphData, optimisticBranch]);
 
   const handleRestore = useCallback(async (chatId: string) => {
     const numericId = Number(chatId);
@@ -167,11 +260,11 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
         <div className="flex-1 overflow-auto px-4 pb-3">
           <GraphPanel
             messages={graphMessages}
-            conv={graphConversation ?? conv}
+            conv={graphConversationWithOptimisticBranch ?? conv}
             branchMessagesById={branchMessagesById}
             activeId={activeId}
             onNodeClick={handleNodeClick}
-            graphData={isGraphFetching ? undefined : mergedGraphData}
+            graphData={isGraphFetching && !mergedGraphData ? undefined : mergedGraphData}
             onExpand={handleExpand}
             onRestore={handleRestore}
           />

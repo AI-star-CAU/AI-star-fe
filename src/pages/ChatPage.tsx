@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { useConversations } from '../features/chat/hooks/useConversations';
@@ -21,15 +22,19 @@ import { LLM_OPTIONS, DEFAULT_LLM_OPTION } from '../features/chat/constants/llm'
 import type { LlmModel } from '../features/chat/types';
 import ResizeHandle from '../shared/components/layout/ResizeHandle';
 import { useResizeDrag } from '../shared/hooks/useResizeDrag';
+import { ApiError } from '../shared/api/client';
 import { chatPath } from '../app/router/routes';
+import type { CreateBranchResponse } from '../features/branch/types';
 
 const ChatPage: React.FC = () => {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { convId } = useParams<{ convId: string }>();
   const { user, logout } = useAuth();
 
   const [input, setInput] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [optimisticBranch, setOptimisticBranch] = useState<CreateBranchResponse | null>(null);
   // 명세 §2.1 / FR-10.1: 새 대화 생성 시 사용할 모델 선택.
   const [selectedModel, setSelectedModel] = useState<LlmModel>(
     DEFAULT_LLM_OPTION.model,
@@ -77,7 +82,7 @@ const ChatPage: React.FC = () => {
     [conversations, activeConvId],
   );
   // 명세 §2.3: 목록에 아직 없는(갓 생성된) chat 은 메타 조회로 보강.
-  const { data: chatMeta } = useChatMeta(
+  const { data: chatMeta, isLoading: chatMetaLoading } = useChatMeta(
     listConv || activeConvId === 'new' ? '' : activeConvId,
   );
   const activeConv = useMemo<typeof listConv>(() => {
@@ -95,6 +100,16 @@ const ChatPage: React.FC = () => {
       branches: [],
     };
   }, [listConv, chatMeta]);
+  const graphRootId = useMemo(() => {
+    if (activeConvId === 'new') return null;
+    if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {
+      return String(optimisticBranch.rootChatId);
+    }
+    if (chatMeta && String(chatMeta.chatId) === activeConvId) {
+      return String(chatMeta.rootChatId);
+    }
+    return activeConvId;
+  }, [activeConvId, optimisticBranch, chatMeta]);
   const activeBranch = useMemo(
     () => conversations.flatMap(c => c.branches).find(branch => branch.id === activeConvId),
     [conversations, activeConvId],
@@ -157,24 +172,27 @@ const ChatPage: React.FC = () => {
 
   const isKnownConvId = useMemo(
     () =>
+      activeConvId === 'new' ||
+      (!!chatMeta && String(chatMeta.chatId) === activeConvId) ||
       conversations.some(
         c =>
           c.id === activeConvId ||
           c.branches.some(b => b.id === activeConvId),
       ),
-    [conversations, activeConvId],
+    [conversations, activeConvId, chatMeta],
   );
 
   useEffect(() => {
     if (
       !convsLoading &&
+      !chatMetaLoading &&
       conversations.length > 0 &&
       activeConvId !== 'new' &&
       !isKnownConvId
     ) {
       navigate(chatPath(conversations[0].id), { replace: true });
     }
-  }, [convsLoading, conversations, activeConvId, isKnownConvId, navigate]);
+  }, [convsLoading, chatMetaLoading, conversations, activeConvId, isKnownConvId, navigate]);
 
   const handleBranch = useCallback(async (messageId: string) => {
     const message = visibleMessages.messages.find(m => m.id === messageId);
@@ -183,18 +201,29 @@ const ChatPage: React.FC = () => {
       return;
     }
     const numericChatId = Number(activeConvId);
-    if (isNaN(numericChatId)) return;
+    if (isNaN(numericChatId)) {
+      console.warn('[handleBranch] invalid chat id:', activeConvId);
+      return;
+    }
     try {
       const result = await branchApi.createBranch(numericChatId, {
         branchPointTurnId: message.turnId,
         title: null,
       });
+      setOptimisticBranch(result);
+      setSidebarOpen(true);
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['graph'] });
       navigate(chatPath(String(result.chatId)));
     } catch (err) {
       console.error('[handleBranch] 분기 생성 실패:', err);
-      alert('분기 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      alert(
+        err instanceof ApiError
+          ? err.message
+          : '분기 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
+      );
     }
-  }, [visibleMessages.messages, activeConvId, navigate]);
+  }, [visibleMessages.messages, activeConvId, queryClient, navigate]);
 
   const handleSend = useCallback(() => {
     const content = input.trim();
@@ -223,6 +252,8 @@ const ChatPage: React.FC = () => {
           conv={activeConv}
           isOpen={sidebarOpen}
           width={sidebarWidth}
+          graphRootId={graphRootId}
+          optimisticBranch={optimisticBranch}
         />
 
         {sidebarOpen && (
