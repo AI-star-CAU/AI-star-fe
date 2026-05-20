@@ -9,6 +9,7 @@ import { useSendMessage } from '../features/chat/hooks/useSendMessage';
 import { useRegenerate } from '../features/chat/hooks/useRegenerate';
 import { useEditMessage } from '../features/chat/hooks/useEditMessage';
 import { branchApi } from '../features/branch/api/branchApi';
+import { useGraph } from '../features/branch/hooks/useGraph';
 import {
   getForkTurnIndexByTurnId,
   getMessagesThroughFork,
@@ -193,6 +194,31 @@ const ChatPage: React.FC = () => {
     },
     [activeBranch, activeParentConv],
   );
+  // GraphPanel 과 동일한 정렬(depth ASC, chatId ASC)로 B{n} 컬럼을 매긴다.
+  // useGraph 캐시 키가 동일하면 ConvSidebar 와 fetch 를 공유한다.
+  const graphChatIdNum = useMemo(() => {
+    if (activeConvId === 'new') return null;
+    const n = Number(activeConvId);
+    return Number.isFinite(n) ? n : null;
+  }, [activeConvId]);
+  const { data: branchLabelGraphData } = useGraph(graphChatIdNum);
+  const activeBranchMarkerLabel = useMemo(() => {
+    if (!activeBranch) return undefined;
+    const chats = branchLabelGraphData?.chats;
+    if (chats && chats.length > 0) {
+      const sorted = [...chats].sort((a, b) => a.depth - b.depth || a.chatId - b.chatId);
+      const rootChat = sorted.find(c => c.parentChatId === null);
+      if (rootChat) {
+        let col = 0;
+        for (const chat of sorted) {
+          if (chat.chatId === rootChat.chatId) continue;
+          col += 1;
+          if (String(chat.chatId) === activeBranch.id) return `B${col}`;
+        }
+      }
+    }
+    return activeBranchNumber ? `B${activeBranchNumber}` : 'B1';
+  }, [activeBranch, activeBranchNumber, branchLabelGraphData]);
   // 히스토리(§2.4 무한스크롤) + 진행 중인 스트리밍 턴(liveMessages)을 합친다.
   // 'new' → /chat/{id} 직후 useMessages 가 진행 중 턴을 history 로 가져오면
   // liveMessages 와 중복으로 보이므로, turn_started 이후 매칭되는 id 는 제거한다.
@@ -376,7 +402,7 @@ const ChatPage: React.FC = () => {
                 messages={visibleMessages.messages}
                 isLoading={isMessagesLoading}
                 userName={user?.name ?? '나'}
-                branchMarkerLabel={activeBranchNumber ? `B${activeBranchNumber}` : undefined}
+                branchMarkerLabel={activeBranchMarkerLabel}
                 branchStartIndex={visibleMessages.branchStartIndex}
                 hasOlder={hasNextPage && !activeBranch}
                 isLoadingOlder={isFetchingNextPage}
