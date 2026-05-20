@@ -66,7 +66,7 @@ const ChatPage: React.FC = () => {
     cancel,
     isPending: isSending,
     isCanceling,
-    liveMessages,
+    liveMessages: sendLiveMessages,
   } = useSendMessage(activeConvId, {
     onConversationCreated,
     chatOptions: {
@@ -74,8 +74,14 @@ const ChatPage: React.FC = () => {
       llmModel: selectedLlm.model,
     },
   });
-  const { regenerate } = useRegenerate(activeConvId);
-  const { editMessage } = useEditMessage(activeConvId);
+  const {
+    regenerate,
+    liveMessages: regenerateLiveMessages = [],
+  } = useRegenerate(activeConvId);
+  const {
+    editMessage,
+    liveMessages: editLiveMessages = [],
+  } = useEditMessage(activeConvId);
 
   const listConv = useMemo(
     () => conversations.find(c => c.id === activeConvId),
@@ -105,7 +111,11 @@ const ChatPage: React.FC = () => {
     if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {
       return String(optimisticBranch.rootChatId);
     }
-    if (chatMeta && String(chatMeta.chatId) === activeConvId) {
+    if (
+      chatMeta &&
+      String(chatMeta.chatId) === activeConvId &&
+      chatMeta.rootChatId != null
+    ) {
       return String(chatMeta.rootChatId);
     }
     return activeConvId;
@@ -133,11 +143,16 @@ const ChatPage: React.FC = () => {
   // 'new' → /chat/{id} 직후 useMessages 가 진행 중 턴을 history 로 가져오면
   // liveMessages 와 중복으로 보이므로, turn_started 이후 매칭되는 id 는 제거한다.
   const messages = useMemo(() => {
+    const liveMessages = [
+      ...sendLiveMessages,
+      ...regenerateLiveMessages,
+      ...editLiveMessages,
+    ].filter(message => message.conversationId === activeConvId);
     if (liveMessages.length === 0) return history;
     const liveIds = new Set(liveMessages.map(m => m.id));
     const dedupedHistory = history.filter(h => !liveIds.has(h.id));
     return [...dedupedHistory, ...liveMessages];
-  }, [history, liveMessages]);
+  }, [history, sendLiveMessages, regenerateLiveMessages, editLiveMessages, activeConvId]);
   const visibleMessages = useMemo(
     () => {
       const normalizedMessages = removePreTurnAssistantMessages(messages);
@@ -232,6 +247,16 @@ const ChatPage: React.FC = () => {
     sendMessage(content);
   }, [input, isSending, sendMessage]);
 
+  const handleRegenerate = useCallback((messageId: string) => {
+    const messageIndex = visibleMessages.messages.findIndex(message => message.id === messageId);
+    const userMessage = [...visibleMessages.messages]
+      .slice(0, Math.max(messageIndex, 0))
+      .reverse()
+      .find(message => message.role === 'user');
+
+    regenerate(messageId, userMessage?.content ?? '');
+  }, [visibleMessages.messages, regenerate]);
+
   return (
     <div className="h-screen flex flex-col bg-slate-950 overflow-hidden">
       <ChatHeader
@@ -302,7 +327,7 @@ const ChatPage: React.FC = () => {
                 isLoadingOlder={isFetchingNextPage}
                 onLoadOlder={handleLoadOlder}
                 onBranch={handleBranch}
-                onRegenerate={regenerate}
+                onRegenerate={handleRegenerate}
                 onEdit={editMessage}
               />
               <ChatInput

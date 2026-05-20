@@ -14,7 +14,7 @@ export type SummaryStatus = 'PENDING' | 'GENERATED';
 
 export interface ChatNodeDto {
   chatId: number;
-  title: string;
+  title: string | null;
   titleStatus: TitleStatus;
   parentChatId: number | null;
   branchPointTurnId: number | null;

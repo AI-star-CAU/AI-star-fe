@@ -5,7 +5,7 @@ export const SummaryStatusSchema = z.enum(['PENDING', 'GENERATED']);
 
 export const ChatNodeDtoSchema = z.object({
   chatId: z.number(),
-  title: z.string(),
+  title: z.string().nullable(),
   titleStatus: TitleStatusSchema,
   parentChatId: z.number().nullable(),
   branchPointTurnId: z.number().nullable(),
