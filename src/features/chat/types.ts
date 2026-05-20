@@ -22,6 +22,7 @@ export interface Message {
   /** 명세 §2.4: CANCELED/FAILED 시 부분 텍스트 + 종료 상태 구분용. */
   status?: MessageStatus;
   isPending?: boolean;
+  turnId?: number;
 }
 
 export interface Conversation {

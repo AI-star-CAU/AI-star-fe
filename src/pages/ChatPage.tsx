@@ -5,6 +5,9 @@ import { useConversations } from '../features/chat/hooks/useConversations';
 import { useChatMeta } from '../features/chat/hooks/useChatMeta';
 import { useMessages } from '../features/chat/hooks/useMessages';
 import { useSendMessage } from '../features/chat/hooks/useSendMessage';
+import { useRegenerate } from '../features/chat/hooks/useRegenerate';
+import { useEditMessage } from '../features/chat/hooks/useEditMessage';
+import { branchApi } from '../features/branch/api/branchApi';
 import {
   getMessagesThroughFork,
   removePreTurnAssistantMessages,
@@ -66,6 +69,8 @@ const ChatPage: React.FC = () => {
       llmModel: selectedLlm.model,
     },
   });
+  const { regenerate } = useRegenerate(activeConvId);
+  const { editMessage } = useEditMessage(activeConvId);
 
   const listConv = useMemo(
     () => conversations.find(c => c.id === activeConvId),
@@ -167,6 +172,17 @@ const ChatPage: React.FC = () => {
     }
   }, [convsLoading, conversations, activeConvId, isKnownConvId, navigate]);
 
+  const handleBranch = useCallback(async (messageId: string) => {
+    const message = visibleMessages.messages.find(m => m.id === messageId);
+    if (!message?.turnId) return;
+    const numericChatId = Number(activeConvId);
+    if (isNaN(numericChatId)) return;
+    const result = await branchApi.createBranch(numericChatId, {
+      branchPointTurnId: message.turnId,
+    });
+    navigate(chatPath(String(result.chatId)));
+  }, [visibleMessages.messages, activeConvId, navigate]);
+
   const handleSend = useCallback(() => {
     const content = input.trim();
     if (!content || isSending) return;
@@ -241,6 +257,9 @@ const ChatPage: React.FC = () => {
                 hasOlder={hasNextPage && !activeBranch}
                 isLoadingOlder={isFetchingNextPage}
                 onLoadOlder={handleLoadOlder}
+                onBranch={handleBranch}
+                onRegenerate={regenerate}
+                onEdit={editMessage}
               />
               <ChatInput
                 value={input}

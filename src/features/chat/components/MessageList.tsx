@@ -9,10 +9,11 @@ interface MessageListProps {
   branchMarkerLabel?: string;
   branchStartIndex?: number;
   onBranch?: (messageId: string) => void;
-  /** 명세 §2.4: 더 불러올 과거 페이지가 있는지 */
   hasOlder?: boolean;
   isLoadingOlder?: boolean;
   onLoadOlder?: () => void;
+  onRegenerate?: (messageId: string) => void;
+  onEdit?: (messageId: string, content: string) => void;
 }
 
 const BranchMarker: React.FC<{ label: string }> = ({ label }) => (
@@ -77,6 +78,8 @@ const MessageList: React.FC<MessageListProps> = ({
   hasOlder = false,
   isLoadingOlder = false,
   onLoadOlder,
+  onRegenerate,
+  onEdit,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -131,7 +134,7 @@ const MessageList: React.FC<MessageListProps> = ({
               {shouldShowBranchMarker && index === branchStartIndex && (
                 <BranchMarker label={branchMarkerLabel} />
               )}
-              <MessageBubble message={msg} userName={userName} onBranch={onBranch} />
+              <MessageBubble message={msg} userName={userName} onBranch={onBranch} onRegenerate={onRegenerate} onEdit={onEdit} />
             </React.Fragment>
           ))}
           {shouldShowBranchMarker && branchStartIndex === messages.length && (

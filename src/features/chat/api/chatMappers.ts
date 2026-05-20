@@ -54,6 +54,9 @@ export function mapTurnListToMessages(
   chatId: string,
 ): Message[] {
   return turns.flatMap(turn =>
-    turn.messages.map(m => mapMessageResponseToMessage(m, chatId)),
+    turn.messages.map(msg => ({
+      ...mapMessageResponseToMessage(msg, chatId),
+      turnId: turn.turnId,
+    })),
   );
 }
