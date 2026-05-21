@@ -12,7 +12,7 @@ interface BranchCreatedData {
   branchPointTurnId: number;
   title: string | null;
   titleStatus: 'PENDING' | 'GENERATED' | 'USER_EDITED';
-}
+} 
 
 interface TurnStartedData {
   turnId: number;

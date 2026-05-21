@@ -39,6 +39,58 @@
 
 ---
 
+## 2026-05-21 — Codex (FILE_STRUCTURE/SUMMARY 역할 분리)
+
+**유형:** docs
+**범위:** repo root (AI-star-fe)
+
+### 변경 내용
+- [FILE_STRUCTURE.md](./FILE_STRUCTURE.md)는 실제 파일/폴더 구조와 레이어 방향만 남기도록 정리.
+- [FILE_STRUCTURE.md](./FILE_STRUCTURE.md)의 각 파일/폴더에 한 줄 역할 설명을 추가.
+- Feature 현황, BE 도메인 매핑, SRS FG 위치는 이 문서(SUMMARY)로 이동.
+
+### Feature 현황
+| feature | 담당 기능 | 상태 |
+| ------- | --------- | ---- |
+| `auth` | 로그인, 회원가입, 인증 상태 | 구현 |
+| `member` | 마이페이지 프로필/플랜/사용 현황 UI | 구현 |
+| `chat` | 대화 생성, 메시지 조회/송신, SSE, 재생성/수정 | 구현 |
+| `branch` | 분기 생성/수정/삭제/복구 API와 분기 메시지 훅 | 구현 |
+| `graph` | 분기 그래프 조회/확장/표시 | 구현 |
+| `conversation-explorer` | 좌측 대화 목록과 사이드바 | 구현 |
+| `search` | 사이드바 내 대화/분기 제목 검색 | 부분 구현 |
+| `settings` | 로컬 환경 설정, 기본 LLM 모델 선택 | 부분 구현 |
+
+### BE 도메인과 FE feature 매핑
+| BE 도메인 | FE 위치 | 비고 |
+| --------- | ------- | ---- |
+| `domain.auth` | `features/auth` | 로그인/회원가입 |
+| `domain.member` | `features/member`, `features/auth/api/memberApi.ts` | 내 정보/회원 탈퇴, 마이페이지 UI |
+| `domain.chat` | `features/chat`, `features/branch`, `features/graph`, `features/conversation-explorer`, `features/search` | BE는 chat 도메인 중심, FE는 UI 관심사별 분리 |
+| `domain.llm` | `features/chat/constants/llm.ts`, `features/settings` | 새 대화 생성 시 provider/model 선택 |
+| `global.security` | `shared/api/interceptors/authInterceptor.ts` | 인증 만료 처리 |
+| `global.apiPayload` | `shared/api/{ApiError,apiResponse,errorCodes,parseHttpError}` | ApiResponse/에러 코드 처리 |
+
+### SRS FG 위치
+| FG | 기능 | FE 위치 | 상태 |
+| -- | ---- | ------- | ---- |
+| FG-1 | 대화 작성 | `features/chat`, `pages/chat` | 구현 |
+| FG-2 | 분기 관리 | `features/branch` | 구현 |
+| FG-3 | 그래프 시각화 | `features/graph` | 구현 |
+| FG-4 | 대화 탐색기 | `features/conversation-explorer` | 구현 |
+| FG-5 | 맥락/토큰 표시 | 미정 | 미구현 |
+| FG-6 | 검색 | `features/search` | 부분 구현 |
+| FG-7 | 계정/인증 | `features/auth`, `features/member` | 구현 |
+| FG-8 | 구독/결제 | 미정 | 미구현 |
+| FG-9 | 내보내기 | 미정 | 미구현 |
+| FG-10 | 환경 설정 | `features/settings`, `pages/SettingsPage.tsx` | 부분 구현 |
+
+### 영향 범위
+- 코드 변경 없음. 문서만 수정.
+
+### 관련
+- 관련 파일: [FILE_STRUCTURE.md](./FILE_STRUCTURE.md)
+
 ## 2026-05-21 — Codex (Phase E 검색/설정 자리 구현)
 
 **유형:** feat
