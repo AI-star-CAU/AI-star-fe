@@ -55,7 +55,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userName, onBran
     if (!trimmed || trimmed === message.content) { setEditing(false); return; }
     onEdit?.(message.id, trimmed, message.conversationId);
     setEditing(false);
-  }, [editContent, message.content, message.id, onEdit]);
+  }, [editContent, message.content, message.conversationId, message.id, onEdit]);
 
   return (
     <div

@@ -1,34 +1,46 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../features/auth/hooks/useAuth';
-import { useConversations } from '../features/chat/hooks/useConversations';
-import { useChatMeta } from '../features/chat/hooks/useChatMeta';
-import { useMessages } from '../features/chat/hooks/useMessages';
-import { useSendMessage } from '../features/chat/hooks/useSendMessage';
-import { useRegenerate } from '../features/chat/hooks/useRegenerate';
-import { useEditMessage } from '../features/chat/hooks/useEditMessage';
-import { branchApi } from '../features/branch/api/branchApi';
-import { useGraph } from '../features/branch/hooks/useGraph';
+import { useAuth } from '../../features/auth/hooks/useAuth';
+import { useConversations } from '../../features/conversation-explorer/hooks/useConversations';
+import { useChatMeta } from '../../features/chat/hooks/useChatMeta';
+import { useMessages } from '../../features/chat/hooks/useMessages';
+import { useSendMessage } from '../../features/chat/hooks/useSendMessage';
+import { useRegenerate } from '../../features/chat/hooks/useRegenerate';
+import { useEditMessage } from '../../features/chat/hooks/useEditMessage';
+import { branchApi } from '../../features/branch/api/branchApi';
+import { useGraph } from '../../features/graph/hooks/useGraph';
 import {
   getForkTurnIndexByTurnId,
   getMessagesThroughFork,
   removePreTurnAssistantMessages,
-} from '../features/chat/utils/messageHelpers';
-import ChatHeader from '../features/chat/components/ChatHeader';
-import ConvSidebar from '../features/chat/components/ConvSidebar';
-import MessageList from '../features/chat/components/MessageList';
-import ChatInput from '../features/chat/components/ChatInput';
-import LlmModelSelect from '../features/chat/components/LlmModelSelect';
-import { LLM_OPTIONS, DEFAULT_LLM_OPTION } from '../features/chat/constants/llm';
-import type { LlmModel } from '../features/chat/types';
-import ResizeHandle from '../shared/components/layout/ResizeHandle';
-import { useResizeDrag } from '../shared/hooks/useResizeDrag';
-import { ApiError } from '../shared/api/client';
-import { chatPath } from '../app/router/routes';
-import type { Branch, CreateBranchResponse } from '../features/branch/types';
+} from '../../features/chat/utils/messageHelpers';
+import ChatHeader from '../../features/chat/components/ChatHeader';
+import ConvSidebar from '../../features/conversation-explorer/components/ConvSidebar';
+import { LLM_OPTIONS, DEFAULT_LLM_OPTION } from '../../features/chat/constants/llm';
+import type { LlmModel } from '../../features/chat/types';
+import ResizeHandle from '../../shared/components/layout/ResizeHandle';
+import { useResizeDrag } from '../../shared/hooks/useResizeDrag';
+import { ApiError } from '../../shared/api/client';
+import { resolveErrorMessage } from '../../shared/api/errorCodes';
+import { showToast } from '../../app/providers/toastEvents';
+import { chatPath } from '../../app/router/routes';
+import { readSettings } from '../../features/settings/utils/settingsStorage';
+import type { Branch, CreateBranchResponse } from '../../features/branch/types';
+import NewChatLanding from './NewChatLanding';
+import ConversationView from './ConversationView';
 
-const ChatPage: React.FC = () => {
+/**
+ * 채팅 화면의 데이터/상태 코디네이터.
+ *
+ * 사이드바·헤더는 항상 노출되며, 메인 패널은 다음 두 자식 컴포넌트로 위임한다:
+ *  - {@link NewChatLanding} — /chat/new 빈 상태
+ *  - {@link ConversationView} — 메시지가 1개라도 있는 대화 화면
+ *
+ * 라우터를 분기하지 않고 한 페이지 안에서 조건부 렌더링을 한다.
+ * (사이드바가 항상 같은 데이터를 필요로 하므로 라우트 분할의 이득이 적음.)
+ */
+const ChatLayout: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { convId } = useParams<{ convId: string }>();
@@ -40,7 +52,7 @@ const ChatPage: React.FC = () => {
   const [optimisticBranch, setOptimisticBranch] = useState<CreateBranchResponse | null>(null);
   // 명세 §2.1 / FR-10.1: 새 대화 생성 시 사용할 모델 선택.
   const [selectedModel, setSelectedModel] = useState<LlmModel>(
-    DEFAULT_LLM_OPTION.model,
+    () => readSettings().defaultLlmModel,
   );
   const selectedLlm = useMemo(
     () =>
@@ -330,19 +342,22 @@ const ChatPage: React.FC = () => {
       navigate(chatPath(String(result.chatId)));
     } catch (err) {
       console.error('[handleBranch] 분기 생성 실패:', err);
-      alert(
+      showToast(
+        'error',
         err instanceof ApiError
-          ? err.message
-          : '분기 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          ? resolveErrorMessage(err.code, err.message)
+          : '분기 생성에 실패했어요. 잠시 후 다시 시도해 주세요.',
       );
     }
   }, [visibleMessages.messages, queryClient, navigate]);
 
-  const handleSend = useCallback(() => {
+  // NFR-U-4: 전송 실패 시 사용자가 다시 칠 필요 없이 입력을 복구한다.
+  const handleSend = useCallback(async () => {
     const content = input.trim();
     if (!content || isSending) return;
     setInput('');
-    sendMessage(content);
+    const ok = await sendMessage(content);
+    if (!ok) setInput(content);
   }, [input, isSending, sendMessage]);
 
   // 명세 §4.1: 재생성 경로는 messageId 가 속한 chat 의 id 를 써야 한다.
@@ -387,60 +402,38 @@ const ChatPage: React.FC = () => {
 
         <div className="flex-1 flex flex-col min-w-0">
           {isNewChatEmpty ? (
-            <div className="flex-1 flex items-center justify-center px-5 pb-20">
-              <div className="w-full max-w-2xl">
-                <div className="mb-7 text-center">
-                  <p className="text-3xl font-black tracking-tight text-white">
-                    안녕하세요, {user?.name ?? '사용자'}님
-                  </p>
-                  <p className="mt-3 text-sm text-slate-500">
-                    오늘은 어떤 대화를 시작해볼까요?
-                  </p>
-                </div>
-                <div className="mb-3 flex justify-center">
-                  <LlmModelSelect
-                    value={selectedModel}
-                    onChange={setSelectedModel}
-                    disabled={isSending}
-                  />
-                </div>
-                <ChatInput
-                  value={input}
-                  onChange={setInput}
-                  onSend={handleSend}
-                  isSending={isSending}
-                  onCancel={cancel}
-                  isCanceling={isCanceling}
-                  variant="floating"
-                />
-              </div>
-            </div>
+            <NewChatLanding
+              userName={user?.name}
+              input={input}
+              onInputChange={setInput}
+              onSend={handleSend}
+              isSending={isSending}
+              onCancel={cancel}
+              isCanceling={isCanceling}
+              selectedModel={selectedModel}
+              onSelectModel={setSelectedModel}
+            />
           ) : (
-            <>
-              <MessageList
-                messages={visibleMessages.messages}
-                isLoading={isMessagesLoading}
-                userName={user?.name ?? '나'}
-                branchMarkerLabel={activeBranchMarkerLabel}
-                branchStartIndex={visibleMessages.branchStartIndex}
-                hasOlder={hasNextPage}
-                isLoadingOlder={isFetchingNextPage}
-                onLoadOlder={handleLoadOlder}
-                onBranch={handleBranch}
-                onRegenerate={handleRegenerate}
-                onEdit={editMessage}
-                targetTurnId={targetTurnId}
-                onTargetTurnReached={handleTargetTurnReached}
-              />
-              <ChatInput
-                value={input}
-                onChange={setInput}
-                onSend={handleSend}
-                isSending={isSending}
-                onCancel={cancel}
-                isCanceling={isCanceling}
-              />
-            </>
+            <ConversationView
+              visibleMessages={visibleMessages}
+              isMessagesLoading={isMessagesLoading}
+              userName={user?.name ?? '나'}
+              activeBranchMarkerLabel={activeBranchMarkerLabel}
+              hasOlder={hasNextPage}
+              isLoadingOlder={isFetchingNextPage}
+              onLoadOlder={handleLoadOlder}
+              onBranch={handleBranch}
+              onRegenerate={handleRegenerate}
+              onEdit={editMessage}
+              targetTurnId={targetTurnId}
+              onTargetTurnReached={handleTargetTurnReached}
+              input={input}
+              onInputChange={setInput}
+              onSend={handleSend}
+              isSending={isSending}
+              onCancel={cancel}
+              isCanceling={isCanceling}
+            />
           )}
         </div>
       </div>
@@ -448,4 +441,4 @@ const ChatPage: React.FC = () => {
   );
 };
 
-export default ChatPage;
+export default ChatLayout;

@@ -1,6 +1,6 @@
 import { env } from '../config/env';
 import { STORAGE_KEYS } from '../constants/storageKeys';
-import { ApiError } from './client';
+import { parseHttpError } from './parseHttpError';
 
 export interface SSEEvent {
   event: string;
@@ -43,16 +43,9 @@ export async function* streamSSE(
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
 
+  // 스트리밍 시작 전 에러는 ApiResponse JSON 으로 온다 (명세 §2.5).
   if (!response.ok || !response.body) {
-    const errorBody = await response.json().catch(() => undefined);
-    const message =
-      errorBody &&
-      typeof errorBody === 'object' &&
-      'message' in errorBody &&
-      typeof (errorBody as { message: unknown }).message === 'string'
-        ? (errorBody as { message: string }).message
-        : `SSE request failed: ${response.status}`;
-    throw new ApiError(response.status, message, errorBody);
+    throw await parseHttpError(response, 'SSE 요청에 실패했어요.');
   }
 
   const reader = response.body.getReader();

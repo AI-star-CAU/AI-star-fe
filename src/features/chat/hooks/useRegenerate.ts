@@ -141,6 +141,7 @@ export const useRegenerate = (conversationId: string) => {
           throw new ApiError(
             500,
             parsed?.message ?? '응답 재생성 중 오류가 발생했습니다.',
+            parsed?.code ?? null,
             parsed,
           );
         } else if (event === 'done') {

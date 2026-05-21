@@ -1,16 +1,18 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ConversationList from './ConversationList';
-import GraphPanel from '../../branch/components/GraphPanel';
+import GraphPanel from '../../graph/components/GraphPanel';
 import { branchApi } from '../../branch/api/branchApi';
+import { graphApi } from '../../graph/api/graphApi';
 import { useBranchMessages } from '../../branch/hooks/useBranchMessages';
-import { useGraph } from '../../branch/hooks/useGraph';
-import { useMessages } from '../hooks/useMessages';
-import { useDeleteChat } from '../hooks/useDeleteChat';
+import { useGraph } from '../../graph/hooks/useGraph';
+import { useMessages } from '../../chat/hooks/useMessages';
+import { useDeleteChat } from '../../chat/hooks/useDeleteChat';
 import { useResizeDrag } from '../../../shared/hooks/useResizeDrag';
 import ResizeHandle from '../../../shared/components/layout/ResizeHandle';
-import type { Conversation, Message } from '../types';
-import type { CreateBranchResponse, GraphResponse, NodeAction } from '../../branch/types';
+import type { Conversation, Message } from '../../chat/types';
+import type { CreateBranchResponse } from '../../branch/types';
+import type { GraphResponse, NodeAction } from '../../graph/types';
 
 interface ConvSidebarProps {
   conversations: Conversation[];
@@ -193,7 +195,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 
   const handleExpand = useCallback(async (fromTurnId: number, direction: 'UP' | 'DOWN') => {
     if (!validChatId) return;
-    const result = await branchApi.expandGraph(validChatId, { fromTurnId, direction });
+    const result = await graphApi.expandGraph(validChatId, { fromTurnId, direction });
     setMergedGraphData(prev => {
       if (!prev) return prev;
       const existingIds = new Set(prev.turns.map(t => t.turnId));

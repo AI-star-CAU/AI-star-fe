@@ -119,14 +119,14 @@ const MessageList: React.FC<MessageListProps> = ({
       return;
     }
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, targetTurnId]);
 
   // 대화 전환/초기 로딩 종료 시 맨 아래에서 시작.
   useEffect(() => {
     if (!isLoading && targetTurnId == null) {
       endRef.current?.scrollIntoView({ behavior: 'auto' });
     }
-  }, [isLoading]);
+  }, [isLoading, targetTurnId]);
 
   useEffect(() => {
     if (targetTurnId == null || isLoading) return;

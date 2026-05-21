@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import Button from '../../../shared/components/ui/Button';
+import SearchPanel from '../../search/components/SearchPanel';
 import { branchApi } from '../../branch/api/branchApi';
 import type { Branch } from '../../branch/types';
-import type { Conversation } from '../types';
+import type { Conversation } from '../../chat/types';
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -234,6 +235,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
         <span className="text-lg leading-none">+</span> 새 채팅
       </Button>
     </div>
+
+    <SearchPanel />
 
     <div
       className="overflow-y-auto flex-shrink-0 px-2 pb-3"

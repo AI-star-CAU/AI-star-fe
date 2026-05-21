@@ -135,6 +135,7 @@ export const useEditMessage = (conversationId: string) => {
           throw new ApiError(
             500,
             parsed?.message ?? '메시지 수정 응답 생성 중 오류가 발생했습니다.',
+            parsed?.code ?? null,
             parsed,
           );
         } else if (event === 'done') {

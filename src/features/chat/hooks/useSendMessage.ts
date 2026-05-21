@@ -3,7 +3,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '../api/chatApi';
 import { streamMessage } from '../api/messageStream';
 import { ApiError } from '../../../shared/api/client';
+import { resolveErrorMessage } from '../../../shared/api/errorCodes';
+import { showToast } from '../../../app/providers/toastEvents';
 import type { CreateChatRequest, Message } from '../types';
+
+function toastFromError(err: unknown, fallback: string): void {
+  if (err instanceof ApiError) {
+    showToast('error', resolveErrorMessage(err.code, err.message));
+  } else {
+    showToast('error', fallback);
+  }
+}
 
 interface UseSendMessageOptions {
   /** 'new' 화면에서 chat 이 생성되면 새 chatId 로 호출된다. */
@@ -37,8 +47,8 @@ export const useSendMessage = (
   } | null>(null);
 
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (isPending) return;
+    async (content: string): Promise<boolean> => {
+      if (isPending) return false;
       setIsPending(true);
       setIsCanceling(false);
 
@@ -52,6 +62,8 @@ export const useSendMessage = (
           }));
         } catch (err) {
           console.error('[sendMessage] chat creation failed:', err);
+          // NFR-U-4: 사용자 메시지를 회색 풍선으로라도 남겨 무슨 일이 났는지 보이게 한다.
+          // 입력 복구는 호출자(handleSend) 가 false 반환을 받고 처리.
           const now = new Date().toISOString();
           setLiveMessages([
             {
@@ -61,20 +73,10 @@ export const useSendMessage = (
               content,
               createdAt: now,
             },
-            {
-              id: `failed-ai-${Date.now() + 1}`,
-              conversationId,
-              role: 'assistant',
-              content:
-                err instanceof ApiError
-                  ? `⚠️ ${err.message}`
-                  : '⚠️ 대화 생성에 실패했습니다.',
-              createdAt: now,
-              status: 'FAILED',
-            },
           ]);
+          toastFromError(err, '대화를 시작하지 못했어요. 잠시 후 다시 시도해 주세요.');
           setIsPending(false);
-          return;
+          return false;
         }
       }
 
@@ -162,6 +164,7 @@ export const useSendMessage = (
           options?.onConversationCreated?.(targetId);
         }
         void cancelled;
+        return true;
       } catch (err) {
         if (accumulated) {
           // 일부라도 받았으면 받은 내용 + 실패 상태 유지 (명세 §2.5 FAILED).
@@ -181,6 +184,8 @@ export const useSendMessage = (
             isPending: false,
           });
         }
+        toastFromError(err, '응답을 받지 못했어요. 잠시 후 다시 시도해 주세요.');
+        return false;
       } finally {
         activeStreamRef.current = null;
         setIsPending(false);
