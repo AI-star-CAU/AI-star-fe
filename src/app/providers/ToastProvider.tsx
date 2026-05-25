@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Toast, { type ToastItem } from '../../shared/components/feedback/Toast';
-import { TOAST_EVENT, type ToastEventDetail } from './toastEvents';
+import { TOAST_EVENT, type ToastEventDetail } from '../../shared/utils/toastEvents';
 
 /**
  * `window.dispatchEvent(new CustomEvent('app:toast', { detail: { type, message } }))`

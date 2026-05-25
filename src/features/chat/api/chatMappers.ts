@@ -31,8 +31,8 @@ export function mapChatListItemToConversation(item: ChatListItemResponse): Conve
 }
 
 /**
- * 명세 §2.4: MessageDto 에는 chatId 가 없으므로(부모 turn/chat 에 포함)
- * 호출 측이 path 로 알고 있는 chatId 를 주입한다.
+ * 명세 §2.4 + Phase 3 §8: 메시지 자체의 chatId 를 우선 사용하고,
+ * 없으면 path 로 알고 있는 chatId 를 주입한다.
  */
 export function mapMessageResponseToMessage(
   response: ChatMessageResponse,
@@ -40,9 +40,8 @@ export function mapMessageResponseToMessage(
 ): Message {
   return {
     id: String(response.messageId),
-    conversationId: chatId,
+    conversationId: response.chatId ? String(response.chatId) : chatId,
     role: mapSenderTypeToRole(response.senderType),
-    // 명세 §2.4: 취소/실패 시 content 가 null 일 수 있다.
     content: response.content ?? '',
     status: response.status,
     createdAt: response.createdAt,

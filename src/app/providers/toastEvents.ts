@@ -1,13 +1,3 @@
-import type { ToastType } from '../../shared/components/feedback/Toast';
-
-export const TOAST_EVENT = 'app:toast';
-
-export interface ToastEventDetail {
-  type?: ToastType;
-  message: string;
-}
-
-/** React 트리 밖에서도 토스트를 띄우기 위한 CustomEvent 헬퍼. */
-export function showToast(type: ToastType, message: string): void {
-  window.dispatchEvent(new CustomEvent(TOAST_EVENT, { detail: { type, message } }));
-}
+// 이 파일은 shared/utils/toastEvents.ts 로 이동되었습니다.
+export { TOAST_EVENT, showToast } from '../../shared/utils/toastEvents';
+export type { ToastEventDetail } from '../../shared/utils/toastEvents';

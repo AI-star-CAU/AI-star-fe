@@ -39,6 +39,32 @@
 
 ---
 
+## 2026-05-25 — Claude (FE 구조 7가지 개선 + Phase 3 API 정합성 수정)
+
+**유형:** refactor
+**범위:** shared/utils, features/chat, features/branch, features/graph, features/member, pages/chat
+
+### 변경 내용
+- `app/providers/toastEvents.ts` → `shared/utils/toastEvents.ts` 이동 (레이어 역전 해소). 기존 경로는 re-export shim 유지.
+- `features/chat/api/streamTypes.ts` 신설 — SSE 이벤트 타입(`TurnStartedData`, `ChunkData`, `TurnCompletedData`, `CancelledData`, `BranchCreatedData`, `StreamErrorData`) 통합. `messageStream.ts`, `useRegenerate.ts`, `useEditMessage.ts` 중복 정의 제거.
+- **Phase 3 §4.1 v0.7 정합**: `useRegenerate.ts` 에서 `branch_created` 이벤트 처리 및 `navigate` 제거. regenerate 는 같은 chat 내 AI 메시지를 덮어씀(분기 미생성).
+- **Phase 3 §8 정합**: `ChatMessageResponse` 에 `chatId?: number` 추가. `chatMappers.ts` 의 `mapMessageResponseToMessage` 가 서버 제공 `chatId` 를 우선 사용.
+- `features/auth/api/memberApi.ts` → `features/member/api/memberApi.ts` 이동. 기존 경로는 re-export shim 유지. `AuthProvider` 임포트 경로 갱신.
+- `features/branch/hooks/useChatTitle.ts` → `features/graph/hooks/useChatTitle.ts` 이동 (소유권 정렬).
+- `features/branch/hooks/useCreateBranch.ts` 신설 — `ChatLayout` 에서 직접 `branchApi` 호출·`useQueryClient` 사용 제거. God Component 해소.
+- `src/mocks/` → `src/shared/mocks/` 이동 (`conversations.ts`, `messages.ts`). 기존 경로는 re-export shim 유지.
+
+### 영향 범위
+- `useRegenerate` 를 사용하는 곳에서 더 이상 분기 이동(`navigate`)이 발생하지 않음. 메시지가 같은 chat 에서 교체됨.
+- `TurnStartedData.chatId` 가 optional 로 추가됨 — send/regenerate 에서는 없을 수 있음.
+- `npx tsc --noEmit` 오류 없음 확인.
+
+### 관련
+- 참조 명세: BE Phase 3 API §4.1 (v0.7 regenerate 변경), §8 (`GET /chats/{chatId}/turns` chatId 필드)
+- 관련 파일: [src/shared/utils/toastEvents.ts](./src/shared/utils/toastEvents.ts), [src/features/chat/api/streamTypes.ts](./src/features/chat/api/streamTypes.ts), [src/features/member/api/memberApi.ts](./src/features/member/api/memberApi.ts), [src/features/graph/hooks/useChatTitle.ts](./src/features/graph/hooks/useChatTitle.ts), [src/features/branch/hooks/useCreateBranch.ts](./src/features/branch/hooks/useCreateBranch.ts)
+
+---
+
 ## 2026-05-21 — Codex (FILE_STRUCTURE/SUMMARY 역할 분리)
 
 **유형:** docs

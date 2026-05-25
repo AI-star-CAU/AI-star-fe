@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { AuthContext, INITIAL_AUTH_STATE, authReducer } from './AuthContext';
 import { authApi } from '../api/authApi';
-import { memberApi } from '../api/memberApi';
+import { memberApi } from '../../member/api/memberApi';
 import {
   clearAuthToken,
   clearSavedUser,

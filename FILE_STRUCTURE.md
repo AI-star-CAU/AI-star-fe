@@ -37,7 +37,7 @@ src/
 │   │   ├── AppProviders.tsx # Router, Query, Auth, Toast, ErrorBoundary 조합
 │   │   ├── QueryProvider.tsx # TanStack Query 클라이언트 설정
 │   │   ├── ToastProvider.tsx # 전역 토스트 렌더링
-│   │   └── toastEvents.ts   # React 트리 밖에서 토스트를 띄우는 이벤트 헬퍼
+│   │   └── toastEvents.ts   # re-export shim → shared/utils/toastEvents.ts
 │   └── router/              # 라우팅 설정
 │       ├── AppRouter.tsx    # 전체 Route 선언
 │       ├── routes.ts        # 경로 상수와 path helper
@@ -58,7 +58,7 @@ src/
 │   ├── auth/                # 인증 기능
 │   │   ├── api/             # 인증 관련 HTTP 호출
 │   │   │   ├── authApi.ts   # 로그인/회원가입 API
-│   │   │   └── memberApi.ts # 내 정보 조회/회원 탈퇴 API
+│   │   │   └── memberApi.ts # re-export shim → member/api/memberApi.ts
 │   │   ├── components/      # 인증 화면 UI
 │   │   │   ├── EmailLoginForm.tsx # 이메일 로그인 폼
 │   │   │   └── EmailSignupForm.tsx # 이메일 회원가입 폼
@@ -80,7 +80,8 @@ src/
 │   │   │   └── schemas.ts   # 분기 API zod 스키마
 │   │   ├── hooks/           # 분기 hooks
 │   │   │   ├── useBranchMessages.ts # 여러 분기의 메시지 조회
-│   │   │   └── useChatTitle.ts # 비동기 제목 상태 갱신 hook
+│   │   │   ├── useChatTitle.ts # re-export shim → graph/hooks/useChatTitle.ts
+│   │   │   └── useCreateBranch.ts # 분기 생성 mutation hook (ChatLayout 에서 추출)
 │   │   └── types.ts         # 분기 타입
 │   │
 │   ├── chat/                # 채팅/메시지 기능
@@ -88,7 +89,8 @@ src/
 │   │   │   ├── chatApi.ts   # 채팅 목록/메타/턴/삭제 API
 │   │   │   ├── chatMappers.ts # API DTO를 FE 모델로 변환
 │   │   │   ├── messageStream.ts # 메시지 송신 SSE 처리
-│   │   │   └── schemas.ts   # 채팅 API zod 스키마
+│   │   │   ├── schemas.ts   # 채팅 API zod 스키마
+│   │   │   └── streamTypes.ts # SSE 이벤트 타입 통합 (Phase 3 §4.1)
 │   │   ├── components/      # 채팅 UI
 │   │   │   ├── ChatHeader.tsx # 상단 헤더와 사용자 메뉴
 │   │   │   ├── ChatInput.tsx # 메시지 입력창
@@ -125,11 +127,14 @@ src/
 │   │   │   └── GraphPanel.tsx # 그래프 시각화 패널
 │   │   ├── hooks/           # 그래프 hooks
 │   │   │   ├── useCollapsedBranches.ts # 접힌 분기 계산
+│   │   │   ├── useChatTitle.ts # 비동기 제목 상태 갱신 hook (branch에서 이동)
 │   │   │   ├── useGraph.ts  # 그래프 조회 hook
 │   │   │   └── useGraphExpand.ts # 그래프 확장 hook
 │   │   └── types.ts         # 그래프 타입
 │   │
 │   ├── member/              # 사용자/마이페이지 UI
+│   │   ├── api/             # 회원 관련 HTTP 호출
+│   │   │   └── memberApi.ts # 내 정보 조회/회원 탈퇴 API (auth/api/memberApi.ts 에서 이동)
 │   │   └── components/      # 마이페이지 구성 컴포넌트
 │   │       ├── DangerZone.tsx # 계정 삭제 영역
 │   │       ├── DeleteAccountModal.tsx # 계정 삭제 확인 모달
@@ -183,12 +188,16 @@ src/
 │   │   └── storageKeys.ts   # localStorage key 상수
 │   ├── hooks/               # 공용 hooks
 │   │   └── useResizeDrag.ts # 드래그 리사이즈 hook
+│   ├── mocks/               # 개발용 목업 데이터 (정규 위치)
+│   │   ├── conversations.ts # 대화 목록 목업
+│   │   └── messages.ts      # 메시지 목록 목업
 │   └── utils/               # 공용 유틸
-│       └── date.ts          # 날짜/시간 유틸
+│       ├── date.ts          # 날짜/시간 유틸
+│       └── toastEvents.ts   # React 트리 밖에서 토스트를 띄우는 이벤트 헬퍼
 │
-├── mocks/                   # 개발용 목업 데이터
-│   ├── conversations.ts     # 대화 목록 목업
-│   └── messages.ts          # 메시지 목록 목업
+├── mocks/                   # 개발용 목업 데이터 (re-export shim — shared/mocks/ 로 이동됨)
+│   ├── conversations.ts     # → shared/mocks/conversations.ts
+│   └── messages.ts          # → shared/mocks/messages.ts
 │
 └── styles/                  # 전역 스타일
     └── index.css            # Tailwind 진입점과 공용 스타일

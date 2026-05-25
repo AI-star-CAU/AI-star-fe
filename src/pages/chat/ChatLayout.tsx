@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useConversations } from '../../features/conversation-explorer/hooks/useConversations';
@@ -8,7 +7,7 @@ import { useMessages } from '../../features/chat/hooks/useMessages';
 import { useSendMessage } from '../../features/chat/hooks/useSendMessage';
 import { useRegenerate } from '../../features/chat/hooks/useRegenerate';
 import { useEditMessage } from '../../features/chat/hooks/useEditMessage';
-import { branchApi } from '../../features/branch/api/branchApi';
+import { useCreateBranch } from '../../features/branch/hooks/useCreateBranch';
 import { useGraph } from '../../features/graph/hooks/useGraph';
 import {
   getForkTurnIndexByTurnId,
@@ -21,9 +20,6 @@ import { LLM_OPTIONS, DEFAULT_LLM_OPTION } from '../../features/chat/constants/l
 import type { LlmModel } from '../../features/chat/types';
 import ResizeHandle from '../../shared/components/layout/ResizeHandle';
 import { useResizeDrag } from '../../shared/hooks/useResizeDrag';
-import { ApiError } from '../../shared/api/client';
-import { resolveErrorMessage } from '../../shared/api/errorCodes';
-import { showToast } from '../../app/providers/toastEvents';
 import { chatPath } from '../../app/router/routes';
 import { readSettings } from '../../features/settings/utils/settingsStorage';
 import type { Branch, CreateBranchResponse } from '../../features/branch/types';
@@ -41,7 +37,6 @@ import ConversationView from './ConversationView';
  * (사이드바가 항상 같은 데이터를 필요로 하므로 라우트 분할의 이득이 적음.)
  */
 const ChatLayout: React.FC = () => {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { convId } = useParams<{ convId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -316,40 +311,20 @@ const ChatLayout: React.FC = () => {
     }
   }, [convsLoading, chatMetaLoading, conversations, activeConvId, isKnownConvId, navigate]);
 
-  // 명세 §2.1: POST /chats/{chatId}/branches 의 chatId 는 분기점 turn 이
-  // 실제로 속한 chat 의 id 여야 한다. 부모 chat 의 메시지를 자식 분기에서
-  // 클릭한 경우 activeConvId 로 보내면 BRANCH_4001 이 발생한다.
-  const handleBranch = useCallback(async (messageId: string, originChatId: string) => {
-    const message = visibleMessages.messages.find(m => m.id === messageId);
-    if (!message?.turnId) {
-      console.warn('[handleBranch] turnId 없음 — 서버에서 아직 확정되지 않은 메시지:', messageId);
-      return;
-    }
-    const numericChatId = Number(originChatId);
-    if (isNaN(numericChatId)) {
-      console.warn('[handleBranch] invalid chat id:', originChatId);
-      return;
-    }
-    try {
-      const result = await branchApi.createBranch(numericChatId, {
-        branchPointTurnId: message.turnId,
-        title: null,
-      });
+  const { createBranch } = useCreateBranch({
+    onCreated: (result) => {
       setOptimisticBranch(result);
       setSidebarOpen(true);
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      queryClient.invalidateQueries({ queryKey: ['graph'] });
-      navigate(chatPath(String(result.chatId)));
-    } catch (err) {
-      console.error('[handleBranch] 분기 생성 실패:', err);
-      showToast(
-        'error',
-        err instanceof ApiError
-          ? resolveErrorMessage(err.code, err.message)
-          : '분기 생성에 실패했어요. 잠시 후 다시 시도해 주세요.',
-      );
-    }
-  }, [visibleMessages.messages, queryClient, navigate]);
+    },
+  });
+
+  // 명세 §2.1: chatId 는 분기점 turn 이 실제로 속한 chat 의 id 여야 한다.
+  // 부모 chat 의 메시지를 자식 분기에서 클릭한 경우 originChatId 를 써야 BRANCH_4001 방지.
+  const handleBranch = useCallback((messageId: string, originChatId: string) => {
+    const message = visibleMessages.messages.find(m => m.id === messageId);
+    if (!message?.turnId) return;
+    createBranch(message.turnId, originChatId);
+  }, [visibleMessages.messages, createBranch]);
 
   // NFR-U-4: 전송 실패 시 사용자가 다시 칠 필요 없이 입력을 복구한다.
   const handleSend = useCallback(async () => {

@@ -3,37 +3,14 @@ import { STORAGE_KEYS } from '../../../shared/constants/storageKeys';
 import { ApiError } from '../../../shared/api/client';
 import { parseHttpError } from '../../../shared/api/parseHttpError';
 import { ENDPOINTS } from '../../../shared/api/endpoints';
+import type {
+  TurnStartedData,
+  ChunkData,
+  TurnCompletedData,
+  CancelledData,
+} from './streamTypes';
 
-/**
- * 명세 §2.5 메시지 송신(SSE) 이벤트 스키마.
- * terminal event 는 turn_completed | error | cancelled 중 정확히 하나이며,
- * 그 뒤 반드시 done 이 온다.
- */
-export interface TurnStartedData {
-  turnId: number;
-  userMessageId: number;
-  aiMessageId: number;
-}
-
-export interface ChunkData {
-  text: string;
-}
-
-/** Phase 3 명세 §4.1: {turnId, aiMessageId, answerToken, summaryStatus} */
-export interface TurnCompletedData {
-  turnId: number;
-  aiMessageId: number;
-  answerToken: number;
-  summaryStatus: 'PENDING';
-}
-
-/** 명세 §2.5: {aiMessageId, status:"CANCELED", content?, answerToken?} */
-export interface CancelledData {
-  aiMessageId: number;
-  status: 'CANCELED';
-  content?: string;
-  answerToken?: number;
-}
+export type { TurnStartedData, ChunkData, TurnCompletedData, CancelledData };
 
 export interface StreamHandlers {
   onTurnStarted?: (d: TurnStartedData) => void;

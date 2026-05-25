@@ -4,7 +4,7 @@ import { chatApi } from '../api/chatApi';
 import { streamMessage } from '../api/messageStream';
 import { ApiError } from '../../../shared/api/client';
 import { resolveErrorMessage } from '../../../shared/api/errorCodes';
-import { showToast } from '../../../app/providers/toastEvents';
+import { showToast } from '../../../shared/utils/toastEvents';
 import type { CreateChatRequest, Message } from '../types';
 
 function toastFromError(err: unknown, fallback: string): void {

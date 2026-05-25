@@ -5,45 +5,15 @@ import { streamSSE } from '../../../shared/api/sse';
 import { ApiError } from '../../../shared/api/client';
 import { ENDPOINTS } from '../../../shared/api/endpoints';
 import { chatPath } from '../../../app/router/routes';
+import {
+  parseEventData,
+  type BranchCreatedData,
+  type TurnStartedData,
+  type ChunkData,
+  type TurnCompletedData,
+  type StreamErrorData,
+} from '../api/streamTypes';
 import type { Message } from '../types';
-
-interface BranchCreatedData {
-  newChatId: number;
-  branchPointTurnId: number;
-  title: string | null;
-  titleStatus: 'PENDING' | 'GENERATED' | 'USER_EDITED';
-}
-
-interface TurnStartedData {
-  turnId: number;
-  userMessageId: number;
-  aiMessageId: number;
-}
-
-interface ChunkData {
-  text: string;
-}
-
-interface TurnCompletedData {
-  turnId: number;
-  aiMessageId: number;
-  answerToken: number;
-  summaryStatus: 'PENDING';
-}
-
-interface StreamErrorData {
-  code?: string;
-  message?: string;
-  retryable?: boolean;
-}
-
-function parseEventData<T>(data: string): T | null {
-  try {
-    return JSON.parse(data) as T;
-  } catch {
-    return null;
-  }
-}
 
 export const useEditMessage = (conversationId: string) => {
   const [isEditing, setIsEditing] = useState(false);
