@@ -81,6 +81,10 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 이 두 문서는 팀원과의 공유 수단이다. 누락하지 않는다.
 
+## 6. BE 참고 규칙
+BE 코드는 기본적으로 적극적으로 참고만 하되, 수정하지 않는다. 
+BE 파일 중에서 각각의 phase 별로 있는 api 명세서는 특히 적극적으로 참고해서 FE 코드에 반영한다. 
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
