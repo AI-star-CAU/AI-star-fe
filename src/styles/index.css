@@ -1,5 +1,63 @@
 @import "tailwindcss";
 
+/* ── Theme: Warm Latte (Light) ───────────────────────────────────
+ * 디자인 리뉴얼: 4색 팔레트 기반 따뜻한 라이트 테마.
+ * 빈도 순서(많이 → 적게):
+ *   1) #EDE9E6  크림   — 배경/표면 (가장 많이)
+ *   2) #C9996B  카멜   — 액센트(버튼·유저버블·링크·활성·포커스)
+ *   3) #5C4F4A  브라운 — 본문/주요 텍스트
+ *   4) #5C766D  세이지 — 그라디언트 끝색 등 희소 강조 (가장 적게)
+ *
+ * Tailwind 기본 팔레트 이름을 재정의하므로 컴포넌트의 `bg-slate-900`,
+ * `text-cyan-400` 등은 수정 없이 새 색을 따른다.
+ *   - slate : 크림↔브라운 중립 스케일. **반전** — 높은 번호=밝은 배경,
+ *             낮은 번호=어두운 텍스트 (다크→라이트 전환).
+ *   - cyan  : 카멜 액센트. 채움 셰이드(500~700)는 어둡게 두어
+ *             밝은 텍스트(text-white/cream)가 대비를 확보한다.
+ *   - teal  : 세이지. 그라디언트 끝색 위주.
+ * amber/red/emerald/rose 등 의미색은 그대로 둔다.
+ * ──────────────────────────────────────────────────────────────── */
+@theme {
+  /* slate → 크림↔브라운 (반전: 950=배경 크림, 200=본문 브라운) */
+  --color-slate-50:  #3a312d;
+  --color-slate-100: #4a403b;
+  --color-slate-200: #5c4f4a;
+  --color-slate-300: #685b55;
+  --color-slate-400: #75685f;
+  --color-slate-500: #8c7f77;
+  --color-slate-600: #b2a69c;
+  --color-slate-700: #ccc1b8;
+  --color-slate-800: #ddd5ce;
+  --color-slate-900: #e8e2dd;
+  --color-slate-950: #ede9e6;
+
+  /* cyan → 카멜 액센트 (#C9996B at 300; 채움은 500~700에서 어둡게) */
+  --color-cyan-50:  #f4ece2;
+  --color-cyan-100: #ebdac8;
+  --color-cyan-200: #dcc0a0;
+  --color-cyan-300: #c9996b;
+  --color-cyan-400: #bc8755;
+  --color-cyan-500: #a5703f;
+  --color-cyan-600: #8c5d34;
+  --color-cyan-700: #6e4a2c;
+  --color-cyan-800: #573b25;
+  --color-cyan-900: #46301f;
+  --color-cyan-950: #2a1c12;
+
+  /* teal → 세이지 (#5C766D at 500) */
+  --color-teal-50:  #eaf0ee;
+  --color-teal-100: #d3dfda;
+  --color-teal-200: #aec2ba;
+  --color-teal-300: #88a398;
+  --color-teal-400: #6e8c81;
+  --color-teal-500: #5c766d;
+  --color-teal-600: #4e645c;
+  --color-teal-700: #3f524b;
+  --color-teal-800: #344440;
+  --color-teal-900: #2c3835;
+  --color-teal-950: #19211f;
+}
+
 /* ── Base layer ──────────────────────────────────────────────── */
 @layer base {
   *, *::before, *::after {
@@ -63,7 +121,7 @@
 
   .sidebar-item-active {
     @apply px-3 py-2.5 rounded-xl cursor-pointer
-           bg-cyan-400/10 border border-cyan-300/25 text-cyan-200
+           bg-cyan-400/15 border border-cyan-500/30 text-cyan-700
            transition-all duration-150;
   }
 

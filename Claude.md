@@ -83,7 +83,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 6. BE 참고 규칙
 BE 코드는 기본적으로 적극적으로 참고만 하되, 수정하지 않는다. 
-BE 파일 중에서 각각의 phase 별로 있는 api 명세서는 특히 적극적으로 참고해서 FE 코드에 반영한다. 
+document 폴더에 있는 각각의 phase 별 api 명세를 토대로 FE 코드에 반영한다. 
 
 ---
 

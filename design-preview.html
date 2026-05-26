@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AIT — Design Preview</title>
+<style>
+  /* ────────────────────────────────────────────────
+     팔레트 (Warm Latte)
+     크림  #EDE9E6  — 배경
+     카멜  #C9996B  — 액센트(버튼/링크/유저버블)
+     브라운 #5C4F4A  — 본문 텍스트
+     세이지 #5C766D  — 희소 강조
+     ──────────────────────────────────────────────── */
+  :root{
+    --cream-50:#FBF8F5;
+    --cream-100:#F5F0EA;
+    --cream:#EDE9E6;
+    --cream-200:#E2DACF;
+    --cream-300:#CFC4B7;
+    --brown-500:#5C4F4A;
+    --brown-700:#3D332F;
+    --brown-300:#897C75;
+    --brown-200:#A89C95;
+    --camel:#C9996B;
+    --camel-dark:#A5703F;
+    --camel-darker:#6E4A2C;
+    --sage:#5C766D;
+    --sage-dark:#3F524B;
+    --gold:#D4A86A;
+    --danger:#B85450;
+    --shadow-sm: 0 1px 2px rgba(60,40,30,.06);
+    --shadow:    0 8px 24px -8px rgba(60,40,30,.18), 0 2px 6px rgba(60,40,30,.06);
+    --shadow-lg: 0 24px 60px -20px rgba(60,40,30,.30);
+    --radius:14px;
+    --radius-lg:20px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Noto Sans KR','Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--cream);
+    color:var(--brown-500);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* 미리보기 컨테이너 */
+  .preview-nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(237,233,230,.85);
+    backdrop-filter:saturate(140%) blur(10px);
+    border-bottom:1px solid var(--cream-200);
+    padding:14px 28px;
+    display:flex; align-items:center; gap:18px;
+  }
+  .preview-nav .brand{
+    font-weight:900; font-size:20px; color:var(--brown-700);
+    letter-spacing:-.02em;
+  }
+  .preview-nav .brand span{color:var(--camel-dark)}
+  .preview-nav a{
+    color:var(--brown-300); text-decoration:none; font-size:13px; font-weight:600;
+    padding:6px 12px; border-radius:10px; transition:all .15s;
+  }
+  .preview-nav a:hover{background:var(--cream-200); color:var(--brown-700)}
+
+  .screen{
+    max-width:1440px; margin:0 auto; padding:48px 28px 16px;
+  }
+  .screen-title{
+    font-size:13px; font-weight:800; color:var(--camel-dark);
+    letter-spacing:.14em; text-transform:uppercase;
+    margin:0 0 6px;
+  }
+  .screen-sub{
+    font-size:24px; font-weight:800; color:var(--brown-700);
+    margin:0 0 22px; letter-spacing:-.02em;
+  }
+  .frame{
+    background:var(--cream-50);
+    border:1px solid var(--cream-200);
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:var(--shadow-lg);
+    margin-bottom:32px;
+  }
+  .frame-bar{
+    display:flex; align-items:center; gap:8px;
+    padding:14px 18px;
+    background:var(--cream-100);
+    border-bottom:1px solid var(--cream-200);
+  }
+  .dot{ width:12px;height:12px;border-radius:50%; }
+  .dot.r{background:#E5887F}.dot.y{background:#E5C56F}.dot.g{background:#86B58B}
+  .frame-url{
+    margin-left:14px; font-size:12px; color:var(--brown-300);
+    background:var(--cream); padding:5px 12px; border-radius:8px;
+    font-family:ui-monospace,Menlo,monospace;
+  }
+
+  /* 공통 요소 */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    height:44px; padding:0 18px;
+    border-radius:12px; border:1px solid transparent;
+    font-size:14px; font-weight:700;
+    cursor:pointer; transition:all .15s;
+    font-family:inherit;
+  }
+  .btn-primary{
+    background:var(--camel); color:#fff;
+    box-shadow:0 6px 16px -6px rgba(165,112,63,.55);
+  }
+  .btn-primary:hover{background:var(--camel-dark)}
+  .btn-ghost{
+    background:transparent; color:var(--brown-500);
+    border-color:var(--cream-300);
+  }
+  .btn-ghost:hover{background:var(--cream-100)}
+  .btn-danger{
+    background:transparent; color:var(--danger);
+    border-color:#E0B5B2;
+  }
+  .btn-danger:hover{background:#F7E8E7}
+
+  .input{
+    width:100%; height:44px; padding:0 14px;
+    border-radius:12px;
+    background:#fff;
+    border:1px solid var(--cream-300);
+    color:var(--brown-700); font-size:14px;
+    transition:all .15s;
+    font-family:inherit;
+  }
+  .input:focus{
+    outline:none; border-color:var(--camel);
+    box-shadow:0 0 0 4px rgba(201,153,107,.18);
+  }
+  .label{ font-size:12px; font-weight:700; color:var(--brown-300); margin-bottom:6px; display:block; letter-spacing:.02em; }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    height:22px; padding:0 10px; border-radius:999px;
+    font-size:11px; font-weight:700; letter-spacing:.02em;
+  }
+  .chip-free{ background:var(--cream-200); color:var(--brown-300); }
+  .chip-pro{ background:rgba(212,168,106,.18); color:var(--camel-darker); border:1px solid rgba(212,168,106,.35); }
+  .chip-sage{ background:rgba(92,118,109,.15); color:var(--sage-dark); border:1px solid rgba(92,118,109,.25); }
+
+  .card{
+    background:#fff;
+    border:1px solid var(--cream-200);
+    border-radius:var(--radius-lg);
+    padding:24px;
+    box-shadow:var(--shadow-sm);
+  }
+
+  /* ───────── 1) LOGIN ───────── */
+  .login{
+    display:grid; grid-template-columns:1.05fr 1fr;
+    min-height:760px;
+  }
+  .login-left{
+    background:
+      radial-gradient(at 80% 0%, rgba(201,153,107,.22), transparent 50%),
+      radial-gradient(at 0% 100%, rgba(92,118,109,.20), transparent 55%),
+      linear-gradient(180deg,#F5F0EA 0%, #EDE9E6 100%);
+    padding:56px 60px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    position:relative; overflow:hidden;
+  }
+  .login-left::after{
+    content:""; position:absolute; inset:auto -120px -160px auto;
+    width:480px; height:480px; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(201,153,107,.20), transparent 70%);
+    pointer-events:none;
+  }
+  .logo{
+    font-size:42px; font-weight:900; color:var(--brown-700);
+    letter-spacing:-.04em; line-height:1;
+  }
+  .logo span{
+    background:linear-gradient(135deg,var(--camel) 0%, var(--sage) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .logo-sub{
+    margin-top:10px; color:var(--brown-300); font-size:14px;
+  }
+
+  /* 분기 그래프 모티프 */
+  .branch-motif{
+    margin:48px 0;
+    width:240px; height:220px;
+    position:relative;
+  }
+  .node{
+    position:absolute; display:flex; align-items:center; justify-content:center;
+    height:30px; padding:0 12px;
+    border-radius:10px; font-size:11px; font-weight:800;
+  }
+  .node.root{ left:0; top:0; background:var(--brown-500); color:#fff; }
+  .node.t1{ left:0; top:60px; background:#fff; color:var(--brown-300); border:1px solid var(--cream-300); }
+  .node.t2{ left:0; top:120px; background:#fff; color:var(--brown-300); border:1px solid var(--cream-300); }
+  .node.b1{ left:130px; top:90px; background:var(--camel); color:#fff; }
+  .node.b1t1{ left:130px; top:160px; background:var(--sage); color:#fff; }
+  .branch-motif svg{ position:absolute; inset:0; width:100%; height:100%; }
+
+  .quote{
+    font-size:22px; font-weight:300; color:var(--brown-500);
+    line-height:1.5; letter-spacing:-.01em;
+    max-width:380px;
+  }
+  .quote b{ color:var(--brown-700); font-weight:700; }
+  .features{ display:flex; flex-direction:column; gap:16px; margin-top:30px; }
+  .feature{ display:flex; gap:14px; align-items:flex-start; }
+  .feature-icon{
+    flex:0 0 36px; height:36px; border-radius:10px;
+    background:rgba(201,153,107,.15); color:var(--camel-dark);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+  }
+  .feature h4{ margin:0 0 2px; font-size:14px; color:var(--brown-700); }
+  .feature p{ margin:0; font-size:12px; color:var(--brown-300); }
+  .copyright{ color:var(--brown-200); font-size:12px; }
+
+  .login-right{
+    padding:80px 80px;
+    display:flex; flex-direction:column; justify-content:center;
+    background:var(--cream-50);
+  }
+  .form-card{ max-width:380px; width:100%; margin:0 auto; }
+  .form-title{ font-size:30px; font-weight:800; color:var(--brown-700); margin:0 0 6px; letter-spacing:-.02em; }
+  .form-sub{ color:var(--brown-300); font-size:14px; margin:0 0 32px; }
+
+  .social{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    height:50px; border-radius:14px; font-size:14px; font-weight:700;
+    border:1px solid var(--cream-300); background:#fff; color:var(--brown-700);
+    cursor:pointer; transition:all .15s; margin-bottom:10px;
+  }
+  .social:hover{ border-color:var(--camel); box-shadow:var(--shadow-sm); }
+  .social.dark{ background:var(--brown-700); color:#fff; border-color:var(--brown-700); }
+  .social.dark:hover{ background:#000; }
+
+  .divider{
+    display:flex; align-items:center; gap:12px;
+    color:var(--brown-200); font-size:12px;
+    margin:22px 0;
+  }
+  .divider::before, .divider::after{
+    content:""; flex:1; height:1px; background:var(--cream-300);
+  }
+
+  .email-row{ display:flex; flex-direction:column; gap:14px; margin-bottom:14px; }
+  .row-actions{ display:flex; justify-content:space-between; align-items:center; font-size:12px; margin-bottom:18px; }
+  .row-actions label{ color:var(--brown-300); display:flex; gap:6px; align-items:center; }
+  .row-actions a{ color:var(--camel-dark); text-decoration:none; font-weight:700; }
+
+  .terms{ text-align:center; font-size:12px; color:var(--brown-200); margin-top:22px; }
+  .terms a{ color:var(--brown-300); text-decoration:underline; }
+  .switch{ text-align:center; font-size:13px; color:var(--brown-300); margin-top:14px; }
+  .switch a{ color:var(--camel-dark); font-weight:700; text-decoration:none; }
+
+  /* ───────── 2) CHAT ───────── */
+  .chat{
+    display:grid;
+    grid-template-columns:288px 1fr;
+    height:780px;
+  }
+  .chat-sidebar{
+    background:var(--cream-100);
+    border-right:1px solid var(--cream-200);
+    display:flex; flex-direction:column;
+  }
+  .chat-header{
+    height:60px; padding:0 20px;
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid var(--cream-200);
+    background:#fff;
+  }
+  .chat-brand{ display:flex; align-items:center; gap:10px; font-weight:900; font-size:18px; color:var(--brown-700); letter-spacing:-.02em; }
+  .chat-brand .logo-mark{
+    width:30px; height:30px; border-radius:9px;
+    background:linear-gradient(135deg,var(--camel),var(--sage));
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:900;
+  }
+  .icon-btn{
+    width:36px; height:36px; border-radius:10px;
+    border:1px solid transparent; background:transparent; cursor:pointer;
+    color:var(--brown-300);
+    display:flex; align-items:center; justify-content:center;
+    transition:all .15s;
+  }
+  .icon-btn:hover{ background:var(--cream-100); color:var(--brown-700); }
+
+  .new-chat{
+    margin:14px; height:46px; border-radius:12px;
+    background:var(--camel); color:#fff; font-weight:800;
+    border:none; cursor:pointer; font-size:14px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    box-shadow:0 8px 18px -8px rgba(165,112,63,.5);
+  }
+
+  .search-box{
+    margin:0 14px 12px; position:relative;
+  }
+  .search-box input{
+    width:100%; height:38px; border-radius:10px;
+    padding:0 12px 0 36px; font-size:13px;
+    background:#fff; border:1px solid var(--cream-200);
+    color:var(--brown-500);
+  }
+  .search-box .si{ position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--brown-200); font-size:14px;}
+
+  .nav-section{ padding:0 14px; }
+  .section-label{
+    color:var(--brown-200); font-size:11px; font-weight:800;
+    letter-spacing:.14em; text-transform:uppercase;
+    padding:14px 6px 6px;
+  }
+  .conv{
+    padding:11px 12px; border-radius:12px; cursor:pointer;
+    transition:all .15s; margin-bottom:4px;
+    border:1px solid transparent;
+  }
+  .conv:hover{ background:#fff; }
+  .conv .title{ color:var(--brown-700); font-weight:700; font-size:13px; line-height:1.3; }
+  .conv .meta{ color:var(--brown-200); font-size:11px; margin-top:3px; }
+  .conv.active{ background:#fff; border-color:rgba(201,153,107,.35); box-shadow:var(--shadow-sm); }
+  .conv.active .title{ color:var(--camel-darker); }
+
+  .branch-list{ margin:6px 0 0 12px; padding-left:14px; border-left:1.5px dashed var(--cream-300); display:flex; flex-direction:column; gap:4px; }
+  .branch-item{
+    padding:7px 10px; border-radius:8px;
+    font-size:12px; color:var(--brown-300);
+    display:flex; justify-content:space-between; align-items:center;
+    cursor:pointer; transition:all .15s;
+  }
+  .branch-item:hover{ background:var(--cream-100); color:var(--brown-700); }
+  .branch-item.gold{ background:rgba(212,168,106,.16); color:var(--camel-darker); font-weight:700; }
+  .branch-item .tag{ color:var(--brown-200); font-size:10px; font-weight:700; }
+
+  .sidebar-footer{
+    margin-top:auto; padding:14px;
+    border-top:1px solid var(--cream-200); background:#fff;
+    display:flex; align-items:center; gap:10px;
+  }
+  .avatar{
+    width:36px; height:36px; border-radius:50%;
+    background:linear-gradient(135deg,var(--camel),var(--sage));
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:14px;
+  }
+  .user-info{ flex:1; line-height:1.2; }
+  .user-info b{ display:block; color:var(--brown-700); font-size:13px; }
+  .user-info span{ color:var(--brown-200); font-size:11px; }
+
+  /* Chat main */
+  .chat-main{ display:grid; grid-template-rows:60px 1fr auto; min-width:0; background:var(--cream-50);}
+  .chat-topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 22px; border-bottom:1px solid var(--cream-200); background:#fff;
+  }
+  .chat-topbar h2{ margin:0; font-size:15px; font-weight:800; color:var(--brown-700); display:flex; align-items:center; gap:10px; }
+  .breadcrumb{ font-size:12px; color:var(--brown-200); }
+  .crumb-sep{ margin:0 6px; color:var(--brown-200); }
+  .topbar-right{ display:flex; align-items:center; gap:8px; }
+  .model-select{
+    height:36px; padding:0 12px; border-radius:10px;
+    background:var(--cream-100); border:1px solid var(--cream-200);
+    color:var(--brown-700); font-size:13px; font-weight:600;
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+  }
+  .model-select .dot-sm{ width:8px; height:8px; border-radius:50%; background:var(--sage); }
+
+  /* Conversation area with graph panel */
+  .chat-body{
+    display:grid;
+    grid-template-columns:1fr 320px;
+    min-height:0;
+  }
+  .messages{
+    overflow-y:auto;
+    padding:32px 40px;
+    display:flex; flex-direction:column; gap:22px;
+  }
+  .msg-row{ display:flex; gap:12px; }
+  .msg-row.user{ justify-content:flex-end; }
+  .bubble{
+    max-width:560px; padding:14px 18px; border-radius:18px;
+    font-size:14.5px; line-height:1.6;
+  }
+  .bubble.ai{
+    background:#fff; border:1px solid var(--cream-200);
+    color:var(--brown-700); border-top-left-radius:6px;
+  }
+  .bubble.user{
+    background:var(--camel); color:#fff;
+    border-top-right-radius:6px;
+    box-shadow:0 6px 18px -8px rgba(165,112,63,.45);
+  }
+  .msg-meta{ font-size:11px; color:var(--brown-200); margin-top:6px; display:flex; gap:10px; align-items:center; }
+  .msg-actions{ display:flex; gap:6px; }
+  .msg-actions button{
+    background:transparent; border:none; cursor:pointer;
+    color:var(--brown-200); font-size:12px; padding:2px 6px; border-radius:6px;
+  }
+  .msg-actions button:hover{ background:var(--cream-100); color:var(--brown-700); }
+
+  .branch-divider{
+    display:flex; align-items:center; gap:10px; margin:6px 0;
+    color:var(--brown-200); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  }
+  .branch-divider::before, .branch-divider::after{
+    content:""; flex:1; height:1px; background:var(--cream-300);
+  }
+
+  .input-dock{
+    padding:16px 40px 22px;
+    border-top:1px solid var(--cream-200);
+    background:linear-gradient(180deg, rgba(251,248,245,0), var(--cream-50) 30%);
+  }
+  .input-wrap{
+    background:#fff; border:1px solid var(--cream-300);
+    border-radius:18px;
+    padding:10px 12px 10px 18px;
+    box-shadow:0 12px 32px -16px rgba(60,40,30,.20);
+    display:flex; align-items:flex-end; gap:10px;
+  }
+  .input-wrap:focus-within{ border-color:var(--camel); box-shadow:0 12px 32px -12px rgba(201,153,107,.35); }
+  .input-wrap textarea{
+    flex:1; border:none; outline:none; resize:none;
+    font-family:inherit; font-size:14.5px; color:var(--brown-700);
+    background:transparent; padding:6px 0; max-height:140px; min-height:24px;
+  }
+  .input-wrap .send{
+    width:38px; height:38px; border-radius:11px;
+    background:var(--camel); color:#fff; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800;
+  }
+  .input-toolbar{
+    display:flex; gap:6px; align-items:center;
+    padding:8px 4px 0; color:var(--brown-200);
+  }
+  .input-toolbar .tool{
+    background:transparent; border:none; cursor:pointer;
+    color:var(--brown-300); padding:6px 8px; border-radius:8px; font-size:12px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .input-toolbar .tool:hover{ background:var(--cream-100); color:var(--brown-700); }
+  .hint{ margin-left:auto; font-size:11px; color:var(--brown-200); }
+
+  /* Graph panel */
+  .graph-panel{
+    background:#fff;
+    border-left:1px solid var(--cream-200);
+    padding:18px; overflow:auto;
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .panel-h{
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .panel-h h3{ margin:0; font-size:13px; font-weight:800; color:var(--brown-700); letter-spacing:.04em; }
+  .panel-h .panel-actions{ display:flex; gap:4px; }
+
+  .graph-canvas{
+    border:1px dashed var(--cream-300); border-radius:14px;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(201,153,107,.07), transparent 60%),
+      var(--cream-50);
+    aspect-ratio:1/1; position:relative;
+  }
+  .gnode{
+    position:absolute; display:flex; align-items:center; justify-content:center;
+    padding:6px 10px; border-radius:10px;
+    font-size:11px; font-weight:800; transform:translate(-50%,-50%);
+    box-shadow:var(--shadow-sm);
+  }
+  .gnode.root{ background:var(--brown-500); color:#fff; }
+  .gnode.t1{ background:#fff; border:1px solid var(--cream-300); color:var(--brown-500); }
+  .gnode.active{ background:var(--camel); color:#fff; box-shadow:0 0 0 4px rgba(201,153,107,.25); }
+  .gnode.b1{ background:var(--sage); color:#fff; }
+
+  .legend{ display:flex; flex-direction:column; gap:6px; font-size:11px; color:var(--brown-300); }
+  .legend-row{ display:flex; align-items:center; gap:8px; }
+  .legend-dot{ width:10px; height:10px; border-radius:3px; }
+
+  /* ───────── 3) MY PAGE & 4) SETTINGS ───────── */
+  .container{ max-width:1100px; margin:0 auto; padding:48px 32px; }
+  .page-header{ margin-bottom:32px; display:flex; align-items:center; justify-content:space-between;}
+  .page-header h1{ margin:0 0 6px; font-size:28px; font-weight:800; color:var(--brown-700); letter-spacing:-.02em; }
+  .page-header p{ margin:0; color:var(--brown-300); font-size:14px; }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+
+  .profile-card{ display:flex; align-items:center; gap:18px; }
+  .profile-card .avatar.lg{ width:64px; height:64px; font-size:22px; }
+  .profile-card h3{ margin:0 0 4px; color:var(--brown-700); font-size:18px;}
+  .profile-card p{ margin:0; color:var(--brown-300); font-size:13px; }
+
+  .stat{ padding:22px 24px; }
+  .stat .label-sm{ font-size:11px; font-weight:800; color:var(--brown-200); letter-spacing:.14em; text-transform:uppercase; }
+  .stat .value{ font-size:32px; font-weight:800; color:var(--brown-700); margin:6px 0 0; letter-spacing:-.02em; }
+  .stat .delta{ font-size:12px; color:var(--sage); margin-top:6px; }
+
+  .plan-card{ position:relative; overflow:hidden; }
+  .plan-card::after{
+    content:""; position:absolute; right:-60px; top:-60px;
+    width:180px; height:180px; border-radius:50%;
+    background:radial-gradient(closest-side,rgba(201,153,107,.25), transparent 70%);
+  }
+  .plan-card h3{ margin:0 0 4px; }
+  .plan-card .price{ font-size:30px; font-weight:800; color:var(--brown-700); margin:14px 0 2px; }
+  .plan-card .price small{ font-size:13px; color:var(--brown-300); font-weight:600; }
+  .plan-card ul{ margin:16px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
+  .plan-card li{ font-size:13px; color:var(--brown-500); display:flex; gap:8px; align-items:center; }
+  .plan-card li::before{ content:"✓"; color:var(--camel-dark); font-weight:800; }
+
+  .usage{ padding:24px; }
+  .usage-row{ display:flex; justify-content:space-between; font-size:13px; color:var(--brown-300); margin-bottom:6px; }
+  .bar{ height:8px; background:var(--cream-200); border-radius:99px; overflow:hidden; }
+  .bar > span{ display:block; height:100%; background:linear-gradient(90deg,var(--camel),var(--sage)); border-radius:99px; }
+
+  .danger-zone{
+    border:1px solid #E0B5B2; background:#FCF6F5;
+    border-radius:var(--radius-lg); padding:24px;
+    display:flex; justify-content:space-between; align-items:center; gap:24px;
+  }
+  .danger-zone h4{ margin:0 0 4px; color:var(--danger); font-size:15px; }
+  .danger-zone p{ margin:0; color:var(--brown-300); font-size:13px; }
+
+  /* Settings */
+  .settings-section h3{ font-size:13px; font-weight:800; color:var(--camel-dark); letter-spacing:.12em; text-transform:uppercase; margin:0 0 14px; }
+  .setting-row{
+    background:#fff; border:1px solid var(--cream-200);
+    border-radius:14px; padding:18px 22px;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:24px; margin-bottom:10px;
+  }
+  .setting-row .text{ flex:1; min-width:0; }
+  .setting-row b{ display:block; color:var(--brown-700); font-size:14px; margin-bottom:2px; }
+  .setting-row span{ color:var(--brown-300); font-size:12.5px; }
+  .select{
+    height:38px; padding:0 32px 0 12px;
+    border-radius:10px; border:1px solid var(--cream-300);
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23897C75' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+    appearance:none; -webkit-appearance:none;
+    font-size:13px; font-family:inherit; color:var(--brown-700);
+    min-width:170px;
+  }
+  .toggle{
+    position:relative; width:42px; height:24px;
+    background:var(--cream-300); border-radius:99px; cursor:pointer;
+    transition:all .15s;
+  }
+  .toggle::after{
+    content:""; position:absolute; left:3px; top:3px;
+    width:18px; height:18px; border-radius:50%; background:#fff;
+    box-shadow:var(--shadow-sm); transition:all .15s;
+  }
+  .toggle.on{ background:var(--camel); }
+  .toggle.on::after{ left:21px; }
+
+  /* ───────── 5) NEW CHAT LANDING ───────── */
+  .landing{
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    padding:80px 40px 60px;
+    text-align:center;
+  }
+  .landing h1{
+    font-size:38px; font-weight:800; color:var(--brown-700);
+    margin:18px 0 8px; letter-spacing:-.025em;
+  }
+  .landing h1 span{
+    background:linear-gradient(120deg,var(--camel),var(--sage));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .landing p{ color:var(--brown-300); font-size:15px; margin:0 0 32px; max-width:520px;}
+  .big-input{
+    width:min(720px, 90%);
+    background:#fff; border:1.5px solid var(--cream-300);
+    border-radius:22px; padding:14px 18px;
+    box-shadow:0 24px 60px -28px rgba(60,40,30,.25);
+    display:flex; align-items:flex-end; gap:12px;
+  }
+  .big-input textarea{
+    flex:1; border:none; outline:none; resize:none;
+    font-family:inherit; font-size:16px; color:var(--brown-700);
+    min-height:54px; max-height:200px; padding:8px 0;
+  }
+  .big-input .send{
+    width:44px; height:44px; border-radius:14px;
+    background:var(--camel); color:#fff; border:none; cursor:pointer;
+    font-weight:800;
+  }
+  .suggestions{
+    display:grid; grid-template-columns:repeat(2,minmax(0,280px));
+    gap:12px; margin-top:28px;
+  }
+  .suggestion{
+    text-align:left; padding:16px 18px;
+    background:#fff; border:1px solid var(--cream-200);
+    border-radius:14px; cursor:pointer;
+    transition:all .15s; box-shadow:var(--shadow-sm);
+  }
+  .suggestion:hover{ border-color:var(--camel); transform:translateY(-2px); }
+  .suggestion b{ display:block; color:var(--brown-700); font-size:13.5px; margin-bottom:4px; }
+  .suggestion span{ color:var(--brown-300); font-size:12px; }
+
+</style>
+</head>
+<body>
+
+<nav class="preview-nav">
+  <div class="brand">A<span>IT</span> — Design Preview</div>
+  <a href="#login">로그인</a>
+  <a href="#landing">새 채팅</a>
+  <a href="#chat">채팅</a>
+  <a href="#mypage">마이페이지</a>
+  <a href="#settings">설정</a>
+  <span style="margin-left:auto; font-size:12px; color:var(--brown-200)">웜 라떼 · 4색 팔레트</span>
+</nav>
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<section class="screen" id="login">
+  <p class="screen-title">01 · Auth</p>
+  <h2 class="screen-sub">로그인 / 회원가입</h2>
+  <div class="frame">
+    <div class="frame-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="frame-url">ait.app / login</span>
+    </div>
+    <div class="login">
+      <!-- LEFT brand panel -->
+      <div class="login-left">
+        <div>
+          <div class="logo">A<span>IT</span></div>
+          <div class="logo-sub">분기 그래프 기반 대화형 AI 에이전트</div>
+
+          <div class="branch-motif">
+            <svg viewBox="0 0 240 220">
+              <path d="M30 15 V 80 H 145 V 105" stroke="#CFC4B7" stroke-width="1.5" fill="none" />
+              <path d="M30 80 V 135" stroke="#CFC4B7" stroke-width="1.5" fill="none" />
+              <path d="M145 105 V 175" stroke="#C9996B" stroke-width="2" fill="none" />
+            </svg>
+            <div class="node root">root</div>
+            <div class="node t1">T1</div>
+            <div class="node t2">T2</div>
+            <div class="node b1">B1 · 분기</div>
+            <div class="node b1t1">B1·T1</div>
+          </div>
+        </div>
+
+        <div>
+          <p class="quote">
+            "대화의 흐름을 잃지 않고,<br/>
+            원하는 지점에서 언제든 <b>새로운 분기</b>를 시작하세요."
+          </p>
+          <div class="features">
+            <div class="feature">
+              <div class="feature-icon">◎</div>
+              <div><h4>분기 관리</h4><p>대화 흐름을 DAG 구조로 관리</p></div>
+            </div>
+            <div class="feature">
+              <div class="feature-icon">◇</div>
+              <div><h4>그래프 시각화</h4><p>분기 구조를 한눈에 파악</p></div>
+            </div>
+            <div class="feature">
+              <div class="feature-icon">△</div>
+              <div><h4>맥락 보존</h4><p>분기별 독립적인 컨텍스트 유지</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="copyright">© 2026 AIT. All rights reserved.</div>
+      </div>
+
+      <!-- RIGHT form -->
+      <div class="login-right">
+        <div class="form-card">
+          <h2 class="form-title">시작하기</h2>
+          <p class="form-sub">계정으로 계속하세요</p>
+
+          <button class="social">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.62-.06-1.22-.16-1.8H9.2v3.41h4.74c-.21 1.1-.83 2.02-1.77 2.65v2.22h2.86c1.67-1.54 2.61-3.79 2.61-6.48z" fill="#4285F4"/><path d="M9.2 18c2.38 0 4.37-.79 5.83-2.32l-2.86-2.22c-.78.53-1.78.85-2.97.85-2.29 0-4.23-1.54-4.93-3.62H1.35v2.27C2.79 15.83 5.76 18 9.2 18z" fill="#34A853"/><path d="M4.27 10.69c-.18-.53-.28-1.09-.28-1.69s.1-1.14.28-1.67V5.05H1.35C.74 6.24.4 7.58.4 9s.34 2.76.95 3.96l2.92-2.27z" fill="#FBBC05"/><path d="M9.2 3.58c1.3 0 2.45.45 3.37 1.31l2.52-2.52C13.57.97 11.58.1 9.2.1 5.76.1 2.79 2.27 1.35 5.05l2.92 2.27c.7-2.09 2.64-3.74 4.93-3.74z" fill="#EA4335"/></svg>
+            Google로 계속하기
+          </button>
+          <button class="social dark">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="#fff"><path d="M9 .2C4.04.2 0 4.24 0 9.2c0 3.98 2.58 7.36 6.16 8.55.45.08.62-.2.62-.43v-1.68c-2.5.55-3.03-1.07-3.03-1.07-.41-1.04-1-1.32-1-1.32-.82-.56.06-.55.06-.55.91.07 1.38.94 1.38.94.81 1.38 2.11.98 2.62.75.08-.59.31-.99.57-1.21-2-.23-4.1-1-4.1-4.45 0-.98.35-1.78.93-2.42-.1-.23-.4-1.15.09-2.39 0 0 .76-.24 2.47.92.72-.2 1.49-.3 2.25-.3.76 0 1.53.1 2.25.3 1.71-1.16 2.47-.92 2.47-.92.49 1.24.18 2.16.09 2.39.58.64.93 1.44.93 2.42 0 3.47-2.1 4.22-4.11 4.44.32.28.61.83.61 1.67v2.48c0 .24.16.52.62.43A9.01 9.01 0 0 0 18 9.2c0-4.96-4.04-9-9-9z"/></svg>
+            GitHub로 계속하기
+          </button>
+
+          <div class="divider">또는 이메일로</div>
+
+          <div class="email-row">
+            <div>
+              <span class="label">이메일</span>
+              <input class="input" type="email" placeholder="name@example.com" value="hello@ait.app"/>
+            </div>
+            <div>
+              <span class="label">비밀번호</span>
+              <input class="input" type="password" placeholder="••••••••" value="password123"/>
+            </div>
+          </div>
+          <div class="row-actions">
+            <label><input type="checkbox" checked /> 로그인 유지</label>
+            <a href="#">비밀번호 찾기</a>
+          </div>
+          <button class="btn btn-primary" style="width:100%; height:50px; border-radius:14px;">로그인</button>
+
+          <div class="switch">계정이 없으신가요? <a href="#">회원가입</a></div>
+          <div class="terms">
+            계속 진행하면 <a href="#">이용약관</a> 및 <a href="#">개인정보 처리방침</a>에 동의합니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ NEW CHAT LANDING ═══════════════ -->
+<section class="screen" id="landing">
+  <p class="screen-title">02 · New Chat Landing</p>
+  <h2 class="screen-sub">새 대화 시작 화면</h2>
+  <div class="frame">
+    <div class="frame-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="frame-url">ait.app / chat / new</span>
+    </div>
+    <div class="chat">
+      <!-- sidebar (간단 버전) -->
+      <aside class="chat-sidebar">
+        <div class="chat-header">
+          <div class="chat-brand"><div class="logo-mark">A</div>AIT</div>
+          <button class="icon-btn">⌕</button>
+        </div>
+        <button class="new-chat">＋ 새 채팅</button>
+        <div class="search-box"><span class="si">⌕</span><input placeholder="대화 검색" /></div>
+        <div class="nav-section">
+          <div class="section-label">최근 대화</div>
+          <div class="conv"><div class="title">프론트엔드 에러 처리 전략</div><div class="meta">3시간 전 · 12 메시지</div></div>
+          <div class="conv"><div class="title">소프트웨어 공학 SRS</div><div class="meta">어제 · 8 메시지</div></div>
+          <div class="conv"><div class="title">캠핑 도구 추천</div><div class="meta">3일 전 · 5 메시지</div></div>
+        </div>
+        <div class="sidebar-footer">
+          <div class="avatar">J</div>
+          <div class="user-info"><b>주원</b><span>02juwon@naver.com</span></div>
+          <span class="chip chip-free">FREE</span>
+        </div>
+      </aside>
+
+      <main class="chat-main" style="grid-template-rows:60px 1fr;">
+        <div class="chat-topbar">
+          <h2>새로운 대화</h2>
+          <div class="topbar-right">
+            <button class="model-select"><span class="dot-sm"></span>Claude Opus 4.6 ▾</button>
+          </div>
+        </div>
+
+        <div class="landing">
+          <div class="logo-mark" style="width:56px;height:56px;border-radius:16px;font-size:24px">A</div>
+          <h1>오늘은 <span>어떤 분기</span>로 시작할까요?</h1>
+          <p>질문을 입력하거나, 아래 추천에서 시작하세요. 답변 도중 언제든 새 분기를 만들어 다른 방향을 탐색할 수 있습니다.</p>
+
+          <div class="big-input">
+            <textarea placeholder="무엇이든 물어보세요..."></textarea>
+            <button class="send">↑</button>
+          </div>
+
+          <div class="suggestions">
+            <div class="suggestion"><b>📚 학습 계획 세우기</b><span>"6개월 안에 머신러닝 입문하기" 로드맵</span></div>
+            <div class="suggestion"><b>🛠️ 코드 리뷰</b><span>내 React 컴포넌트 성능을 점검해줘</span></div>
+            <div class="suggestion"><b>✍️ 글쓰기 도움</b><span>제안서 도입부를 다듬어줘</span></div>
+            <div class="suggestion"><b>🧠 아이디어 분기</b><span>스타트업 아이템 3가지 방향 비교</span></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ CHAT MAIN ═══════════════ -->
+<section class="screen" id="chat">
+  <p class="screen-title">03 · Chat</p>
+  <h2 class="screen-sub">채팅 + 사이드바 + 그래프 패널</h2>
+  <div class="frame">
+    <div class="frame-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="frame-url">ait.app / chat / c_8f2e</span>
+    </div>
+    <div class="chat">
+      <!-- sidebar -->
+      <aside class="chat-sidebar">
+        <div class="chat-header">
+          <div class="chat-brand"><div class="logo-mark">A</div>AIT</div>
+          <button class="icon-btn">⌕</button>
+        </div>
+        <button class="new-chat">＋ 새 채팅</button>
+        <div class="search-box"><span class="si">⌕</span><input placeholder="대화 검색" /></div>
+
+        <div class="nav-section" style="flex:1; overflow-y:auto">
+          <div class="section-label">오늘</div>
+
+          <div class="conv active">
+            <div class="title">프론트엔드 에러 처리 전략 ▾</div>
+            <div class="meta">3시간 전 · 12 메시지</div>
+            <div class="branch-list">
+              <div class="branch-item">API 실패 UX <span class="tag">T1</span></div>
+              <div class="branch-item gold">폼 검증 케이스 <span class="tag">B1</span></div>
+              <div class="branch-item">접근성 점검 <span class="tag">T5</span></div>
+            </div>
+          </div>
+
+          <div class="conv">
+            <div class="title">소프트웨어 공학 SRS ▸</div>
+            <div class="meta">어제 · 8 메시지</div>
+          </div>
+
+          <div class="section-label">이번 주</div>
+          <div class="conv"><div class="title">캠핑 도구 추천 ▸</div><div class="meta">3일 전 · 5 메시지</div></div>
+          <div class="conv"><div class="title">React 19 마이그레이션 ▸</div><div class="meta">4일 전 · 22 메시지</div></div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="avatar">J</div>
+          <div class="user-info"><b>주원</b><span>02juwon@naver.com</span></div>
+          <span class="chip chip-free">FREE</span>
+        </div>
+      </aside>
+
+      <!-- main -->
+      <main class="chat-main">
+        <div class="chat-topbar">
+          <h2>
+            프론트엔드 에러 처리 전략
+            <span class="chip chip-sage">B1 · 폼 검증 케이스</span>
+          </h2>
+          <div class="topbar-right">
+            <button class="model-select"><span class="dot-sm"></span>Claude Opus 4.6 ▾</button>
+            <button class="icon-btn" title="그래프 토글">⌗</button>
+            <button class="icon-btn" title="공유">↗</button>
+            <button class="icon-btn" title="더보기">⋯</button>
+          </div>
+        </div>
+
+        <div class="chat-body">
+          <div class="messages">
+            <div class="msg-row"><div>
+              <div class="bubble ai">
+                안녕하세요! 프론트엔드 에러 처리 전략에 대해 묻고 계신데, 어느 레이어부터 살펴볼까요?
+                네트워크/API · 폼 검증 · 비동기 상태 · 전역 폴백 — 우선순위를 알려주시면 그 흐름으로 정리해드릴게요.
+              </div>
+              <div class="msg-meta">AIT · Opus 4.6 · 14:32
+                <div class="msg-actions"><button>↻</button><button>↶ 분기</button><button>⎘</button></div>
+              </div>
+            </div></div>
+
+            <div class="msg-row user"><div>
+              <div class="bubble user">폼 검증부터 정리해줘. 특히 비동기 검증(이메일 중복확인 같은)이 헷갈려.</div>
+              <div class="msg-meta" style="justify-content:flex-end">14:33</div>
+            </div></div>
+
+            <div class="branch-divider">새 분기 · B1 · 폼 검증 케이스</div>
+
+            <div class="msg-row"><div>
+              <div class="bubble ai">
+                좋아요. 폼 검증은 보통 세 층으로 봅니다.<br/><br/>
+                <b>① 동기 검증</b> — 입력 타입·길이·정규식. 즉시 피드백.<br/>
+                <b>② 비동기 검증</b> — 서버에 묻는 것(중복확인). 디바운스 + 마지막 요청만 신뢰.<br/>
+                <b>③ 제출 검증</b> — 서버 응답으로 받은 필드 단위 에러를 폼에 매핑.<br/><br/>
+                특히 ②는 <i>최신 요청 ID</i>를 들고 있다가 다른 결과는 무시하는 패턴이 가장 흔한 버그 차단막입니다.
+              </div>
+              <div class="msg-meta">AIT · Opus 4.6 · 14:34
+                <div class="msg-actions"><button>↻ 재생성</button><button>↶ 분기</button><button>⎘ 복사</button></div>
+              </div>
+            </div></div>
+
+            <div class="msg-row user"><div>
+              <div class="bubble user">react-hook-form 기준으로 코드 예시도 줘.</div>
+              <div class="msg-meta" style="justify-content:flex-end">14:35</div>
+            </div></div>
+
+            <div class="msg-row"><div>
+              <div class="bubble ai" style="background:#FAF6F1; border-color:rgba(201,153,107,.3)">
+                <span style="color:var(--camel-dark);font-weight:800">●●●</span> AIT가 답변을 작성 중입니다…
+              </div>
+            </div></div>
+          </div>
+
+          <!-- Graph panel -->
+          <aside class="graph-panel">
+            <div class="panel-h">
+              <h3>대화 그래프</h3>
+              <div class="panel-actions">
+                <button class="icon-btn" title="확장">⛶</button>
+                <button class="icon-btn" title="펼치기">▾</button>
+              </div>
+            </div>
+            <div class="graph-canvas">
+              <svg viewBox="0 0 100 100" style="position:absolute; inset:0; width:100%; height:100%;">
+                <path d="M50 12 V 30" stroke="#A89C95" stroke-width=".6" fill="none"/>
+                <path d="M50 30 V 50" stroke="#A89C95" stroke-width=".6" fill="none"/>
+                <path d="M50 50 H 75 V 65" stroke="#C9996B" stroke-width=".9" fill="none"/>
+                <path d="M50 50 V 75" stroke="#A89C95" stroke-width=".6" fill="none"/>
+                <path d="M75 65 V 85" stroke="#C9996B" stroke-width=".9" fill="none"/>
+              </svg>
+              <div class="gnode root" style="left:50%; top:12%">root</div>
+              <div class="gnode t1" style="left:50%; top:30%">T1</div>
+              <div class="gnode t1" style="left:50%; top:50%">T2</div>
+              <div class="gnode t1" style="left:50%; top:75%">T3</div>
+              <div class="gnode active" style="left:75%; top:65%">B1</div>
+              <div class="gnode b1" style="left:75%; top:85%">B1·T1</div>
+            </div>
+            <div class="legend">
+              <div class="legend-row"><span class="legend-dot" style="background:var(--brown-500)"></span>루트 메시지</div>
+              <div class="legend-row"><span class="legend-dot" style="background:#fff; border:1px solid var(--cream-300)"></span>턴(T)</div>
+              <div class="legend-row"><span class="legend-dot" style="background:var(--camel)"></span>현재 분기</div>
+              <div class="legend-row"><span class="legend-dot" style="background:var(--sage)"></span>다른 분기</div>
+            </div>
+
+            <div class="panel-h" style="margin-top:8px"><h3>현재 위치</h3></div>
+            <div class="card" style="padding:14px; border-radius:12px">
+              <div style="font-size:11px; color:var(--brown-200); font-weight:800; letter-spacing:.1em">BRANCH</div>
+              <div style="font-weight:800; color:var(--brown-700); margin-top:4px">B1 · 폼 검증 케이스</div>
+              <div style="font-size:12px; color:var(--brown-300); margin-top:4px">분기 시점: T2 메시지에서</div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Input dock -->
+        <div class="input-dock">
+          <div class="input-wrap">
+            <textarea placeholder="메시지를 입력하세요... (Shift + Enter 줄바꿈)"></textarea>
+            <button class="send">↑</button>
+          </div>
+          <div class="input-toolbar">
+            <button class="tool">＋ 첨부</button>
+            <button class="tool">⎇ 분기로 보내기</button>
+            <button class="tool">🌐 웹 검색</button>
+            <span class="hint">⌘ + Enter 전송</span>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ MY PAGE ═══════════════ -->
+<section class="screen" id="mypage">
+  <p class="screen-title">04 · My Page</p>
+  <h2 class="screen-sub">프로필 · 플랜 · 사용 현황</h2>
+  <div class="frame">
+    <div class="frame-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="frame-url">ait.app / me</span>
+    </div>
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>마이페이지</h1>
+          <p>계정 정보와 사용 현황을 확인하고 관리하세요.</p>
+        </div>
+        <button class="btn btn-ghost">← 채팅으로 돌아가기</button>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="card profile-card">
+          <div class="avatar lg">J</div>
+          <div style="flex:1">
+            <h3>주원</h3>
+            <p>02juwon@naver.com</p>
+            <div style="margin-top:10px; display:flex; gap:8px">
+              <span class="chip chip-free">FREE</span>
+              <span class="chip chip-sage">2026년 4월 가입</span>
+            </div>
+          </div>
+          <button class="btn btn-ghost">프로필 편집</button>
+        </div>
+
+        <div class="card plan-card">
+          <span class="chip chip-pro">PRO 추천</span>
+          <h3 style="margin-top:10px">AIT Pro 로 업그레이드</h3>
+          <p style="margin:4px 0 0; color:var(--brown-300); font-size:13px">
+            더 긴 컨텍스트, 무제한 분기, 우선 응답 속도
+          </p>
+          <div class="price">₩19,900<small> / 월</small></div>
+          <ul>
+            <li>무제한 메시지 (FREE: 일 50개)</li>
+            <li>최신 모델 우선 이용</li>
+            <li>그래프 내보내기 · 공유</li>
+          </ul>
+          <button class="btn btn-primary" style="margin-top:18px; width:100%">Pro로 업그레이드</button>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-bottom:20px">
+        <div class="card stat">
+          <div class="label-sm">이번 달 메시지</div>
+          <div class="value">142</div>
+          <div class="delta">▲ 지난 달 대비 +24</div>
+        </div>
+        <div class="card stat">
+          <div class="label-sm">생성한 분기</div>
+          <div class="value">18</div>
+          <div class="delta">▲ 지난 달 대비 +6</div>
+        </div>
+        <div class="card stat">
+          <div class="label-sm">총 대화 수</div>
+          <div class="value">27</div>
+          <div class="delta" style="color:var(--brown-300)">변화 없음</div>
+        </div>
+      </div>
+
+      <div class="card usage" style="margin-bottom:20px">
+        <h3 style="margin:0 0 14px; font-size:15px; color:var(--brown-700)">사용량 (오늘)</h3>
+        <div class="usage-row"><span>메시지</span><span><b style="color:var(--brown-700)">38</b> / 50</span></div>
+        <div class="bar"><span style="width:76%"></span></div>
+
+        <div class="usage-row" style="margin-top:16px"><span>분기 슬롯</span><span><b style="color:var(--brown-700)">3</b> / 5</span></div>
+        <div class="bar"><span style="width:60%"></span></div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <h3 style="margin:0 0 12px; font-size:15px; color:var(--brown-700)">최근 대화</h3>
+        <div style="display:flex; flex-direction:column; gap:2px">
+          <div class="setting-row" style="padding:14px 18px; margin:0; border:none; border-bottom:1px solid var(--cream-200); border-radius:0">
+            <div class="text"><b>프론트엔드 에러 처리 전략</b><span>12 메시지 · 3시간 전</span></div>
+            <span class="chip chip-pro">3 분기</span>
+          </div>
+          <div class="setting-row" style="padding:14px 18px; margin:0; border:none; border-bottom:1px solid var(--cream-200); border-radius:0">
+            <div class="text"><b>소프트웨어 공학 SRS</b><span>8 메시지 · 어제</span></div>
+            <span class="chip chip-sage">1 분기</span>
+          </div>
+          <div class="setting-row" style="padding:14px 18px; margin:0; border:none; border-radius:0">
+            <div class="text"><b>캠핑 도구 추천</b><span>5 메시지 · 3일 전</span></div>
+            <span class="chip chip-free">분기 없음</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="danger-zone">
+        <div>
+          <h4>계정 삭제</h4>
+          <p>계정과 모든 대화·분기 데이터가 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</p>
+        </div>
+        <button class="btn btn-danger">계정 삭제</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SETTINGS ═══════════════ -->
+<section class="screen" id="settings">
+  <p class="screen-title">05 · Settings</p>
+  <h2 class="screen-sub">환경 설정</h2>
+  <div class="frame">
+    <div class="frame-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="frame-url">ait.app / settings</span>
+    </div>
+    <div class="container">
+      <div class="page-header">
+        <div>
+          <h1>설정</h1>
+          <p>대화 환경과 기본 모델을 조정하세요.</p>
+        </div>
+        <button class="btn btn-ghost">← 돌아가기</button>
+      </div>
+
+      <div class="settings-section" style="margin-bottom:28px">
+        <h3>일반</h3>
+        <div class="setting-row">
+          <div class="text"><b>테마</b><span>화면 색상 모드를 선택합니다.</span></div>
+          <select class="select"><option>웜 라떼 (현재)</option><option>다크</option><option>시스템 설정</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="text"><b>언어</b><span>인터페이스 표시 언어</span></div>
+          <select class="select"><option>한국어</option><option>English</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="text"><b>키보드 단축키</b><span>전송, 분기, 검색 단축키 설정</span></div>
+          <button class="btn btn-ghost" style="height:38px">단축키 보기</button>
+        </div>
+      </div>
+
+      <div class="settings-section" style="margin-bottom:28px">
+        <h3>대화</h3>
+        <div class="setting-row">
+          <div class="text"><b>기본 모델</b><span>새 대화를 시작할 때 사용할 모델</span></div>
+          <select class="select"><option>Claude Opus 4.6</option><option>Claude Sonnet 4.6</option><option>Claude Haiku 4.5</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="text"><b>응답 톤</b><span>중립적 · 전문가 · 친근함 중 선택</span></div>
+          <select class="select"><option>중립적</option><option>전문가</option><option>친근함</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="text"><b>자동 분기 제안</b><span>맥락이 갈라질 때 분기를 제안합니다.</span></div>
+          <div class="toggle on"></div>
+        </div>
+        <div class="setting-row">
+          <div class="text"><b>그래프 패널 기본 표시</b><span>채팅 진입 시 우측 그래프 패널을 자동으로 엽니다.</span></div>
+          <div class="toggle on"></div>
+        </div>
+      </div>
+
+      <div class="settings-section" style="margin-bottom:28px">
+        <h3>알림 · 데이터</h3>
+        <div class="setting-row">
+          <div class="text"><b>이메일 알림</b><span>중요한 변경 사항을 이메일로 받습니다.</span></div>
+          <div class="toggle"></div>
+        </div>
+        <div class="setting-row">
+          <div class="text"><b>대화 내보내기</b><span>전체 대화를 JSON으로 내려받습니다.</span></div>
+          <button class="btn btn-ghost" style="height:38px">내보내기</button>
+        </div>
+        <div class="setting-row">
+          <div class="text"><b>모든 대화 삭제</b><span>대화·분기 데이터를 모두 비웁니다. 계정은 유지됩니다.</span></div>
+          <button class="btn btn-danger" style="height:38px">전체 삭제</button>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:32px">
+        <button class="btn btn-ghost">취소</button>
+        <button class="btn btn-primary">변경사항 저장</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer style="text-align:center; padding:40px 24px 60px; color:var(--brown-200); font-size:12px">
+  AIT — Design Preview · 웜 라떼 4색 팔레트 · 2026
+</footer>
+
+</body>
+</html>
