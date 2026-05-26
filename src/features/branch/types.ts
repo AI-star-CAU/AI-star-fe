@@ -1,3 +1,5 @@
+export type TitleStatus = 'PENDING' | 'GENERATED' | 'USER_EDITED';
+
 export interface Branch {
   id: string;
   parentConvId: string;
@@ -5,6 +7,24 @@ export interface Branch {
   forkAtTurnIndex: number;
 }
 
-export type NodeAction =
-  | { type: 'scroll'; messageId: string; chatId?: string }
-  | { type: 'navigate'; chatId: string };
+export interface UpdateBranchRequest {
+  title: string;
+}
+
+export interface CreateBranchRequest {
+  branchPointTurnId: number;
+  title?: string | null;
+}
+
+export interface CreateBranchResponse {
+  chatId: number;
+  rootChatId: number;
+  parentId: number;
+  branchPointTurnId: number;
+  title: string | null;
+  titleStatus: TitleStatus;
+  llmProvider: string;
+  llmModel: string;
+  createdAt: string;
+  updatedAt: string;
+}

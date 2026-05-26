@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
-import { useConversations } from '../features/chat/hooks/useConversations';
+import { useConversations } from '../features/conversation-explorer/hooks/useConversations';
 import Button from '../shared/components/ui/Button';
 import { TIME } from '../shared/utils/date';
-import ProfileCard from '../features/user/components/ProfileCard';
-import PlanCard from '../features/user/components/PlanCard';
-import StatCard from '../features/user/components/StatCard';
-import UsageMeter from '../features/user/components/UsageMeter';
-import RecentConversations from '../features/user/components/RecentConversations';
-import DangerZone from '../features/user/components/DangerZone';
-import DeleteAccountModal from '../features/user/components/DeleteAccountModal';
+import ProfileCard from '../features/member/components/ProfileCard';
+import PlanCard from '../features/member/components/PlanCard';
+import StatCard from '../features/member/components/StatCard';
+import UsageMeter from '../features/member/components/UsageMeter';
+import RecentConversations from '../features/member/components/RecentConversations';
+import DangerZone from '../features/member/components/DangerZone';
+import DeleteAccountModal from '../features/member/components/DeleteAccountModal';
 import { PATHS } from '../app/router/routes';
 
 const MyPage: React.FC = () => {

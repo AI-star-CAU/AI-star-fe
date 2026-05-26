@@ -1,17 +1,10 @@
 import { env } from '../config/env';
 import { STORAGE_KEYS } from '../constants/storageKeys';
+import { ApiError } from './ApiError';
+import { parseHttpError } from './parseHttpError';
 
-export class ApiError extends Error {
-  status: number;
-  body?: unknown;
-
-  constructor(status: number, message: string, body?: unknown) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.body = body;
-  }
-}
+// 외부에서 기존처럼 `from '../shared/api/client'` 로 ApiError 를 가져올 수 있게 재노출.
+export { ApiError };
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
@@ -40,16 +33,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   });
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => undefined);
-    // 명세 §0.3: 에러도 ApiResponse<T> 래퍼이므로 사람이 읽는 message 를 우선 사용.
-    const message =
-      errorBody &&
-      typeof errorBody === 'object' &&
-      'message' in errorBody &&
-      typeof (errorBody as { message: unknown }).message === 'string'
-        ? (errorBody as { message: string }).message
-        : response.statusText;
-    throw new ApiError(response.status, message, errorBody);
+    throw await parseHttpError(response, '요청이 실패했어요.');
   }
 
   if (response.status === 204) return undefined as T;

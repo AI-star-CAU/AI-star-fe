@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../../shared/components/ui/Button';
+import { PATHS } from '../../../app/router/routes';
 
 interface ChatHeaderProps {
   userName: string | undefined;
@@ -37,7 +38,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         </Button>
 
         <Link
-          to="/"
+          to={PATHS.LOGIN}
           className="text-xl font-black text-white tracking-tight hover:opacity-80 transition"
         >
           <span className="text-gradient-blue">A</span>IT
@@ -61,13 +62,19 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
               <p className="text-xs text-slate-500 truncate">{userEmail}</p>
             </div>
             <Link
-              to="/mypage"
+              to={PATHS.MY_PAGE}
               className="flex w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50 rounded-xl transition"
             >
               마이페이지
             </Link>
+            <Link
+              to={PATHS.SETTINGS}
+              className="flex w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50 rounded-xl transition"
+            >
+              환경 설정
+            </Link>
             <Button
-              onClick={() => { onLogout(); navigate('/'); }}
+              onClick={() => { onLogout(); navigate(PATHS.LOGIN); }}
               variant="danger"
               size="sm"
               fullWidth

@@ -7,7 +7,11 @@ import { chatApi } from '../api/chatApi';
  */
 export const useChatMeta = (conversationId: string) => {
   const chatId = Number(conversationId);
-  const enabled = conversationId !== 'new' && Number.isFinite(chatId);
+  const enabled =
+    !!conversationId &&
+    conversationId !== 'new' &&
+    Number.isFinite(chatId) &&
+    chatId > 0;
 
   return useQuery({
     queryKey: ['chatMeta', conversationId],

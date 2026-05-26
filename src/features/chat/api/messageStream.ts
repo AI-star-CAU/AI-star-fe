@@ -1,37 +1,16 @@
 import { env } from '../../../shared/config/env';
 import { STORAGE_KEYS } from '../../../shared/constants/storageKeys';
 import { ApiError } from '../../../shared/api/client';
+import { parseHttpError } from '../../../shared/api/parseHttpError';
 import { ENDPOINTS } from '../../../shared/api/endpoints';
+import type {
+  TurnStartedData,
+  ChunkData,
+  TurnCompletedData,
+  CancelledData,
+} from './streamTypes';
 
-/**
- * 명세 §2.5 메시지 송신(SSE) 이벤트 스키마.
- * terminal event 는 turn_completed | error | cancelled 중 정확히 하나이며,
- * 그 뒤 반드시 done 이 온다.
- */
-export interface TurnStartedData {
-  turnId: number;
-  userMessageId: number;
-  aiMessageId: number;
-}
-
-export interface ChunkData {
-  text: string;
-}
-
-/** 명세 §2.5: {aiMessageId, summary, answerToken} */
-export interface TurnCompletedData {
-  aiMessageId: number;
-  summary: string;
-  answerToken?: number;
-}
-
-/** 명세 §2.5: {aiMessageId, status:"CANCELED", content?, answerToken?} */
-export interface CancelledData {
-  aiMessageId: number;
-  status: 'CANCELED';
-  content?: string;
-  answerToken?: number;
-}
+export type { TurnStartedData, ChunkData, TurnCompletedData, CancelledData };
 
 export interface StreamHandlers {
   onTurnStarted?: (d: TurnStartedData) => void;
@@ -98,14 +77,9 @@ export async function streamMessage(
     },
   );
 
-  // 스트리밍 시작 전 에러는 ApiResponse JSON 으로 온다.
+  // 스트리밍 시작 전 에러는 ApiResponse JSON 으로 온다 (명세 §2.5).
   if (!res.ok || !res.body) {
-    const errBody = await res.json().catch(() => undefined);
-    const message =
-      (errBody && typeof errBody === 'object' && 'message' in errBody
-        ? String((errBody as { message: unknown }).message)
-        : res.statusText) || '메시지 전송에 실패했습니다.';
-    throw new ApiError(res.status, message, errBody);
+    throw await parseHttpError(res, '메시지 전송에 실패했어요.');
   }
 
   const reader = res.body.getReader();
@@ -143,6 +117,7 @@ export async function streamMessage(
         throw new ApiError(
           500,
           d?.message ?? 'LLM 응답 생성 중 오류가 발생했습니다.',
+          d?.code ?? null,
           d,
         );
       }

@@ -22,6 +22,7 @@ export interface Message {
   /** 명세 §2.4: CANCELED/FAILED 시 부분 텍스트 + 종료 상태 구분용. */
   status?: MessageStatus;
   isPending?: boolean;
+  turnId?: number;
 }
 
 export interface Conversation {
@@ -38,7 +39,7 @@ export interface Conversation {
 
 export interface ChatListItemResponse {
   chatId: number;
-  title: string;
+  title: string | null;
   lastMessagePreview: string | null;
   turnCount: number;
   lastMessageAt: string | null;
@@ -60,16 +61,19 @@ export interface CreateChatResponse {
   chatId: number;
   rootChatId: number;
   parentId: number | null;
-  title: string;
+  branchPointTurnId?: number | null;
+  title: string | null;
+  titleStatus?: 'PENDING' | 'GENERATED' | 'USER_EDITED';
   llmProvider: LlmProvider;
   llmModel: LlmModel;
   createdAt: string;
   updatedAt: string;
 }
 
-/** 명세 §2.4 MessageDto. (chatId 는 부모 turn/chat 에 포함되어 미응답) */
+/** 명세 §2.4 + Phase 3 §8: chatId 필드 추가 (분기 화면에서 원본 chat 식별용). */
 export interface ChatMessageResponse {
   messageId: number;
+  chatId?: number;
   senderType: SenderType;
   status: MessageStatus;
   content: string | null;
@@ -85,7 +89,8 @@ export type ChatMetaResponse = CreateChatResponse;
 export interface TurnListItemResponse {
   turnId: number;
   turnSequence: number;
-  summary: string;
+  summary: string | null;
+  summaryStatus?: 'PENDING' | 'GENERATED';
   messages: ChatMessageResponse[];
   createdAt: string;
 }
