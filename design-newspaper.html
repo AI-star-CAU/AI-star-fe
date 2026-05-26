@@ -6,7 +6,7 @@
 <title>The AIT Times — Design Preview</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Serif+Display:ital@0;1&family=Special+Elite&family=Noto+Serif+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Special+Elite&family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   /* ──────────────────────────────────────────────
      The AIT Times — Newspaper Design System
@@ -27,8 +27,23 @@
     --red:#A03028;
     --red-deep:#7E2018;
     --gold:#A88A3F;
+    --surface:rgba(250,244,226,.86);
+    --surface-strong:#FFF8E8;
+    --surface-muted:rgba(231,220,192,.7);
+    --focus:#1F5EFF;
+    --success:#3F5A3E;
+    --warning:#A88A3F;
+    --danger:#A03028;
+    --radius-xs:4px;
+    --radius-sm:8px;
+    --radius-md:14px;
+    --radius-lg:22px;
+    --shadow-soft:0 18px 50px rgba(40,30,20,.14);
+    --shadow-paper:4px 4px 0 rgba(40,30,20,.10);
+    --display:'Playfair Display','Nanum Myeongjo',Georgia,serif;
+    --mono:'Special Elite',ui-monospace,SFMono-Regular,Menlo,monospace;
     --serif-display:'Playfair Display','Nanum Myeongjo',Georgia,serif;
-    --serif-display-alt:'DM Serif Display','Nanum Myeongjo',Georgia,serif;
+    --serif-display-alt:'Playfair Display','Nanum Myeongjo',Georgia,serif;
     --serif:'Playfair Display','Noto Serif KR',Georgia,serif;
     --body:'Noto Serif KR','Playfair Display',Georgia,serif;
     --type:'Special Elite','Courier Prime',ui-monospace,monospace;
@@ -56,9 +71,25 @@
     background-image:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.30 0 0 0 0 0.22 0 0 0 0.45 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E");
     mix-blend-mode:multiply;
-    opacity:.55;
+    opacity:.35;
   }
   main, .preview-nav, .screen, .frame{ position:relative; z-index:1; }
+
+  :focus-visible{
+    outline:3px solid var(--focus);
+    outline-offset:3px;
+  }
+  button,
+  a,
+  input,
+  textarea,
+  select{
+    font:inherit;
+  }
+  button{
+    min-width:32px;
+    min-height:32px;
+  }
 
   /* 미리보기 네비 */
   .preview-nav{
@@ -456,6 +487,872 @@
   .composer-tools span{ cursor:pointer; padding:4px 8px; border-bottom:1px dotted transparent; }
   .composer-tools span:hover{ color:var(--red-deep); border-bottom-color:var(--red-deep); }
 
+  /* ───────── Chat redesign: editor desk app layout ───────── */
+  .chat-frame{
+    overflow:visible;
+    background:var(--paper);
+  }
+  .chat-app{
+    min-height:100dvh;
+    display:grid;
+    grid-template-rows:auto 1fr;
+    background:
+      radial-gradient(at 0 0, rgba(160,48,40,.05), transparent 36%),
+      var(--paper);
+  }
+  .compact-masthead{
+    position:sticky;
+    top:50px;
+    z-index:35;
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    align-items:center;
+    gap:18px;
+    padding:12px 18px;
+    border-bottom:3px double var(--rule);
+    background:rgba(250,244,226,.94);
+    backdrop-filter:blur(10px) saturate(130%);
+  }
+  .brand-lockup{
+    display:inline-flex;
+    align-items:baseline;
+    gap:6px;
+    white-space:nowrap;
+  }
+  .brand-the{
+    font-family:var(--display);
+    font-style:italic;
+    color:var(--red);
+  }
+  .brand-name{
+    font-family:var(--display);
+    font-size:24px;
+    font-weight:900;
+    letter-spacing:0;
+  }
+  .live-dot{
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    background:var(--red);
+    box-shadow:0 0 0 4px rgba(160,48,40,.13);
+  }
+  .edition-title{
+    min-width:0;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    overflow:hidden;
+  }
+  .edition-label{
+    flex:0 0 auto;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.16em;
+    color:var(--red-deep);
+    text-transform:uppercase;
+  }
+  .edition-title strong{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-family:var(--body);
+    font-size:15px;
+    color:var(--ink);
+  }
+  .mast-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .icon-btn,
+  .chip-btn{
+    border:1px solid var(--rule-thin);
+    background:var(--paper-card);
+    color:var(--ink-2);
+    cursor:pointer;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.12em;
+  }
+  .icon-btn{
+    min-width:44px;
+    padding:0 10px;
+  }
+  .chip-btn{
+    min-height:32px;
+    padding:0 10px;
+    white-space:nowrap;
+  }
+  .chip-btn.usage{
+    border-color:rgba(160,48,40,.4);
+    color:var(--red-deep);
+  }
+  .context-toggle{
+    display:none;
+  }
+  .chat-app-body{
+    display:grid;
+    grid-template-columns:clamp(220px,18vw,280px) minmax(0,1fr) clamp(280px,22vw,340px);
+    gap:16px;
+    padding:16px;
+    min-height:calc(100dvh - 70px);
+  }
+  .left-rail,
+  .context-panel{
+    min-width:0;
+    overflow:auto;
+    align-self:start;
+    max-height:calc(100dvh - 118px);
+  }
+  .left-rail{
+    border:1px solid var(--rule-thin);
+    background:rgba(250,244,226,.72);
+    padding:12px;
+  }
+  .rail-header{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .new-edition-btn{
+    height:40px;
+    border:1.5px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.16em;
+    cursor:pointer;
+  }
+  .rail-search{
+    display:grid;
+    gap:4px;
+    margin-bottom:14px;
+  }
+  .rail-search span{
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.18em;
+    color:var(--ink-3);
+    text-transform:uppercase;
+  }
+  .rail-search input{
+    width:100%;
+    height:38px;
+    border:1px solid var(--rule-thin);
+    background:var(--paper-card);
+    padding:0 10px;
+    font-family:var(--body);
+    color:var(--ink);
+  }
+  .edition-list{
+    display:grid;
+    gap:8px;
+  }
+  .edition-item{
+    width:100%;
+    min-height:0;
+    text-align:left;
+    padding:12px;
+    border:1px solid transparent;
+    border-bottom:1px dotted var(--rule-thin);
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .edition-item:hover{
+    background:rgba(160,48,40,.05);
+  }
+  .edition-item.is-active{
+    border-color:var(--red);
+    background:rgba(160,48,40,.075);
+    box-shadow:inset 3px 0 0 var(--red);
+  }
+  .edition-kicker{
+    display:block;
+    margin-bottom:4px;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.14em;
+    color:var(--red-deep);
+    text-transform:uppercase;
+  }
+  .edition-item strong{
+    display:block;
+    font-family:var(--display);
+    font-size:16px;
+    line-height:1.18;
+  }
+  .edition-item small{
+    display:block;
+    margin-top:4px;
+    font-family:var(--mono);
+    color:var(--ink-3);
+    font-size:10px;
+    letter-spacing:.1em;
+  }
+  .rail-section-title{
+    margin:18px 0 8px;
+    padding-top:12px;
+    border-top:3px double var(--rule);
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.2em;
+    color:var(--red-deep);
+    text-transform:uppercase;
+  }
+  .branch-shortcuts{
+    display:grid;
+    gap:6px;
+  }
+  .branch-shortcuts button,
+  .upgrade-card button{
+    text-align:left;
+    border:1px dotted var(--rule-thin);
+    background:rgba(250,244,226,.52);
+    color:var(--ink-2);
+    cursor:pointer;
+    padding:8px 10px;
+    font-family:var(--body);
+    font-size:13px;
+  }
+  .upgrade-card{
+    margin-top:18px;
+    border:1.5px solid var(--ink);
+    background:var(--paper-aged);
+    padding:12px;
+  }
+  .upgrade-card strong{
+    display:block;
+    font-family:var(--display);
+    font-size:17px;
+    line-height:1.1;
+  }
+  .upgrade-card p{
+    margin:6px 0 10px;
+    font-family:var(--body);
+    font-size:12.5px;
+    line-height:1.45;
+    color:var(--ink-3);
+  }
+  .upgrade-card button{
+    width:100%;
+    border:1.5px solid var(--red);
+    background:var(--red);
+    color:var(--paper);
+    text-align:center;
+    font-family:var(--mono);
+    letter-spacing:.12em;
+  }
+  .conversation-stage{
+    min-width:0;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    border:1px solid var(--rule-thin);
+    background:color-mix(in srgb, var(--paper-card) 92%, white);
+    box-shadow:0 24px 60px rgba(40,30,20,.12);
+  }
+  .conversation-feed{
+    width:min(100%,860px);
+    margin-inline:auto;
+    padding:24px 28px 28px;
+  }
+  .issue-summary{
+    margin-bottom:24px;
+    padding:20px 22px;
+    border:3px double var(--rule);
+    background:
+      radial-gradient(at 0 0, rgba(160,48,40,.07), transparent 55%),
+      var(--paper-card);
+  }
+  .issue-summary h1{
+    margin:6px 0 8px;
+    font-family:var(--display);
+    font-size:clamp(30px,5vw,46px);
+    line-height:1.02;
+    letter-spacing:0;
+  }
+  .issue-summary p{
+    max-width:68ch;
+    margin:0;
+    color:var(--ink-3);
+    font-style:italic;
+  }
+  .summary-stats{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+  .summary-stats span{
+    display:inline-flex;
+    gap:4px;
+    align-items:baseline;
+    padding:5px 8px;
+    border:1px solid var(--rule-thin);
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.1em;
+  }
+  .message-card{
+    position:relative;
+    margin:0 0 22px;
+    padding:18px 20px;
+    border:1px solid rgba(42,33,27,.55);
+    background:var(--surface);
+    box-shadow:var(--shadow-paper);
+    scroll-margin-top:120px;
+  }
+  .message-card.is-highlighted{
+    box-shadow:0 0 0 4px rgba(160,48,40,.15), var(--shadow-paper);
+  }
+  .assistant-message{
+    border-left:4px solid var(--ink);
+  }
+  .user-message{
+    width:min(92%,680px);
+    margin-left:auto;
+    border-left:0;
+    border-right:4px solid var(--red);
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 25px, rgba(160,48,40,.045) 25px, rgba(160,48,40,.045) 26px),
+      var(--surface-strong);
+  }
+  .message-meta{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  .role-mark{
+    color:var(--red-deep);
+    font-weight:700;
+  }
+  .message-body{
+    font-family:var(--body);
+    font-size:15.5px;
+    line-height:1.72;
+    color:var(--ink);
+  }
+  .message-body h2{
+    margin:0 0 10px;
+    font-family:var(--display);
+    font-size:clamp(22px,3vw,30px);
+    line-height:1.15;
+    letter-spacing:0;
+  }
+  .message-body p{
+    margin:0 0 12px;
+    text-align:left;
+    hyphens:manual;
+  }
+  .message-body p:last-child{
+    margin-bottom:0;
+  }
+  .principle-note{
+    margin:14px 0;
+    padding:12px 14px;
+    border-left:3px solid var(--red);
+    background:rgba(160,48,40,.06);
+    font-family:var(--display);
+    font-size:18px;
+    font-style:italic;
+  }
+  .message-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+    padding-top:10px;
+    border-top:1px dotted var(--rule-thin);
+  }
+  .message-actions button{
+    min-height:32px;
+    padding:0 10px;
+    border:1px solid rgba(42,33,27,.35);
+    background:transparent;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.12em;
+    color:var(--ink-2);
+    cursor:pointer;
+  }
+  .message-actions button:hover,
+  .message-actions button:focus-visible,
+  .message-actions .branch-action{
+    border-color:var(--red);
+    color:var(--red-deep);
+    background:rgba(160,48,40,.06);
+  }
+  .danger-text{
+    color:var(--danger) !important;
+  }
+  .printing-status{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--red-deep);
+  }
+  .press-dot{
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    background:var(--red);
+    animation:press-pulse 1.2s ease-in-out infinite;
+  }
+  .skeleton-lines{
+    margin-top:14px;
+    display:grid;
+    gap:8px;
+  }
+  .skeleton-lines i{
+    height:12px;
+    width:100%;
+    background:linear-gradient(90deg, rgba(42,33,27,.08), rgba(42,33,27,.16), rgba(42,33,27,.08));
+    background-size:220% 100%;
+    animation:skeleton-shift 1.2s linear infinite;
+  }
+  .skeleton-lines i:nth-child(2){ width:86%; }
+  .skeleton-lines i:nth-child(3){ width:64%; }
+  .error-message{
+    border-color:var(--danger);
+    background:rgba(255,248,232,.92);
+  }
+  .fold-btn{
+    width:100%;
+    margin-top:4px;
+    border:1px dotted var(--rule-thin);
+    background:rgba(231,220,192,.35);
+    color:var(--ink-2);
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.12em;
+    cursor:pointer;
+  }
+  .context-panel{
+    display:grid;
+    gap:12px;
+    align-content:start;
+  }
+  .context-card{
+    border:1px solid var(--rule-thin);
+    background:rgba(250,244,226,.78);
+    padding:14px;
+  }
+  .context-card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    border-bottom:1px solid var(--rule-thin);
+    padding-bottom:8px;
+    margin-bottom:10px;
+  }
+  .context-card-head h2{
+    margin:0;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--red-deep);
+  }
+  .context-card-head button{
+    border:1px solid var(--rule-thin);
+    background:transparent;
+    color:var(--ink-2);
+    cursor:pointer;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.12em;
+  }
+  .branch-breadcrumb{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+    margin-bottom:10px;
+    font-family:var(--mono);
+    font-size:10px;
+    color:var(--ink-3);
+  }
+  .branch-breadcrumb button{
+    border:0;
+    padding:0;
+    background:transparent;
+    color:var(--red-deep);
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:3px;
+  }
+  .branch-map{
+    position:relative;
+    aspect-ratio:1 / 1.05;
+    border:1px solid var(--rule);
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 12px, rgba(40,30,20,.045) 12px, rgba(40,30,20,.045) 13px),
+      var(--paper-card);
+    overflow:hidden;
+  }
+  .branch-map svg{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+  }
+  .branch-map-line{
+    stroke:var(--rule);
+    stroke-width:.5;
+    fill:none;
+  }
+  .branch-map-line.is-branch{
+    stroke:var(--red);
+    stroke-width:.8;
+  }
+  .branch-node{
+    position:absolute;
+    left:var(--x);
+    top:var(--y);
+    transform:translate(-50%,-50%);
+    max-width:96px;
+    min-height:30px;
+    padding:5px 8px;
+    border:1.5px solid var(--ink);
+    background:var(--paper-card);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:10px;
+    line-height:1.2;
+    letter-spacing:.08em;
+    cursor:pointer;
+  }
+  .branch-node.is-root{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .branch-node.is-current{
+    background:var(--red);
+    border-color:var(--red);
+    color:var(--paper);
+    box-shadow:0 0 0 4px rgba(160,48,40,.14);
+  }
+  .context-list{
+    display:grid;
+    gap:8px;
+    margin:0;
+    padding:0;
+    list-style:none;
+  }
+  .context-list li,
+  .source-chip{
+    border-bottom:1px dotted var(--rule-thin);
+    padding-bottom:7px;
+    font-family:var(--body);
+    font-size:13px;
+    color:var(--ink-2);
+  }
+  .context-list b{
+    display:block;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.12em;
+    color:var(--red-deep);
+    text-transform:uppercase;
+  }
+  .composer-dock{
+    position:sticky;
+    bottom:0;
+    z-index:30;
+    padding:14px 20px 18px;
+    background:
+      linear-gradient(180deg, rgba(244,236,216,0), var(--paper) 26%),
+      var(--paper);
+  }
+  .file-chips{
+    width:min(100%,860px);
+    margin:0 auto 8px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .file-chips span{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    min-height:28px;
+    padding:0 8px;
+    border:1px solid var(--rule-thin);
+    background:rgba(250,244,226,.88);
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.1em;
+    color:var(--ink-3);
+  }
+  .composer-shell{
+    width:min(100%,860px);
+    margin-inline:auto;
+    border:1.5px solid var(--ink);
+    background:var(--surface-strong);
+    box-shadow:6px 6px 0 rgba(40,30,20,.12);
+  }
+  .composer-toolbar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    padding:8px 10px;
+    border-bottom:1px dotted var(--rule-thin);
+  }
+  .composer-toolbar button,
+  .composer-context{
+    min-height:28px;
+    padding:0 8px;
+    border:1px solid transparent;
+    background:transparent;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.12em;
+    color:var(--ink-3);
+  }
+  .composer-toolbar button{
+    cursor:pointer;
+  }
+  .composer-toolbar button:hover,
+  .composer-toolbar button:focus-visible,
+  .composer-toolbar .branch-toggle{
+    border-color:var(--red);
+    color:var(--red-deep);
+    background:rgba(160,48,40,.06);
+  }
+  .composer-context{
+    margin-left:auto;
+    color:var(--ink-faint);
+  }
+  .composer-input-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:10px;
+    align-items:end;
+    padding:10px;
+  }
+  .composer-input-row textarea{
+    min-height:42px;
+    max-height:180px;
+    resize:none;
+    border:0;
+    outline:0;
+    background:transparent;
+    font-family:var(--body);
+    font-size:16px;
+    line-height:1.55;
+    color:var(--ink);
+  }
+  .send-btn{
+    min-width:86px;
+    min-height:42px;
+    border:1.5px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.16em;
+    cursor:pointer;
+  }
+  .send-btn small{
+    display:block;
+    margin-top:2px;
+    color:rgba(244,236,216,.7);
+    letter-spacing:.08em;
+  }
+  .send-btn:hover,
+  .send-btn:focus-visible{
+    background:var(--red);
+    border-color:var(--red);
+  }
+  .toast.breaking{
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    z-index:80;
+    padding:10px 14px;
+    border:1.5px solid var(--ink);
+    background:var(--surface-strong);
+    box-shadow:var(--shadow-paper);
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    color:var(--red-deep);
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(8px);
+    transition:opacity .16s, transform .16s;
+  }
+  .toast.breaking.is-visible{
+    opacity:1;
+    transform:translateY(0);
+  }
+  @keyframes press-pulse{
+    0%,100%{ transform:scale(1); opacity:.7; }
+    50%{ transform:scale(1.35); opacity:1; }
+  }
+  @keyframes skeleton-shift{
+    to{ background-position:-220% 0; }
+  }
+  @media (max-width:1279px){
+    .chat-app-body{
+      grid-template-columns:240px minmax(0,1fr);
+    }
+    .context-panel{
+      display:none;
+    }
+    .context-toggle{
+      display:inline-flex;
+    }
+  }
+  @media (max-width:959px){
+    .compact-masthead{
+      grid-template-columns:1fr auto;
+      gap:10px;
+    }
+    .edition-title{
+      grid-column:1 / -1;
+      order:3;
+    }
+    .chat-app-body{
+      grid-template-columns:84px minmax(0,1fr);
+      gap:10px;
+      padding:10px;
+    }
+    .left-rail{
+      padding:8px;
+    }
+    .rail-search,
+    .edition-item small,
+    .edition-item strong,
+    .branch-shortcuts,
+    .upgrade-card p{
+      display:none;
+    }
+    .rail-header{
+      grid-template-columns:1fr;
+    }
+    .new-edition-btn,
+    .icon-btn{
+      width:100%;
+      padding:0 6px;
+      font-size:10px;
+    }
+    .edition-item{
+      padding:9px 6px;
+      text-align:center;
+    }
+    .edition-kicker{
+      margin:0;
+      font-size:9px;
+      letter-spacing:.08em;
+    }
+    .upgrade-card{
+      padding:8px;
+    }
+    .upgrade-card strong{
+      font-size:14px;
+      text-align:center;
+    }
+  }
+  @media (max-width:767px){
+    body::before{
+      opacity:.22;
+    }
+    .screen{
+      padding:18px 0 12px;
+    }
+    .screen-title,
+    .screen-sub{
+      padding:0 14px;
+    }
+    .chat-frame{
+      border-left:0;
+      border-right:0;
+      box-shadow:none;
+    }
+    .chat-app-body{
+      display:block;
+      padding:0;
+      min-height:auto;
+    }
+    .left-rail,
+    .context-panel{
+      display:none;
+    }
+    .conversation-stage{
+      border:0;
+      min-height:100dvh;
+    }
+    .compact-masthead{
+      top:0;
+      grid-template-columns:1fr auto;
+      padding:10px 14px;
+    }
+    .brand-name{
+      font-size:22px;
+    }
+    .mast-actions .chip-btn{
+      display:none;
+    }
+    .conversation-feed{
+      padding:16px 14px 18px;
+    }
+    .message-card{
+      padding:15px 15px;
+    }
+    .user-message{
+      width:100%;
+    }
+    .composer-dock{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      padding:10px 12px max(10px, env(safe-area-inset-bottom));
+    }
+    .conversation-feed{
+      padding-bottom:190px;
+    }
+    .composer-context{
+      width:100%;
+      margin-left:0;
+    }
+    .composer-input-row{
+      grid-template-columns:1fr;
+    }
+    .send-btn{
+      width:100%;
+    }
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,
+    *::before,
+    *::after{
+      animation-duration:.001ms !important;
+      animation-iteration-count:1 !important;
+      scroll-behavior:auto !important;
+      transition-duration:.001ms !important;
+    }
+  }
+
   /* ───────── 회원 = Subscription form ───────── */
   .sub-layout{
     display:grid; grid-template-columns:1.15fr 1fr;
@@ -719,244 +1616,267 @@
 <section class="screen" id="chat">
   <p class="screen-title">No. 01 · Front Page</p>
   <h2 class="screen-sub">오늘의 1면 — 채팅</h2>
-  <div class="frame">
+  <div class="frame chat-frame">
     <div class="frame-bar">
-      <span>● ● ●</span>
+      <span aria-hidden="true">● ● ●</span>
       <span class="frame-url">ait.times / front-page</span>
     </div>
 
-    <!-- 마스트헤드 -->
-    <header class="masthead">
-      <div class="mast-top">
-        <span>VOL. MMXXVI · No. 142</span>
-        <span>2026년 5월 26일 · 화요일</span>
-        <span class="badge">SUBSCRIBER EDITION</span>
-      </div>
-
-      <h1 class="mast-name">
-        <span class="the">The</span>AIT<span class="pulse"></span>Times
-      </h1>
-
-      <div class="mast-tagline">— 분기 그래프 위에 적힌 오늘의 대화 일지 —</div>
-
-      <div class="mast-meta">
-        <div class="left">날씨 · 맑음 │ 모델 <b>OPUS 4.6</b></div>
-        <div>편집국장 · 주원 (J. Won)</div>
-        <div class="right">사용량 <b>38 / 50</b> 메시지 · FREE</div>
-      </div>
-    </header>
-
-    <!-- 본문 그리드 -->
-    <div class="news-grid">
-
-      <!-- LEFT TOC -->
-      <aside class="news-col toc">
-        <h4>오늘의 지면</h4>
-
-        <div class="toc-entry active">
-          <span class="page-no">PAGE 01 ─ TOP STORY</span>
-          <h5>프론트엔드 에러 처리 전략</h5>
-          <div class="meta">12 단락 · 3시간 전</div>
-          <div class="toc-sub">
-            <div class="sub"><span>API 실패 UX</span><span class="tag">T1</span></div>
-            <div class="sub gold"><span>폼 검증 케이스 ★</span><span class="tag">B1</span></div>
-            <div class="sub"><span>접근성 점검</span><span class="tag">T5</span></div>
-          </div>
+    <div class="chat-app">
+      <header class="compact-masthead">
+        <div class="brand-lockup" aria-label="The AIT Times">
+          <span class="brand-the">The</span>
+          <span class="brand-name">AIT Times</span>
+          <span class="live-dot" aria-label="online"></span>
         </div>
 
-        <div class="toc-entry">
-          <span class="page-no">PAGE 02 ─ TECH</span>
-          <h5>소프트웨어 공학 SRS</h5>
-          <div class="meta">8 단락 · 어제</div>
+        <div class="edition-title">
+          <span class="edition-label">VOL. 142</span>
+          <strong>프론트엔드 에러 처리 전략</strong>
         </div>
 
-        <div class="toc-entry">
-          <span class="page-no">PAGE 03 ─ LEISURE</span>
-          <h5>캠핑 도구 추천</h5>
-          <div class="meta">5 단락 · 3일 전</div>
+        <div class="mast-actions">
+          <button class="icon-btn" type="button" aria-label="대화 검색">⌘K</button>
+          <button class="chip-btn context-toggle" type="button">지도</button>
+          <button class="chip-btn" type="button">OPUS 4.6</button>
+          <button class="chip-btn usage" type="button">38 / 50</button>
         </div>
+      </header>
 
-        <div class="toc-entry">
-          <span class="page-no">PAGE 04 ─ DEV</span>
-          <h5>React 19 마이그레이션</h5>
-          <div class="meta">22 단락 · 4일 전</div>
-        </div>
-
-        <div class="rule-double"></div>
-
-        <h4>호외 (Branches)</h4>
-        <div style="font-family:var(--serif); font-size:13px; color:var(--ink-2); line-height:1.5">
-          현재 호의 <b>3개 분기</b>를 추적 중. 폼 검증 케이스가 어제 가장 많이 회람되었습니다.
-        </div>
-      </aside>
-
-      <!-- MAIN ARTICLES -->
-      <article class="news-col main">
-
-        <!-- 1번째 기사 -->
-        <div class="article-card">
-          <span class="kicker">FRONT-END · 사설</span>
-          <h1 class="headline xl">
-            <span style="color:var(--red)">"</span>에러를 두려워 말라<span style="color:var(--red)">"</span> —
-            프런트엔드 오류 처리, 어디부터 시작할까
-          </h1>
-          <p class="subhead">네트워크·폼·전역 폴백 — 우선순위에 따라 세 층으로 나누어 정리한다.</p>
-          <div class="byline">
-            <b>AIT 편집국</b> · OPUS 4.6 기자 · 14시 32분 기고
-            <span style="float:right;">2,140 단어 · 9분 분량</span>
+      <div class="chat-app-body">
+        <aside class="left-rail" aria-label="대화 보관함">
+          <div class="rail-header">
+            <button class="new-edition-btn" type="button">＋ 새 호 발행</button>
+            <button class="icon-btn" type="button" aria-label="검색 열기">⌘K</button>
           </div>
 
-          <div class="cols-2 article">
-            <p class="dropcap">
-              안녕하세요, 편집국입니다. 프론트엔드 에러 처리 전략을 묻고 계시군요.
-              우선 어디부터 살펴볼지 정리해보겠습니다. 일반적으로는 네트워크/API 계층,
-              폼 검증 계층, 비동기 상태 관리, 그리고 전역 폴백 — 이 네 가지로 나누어 봅니다.
-            </p>
-            <p>
-              각 계층마다 마주하는 사용자 경험의 결이 다르기 때문에, 같은 "오류"라도
-              어떤 톤으로 보여줄지 결정해야 합니다. 어디부터 다루면 좋을지 알려주시면
-              그 흐름으로 정리해드리겠습니다.
-            </p>
-            <p class="no-break">
-              한 가지 팁을 드리자면, 오류 처리는 <b>모든 곳에서</b>가 아니라
-              <b>경계에서만</b> 적극적으로 다루는 편이 좋습니다. 호출부에서 모두 try/catch를
-              두면 코드가 빠르게 잡음으로 가득해집니다.
-            </p>
-          </div>
-        </div>
+          <label class="rail-search">
+            <span>검색</span>
+            <input type="search" placeholder="호, 단락, 호외 검색" />
+          </label>
 
-        <!-- 독자의 질문 -->
-        <div class="article-card">
-          <div class="letter">
-            <div class="from">독자 J. Won · 14:33</div>
-            <p>폼 검증부터 정리해줘. 특히 비동기 검증(이메일 중복확인 같은)이 헷갈려.</p>
-          </div>
-        </div>
+          <nav class="edition-list" aria-label="최근 대화">
+            <button class="edition-item is-active" type="button" aria-current="page">
+              <span class="edition-kicker">TOP STORY · 3 호외</span>
+              <strong>프론트엔드 에러 처리 전략</strong>
+              <small>12 단락 · 3시간 전</small>
+            </button>
+            <button class="edition-item" type="button">
+              <span class="edition-kicker">TECH · 1 호외</span>
+              <strong>소프트웨어 공학 SRS</strong>
+              <small>8 단락 · 어제</small>
+            </button>
+            <button class="edition-item" type="button">
+              <span class="edition-kicker">LEISURE · 0 호외</span>
+              <strong>캠핑 도구 추천</strong>
+              <small>5 단락 · 3일 전</small>
+            </button>
+            <button class="edition-item" type="button">
+              <span class="edition-kicker">DEV · 4 호외</span>
+              <strong>React 19 마이그레이션</strong>
+              <small>22 단락 · 4일 전</small>
+            </button>
+          </nav>
 
-        <!-- 호외 / B1 -->
-        <div class="article-card">
-          <span class="extra-tag">호외 · Extra Edition · B1</span>
-          <span class="kicker">UX · 폼 검증 케이스</span>
-          <h1 class="headline lg">
-            세 층으로 보는 폼 검증, 그리고 비동기 검증을 망치는 한 줄
-          </h1>
-          <p class="subhead">동기 · 비동기 · 제출 — 흔한 버그는 보통 "마지막 응답만 신뢰하라"는 약속을 잊을 때 생긴다.</p>
-          <div class="byline">
-            <b>AIT 편집국</b> · OPUS 4.6 기자 · 14시 34분 보충
-            <span style="float:right;">분기점: T2 메시지에서</span>
+          <h3 class="rail-section-title">호외 · 분기</h3>
+          <div class="branch-shortcuts">
+            <button type="button">폼 검증 케이스 · 현재</button>
+            <button type="button">API 실패 UX</button>
+            <button type="button">접근성 점검</button>
           </div>
 
-          <div class="cols-2 article">
-            <p class="dropcap">
-              <b>좋습니다.</b> 폼 검증은 보통 세 층으로 봅니다. 첫째, 동기 검증.
-              입력 타입·길이·정규식. 즉시 피드백이 사용자 경험의 절반을 결정합니다.
-              두 번째 층인 비동기 검증부터 일이 복잡해집니다.
-            </p>
-
-            <p class="pull-quote">
-              마지막 요청만이 진실이다.
-            </p>
-
-            <p>
-              <b>비동기 검증</b>은 서버에 묻는 모든 것 — 이메일 중복확인, 닉네임 가용성 등.
-              이때 가장 흔한 함정은 응답 순서가 뒤바뀌는 경우입니다. 사용자가 빠르게
-              "a" → "ab" → "abc"를 입력하면 세 번 요청이 나가는데, 이상하게도 첫 번째
-              "a"의 응답이 가장 늦게 도착할 수 있습니다.
-            </p>
-            <p>
-              해결책은 <b>최신 요청 ID</b>를 들고 있다가, 그것과 일치하지 않는 응답은 무시하는 것.
-              혹은 디바운스로 마지막 입력에서 일정 시간이 지난 뒤에만 요청을 보내는 방법도
-              자주 쓰입니다. 둘 다 함께 적용해도 좋습니다.
-            </p>
-            <p>
-              세 번째 층은 <b>제출 시점</b>의 검증. 서버가 응답으로 보내준 필드 단위 오류를
-              UI에 매핑하는 단계입니다. 이때는 폼 라이브러리의 setError 인터페이스를
-              잘 활용해 각 필드 아래에 인라인 메시지로 표시하는 패턴이 가장 안정적입니다.
-            </p>
+          <div class="upgrade-card">
+            <strong>AIT Premium</strong>
+            <p>무제한 호외와 지면 구성도 PDF 내보내기를 사용할 수 있습니다.</p>
+            <button type="button">구독 보기</button>
           </div>
-        </div>
+        </aside>
 
-        <!-- 독자의 질문 + 작성 중 -->
-        <div class="article-card">
-          <div class="letter">
-            <div class="from">독자 J. Won · 14:35</div>
-            <p>react-hook-form 기준으로 코드 예시도 줘.</p>
-          </div>
+        <main class="conversation-stage" aria-label="현재 대화">
+          <section class="conversation-feed" aria-label="대화 내용">
+            <section class="issue-summary">
+              <span class="kicker">오늘의 머리기사</span>
+              <h1>프론트엔드 에러 처리 전략</h1>
+              <p>네트워크 오류, 폼 검증, 비동기 상태, 전역 폴백을 순서대로 정리하는 대화입니다. 현재 호외는 폼 검증 케이스에서 이어지고 있습니다.</p>
+              <div class="summary-stats" aria-label="대화 요약 통계">
+                <span><b>12</b> 단락</span>
+                <span><b>3</b> 호외</span>
+                <span><b>9분</b> 읽기</span>
+              </div>
+            </section>
 
-          <div style="margin-top:18px; border:1px dashed var(--rule-thin); padding:14px 16px; background:var(--paper); display:flex; gap:14px; align-items:center;">
-            <div style="font-family:var(--type); font-size:11px; color:var(--red-deep); letter-spacing:.22em; text-transform:uppercase">윤전기 가동 중...</div>
-            <div style="flex:1; font-family:var(--serif); font-style:italic; font-size:14px; color:var(--ink-3);">
-              편집국에서 다음 기사를 작성하고 있습니다. 잠시만 기다려 주세요.
+            <article class="message-card assistant-message" id="message-t1" data-message-id="t1">
+              <header class="message-meta">
+                <span class="role-mark">AIT 편집국</span>
+                <span>OPUS 4.6</span>
+                <time datetime="2026-05-26T14:32:00">14:32</time>
+              </header>
+              <div class="message-body">
+                <h2>프런트엔드 오류 처리, 어디부터 시작할까</h2>
+                <p>안녕하세요, 편집국입니다. 프론트엔드 에러 처리는 네트워크/API 계층, 폼 검증 계층, 비동기 상태 관리, 전역 폴백으로 나누어 보는 편이 가장 읽기 쉽습니다.</p>
+                <p>각 계층마다 사용자 경험의 결이 다르기 때문에, 같은 오류라도 어떤 톤과 회복 행동을 제공할지 먼저 정해야 합니다.</p>
+                <p>한 가지 원칙은 오류를 모든 호출부에 흩뿌리지 말고, API 경계와 화면 경계에서 명확히 다루는 것입니다.</p>
+              </div>
+              <footer class="message-actions" aria-label="메시지 작업">
+                <button type="button">복사</button>
+                <button type="button">인용</button>
+                <button type="button">다시 생성</button>
+                <button class="branch-action" type="button">호외 발행</button>
+                <button type="button">접기</button>
+              </footer>
+            </article>
+
+            <article class="message-card user-message" id="message-u1" data-message-id="u1">
+              <header class="message-meta">
+                <span class="role-mark">독자 J. Won</span>
+                <time datetime="2026-05-26T14:33:00">14:33</time>
+              </header>
+              <div class="message-body">
+                <p>폼 검증부터 정리해줘. 특히 비동기 검증(이메일 중복확인 같은)이 헷갈려.</p>
+              </div>
+              <footer class="message-actions" aria-label="메시지 작업">
+                <button type="button">인용</button>
+                <button class="branch-action" type="button">호외 발행</button>
+              </footer>
+            </article>
+
+            <article class="message-card assistant-message is-highlighted" id="message-b1" data-message-id="b1">
+              <header class="message-meta">
+                <span class="role-mark">AIT 편집국</span>
+                <span>호외 · 분기 B1</span>
+                <time datetime="2026-05-26T14:34:00">14:34</time>
+              </header>
+              <div class="message-body">
+                <h2>세 층으로 보는 폼 검증</h2>
+                <p>좋습니다. 폼 검증은 보통 동기 검증, 비동기 검증, 제출 시점 검증으로 나누면 디버깅이 쉬워집니다.</p>
+                <div class="principle-note">마지막 요청만이 진실이다.</div>
+                <p>비동기 검증은 서버에 묻는 모든 작업입니다. 이메일 중복확인, 닉네임 가용성처럼 응답 순서가 뒤바뀔 수 있는 흐름에서는 최신 요청 ID를 기록하고, 일치하지 않는 응답은 무시해야 합니다.</p>
+                <p>제출 시점에는 서버가 보내준 필드 단위 오류를 폼 라이브러리의 오류 상태로 매핑합니다. 이때 전체 toast만 띄우면 사용자가 어디를 고쳐야 할지 놓치기 쉽습니다.</p>
+              </div>
+              <footer class="message-actions" aria-label="메시지 작업">
+                <button type="button">복사</button>
+                <button type="button">인용</button>
+                <button type="button">다시 생성</button>
+                <button class="branch-action" type="button">호외 발행</button>
+                <button class="fold-btn" type="button">전체 답변 펼치기 · 1,280자</button>
+              </footer>
+            </article>
+
+            <article class="message-card user-message" id="message-u2" data-message-id="u2">
+              <header class="message-meta">
+                <span class="role-mark">독자 J. Won</span>
+                <time datetime="2026-05-26T14:35:00">14:35</time>
+              </header>
+              <div class="message-body">
+                <p>react-hook-form 기준으로 코드 예시도 줘.</p>
+              </div>
+            </article>
+
+            <article class="message-card assistant-message is-streaming" aria-live="polite" id="message-b1-t1" data-message-id="b1-t1">
+              <header class="message-meta">
+                <span class="role-mark">AIT 편집국</span>
+                <span>작성 중</span>
+              </header>
+              <div class="printing-status">
+                <span class="press-dot"></span>
+                <strong>윤전기 가동 중</strong>
+                <span>답변을 조판하고 있습니다.</span>
+              </div>
+              <div class="skeleton-lines" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </div>
+              <footer class="message-actions" aria-label="생성 중 작업">
+                <button class="danger-text" type="button">생성 중단</button>
+              </footer>
+            </article>
+
+            <article class="message-card error-message" role="alert" id="message-error">
+              <header class="message-meta">
+                <span class="role-mark">배달 사고</span>
+                <time datetime="2026-05-26T14:36:00">14:36</time>
+              </header>
+              <div class="message-body">
+                <p>응답을 발행하지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.</p>
+              </div>
+              <footer class="message-actions">
+                <button type="button">다시 시도</button>
+                <button type="button">문제 신고</button>
+              </footer>
+            </article>
+          </section>
+
+          <form class="composer-dock" aria-label="메시지 작성">
+            <div class="file-chips" aria-label="첨부 파일">
+              <span>첨부 · validation-rules.md</span>
+              <span>초안 · 호외 B1</span>
             </div>
-            <span class="stamp">PRESS</span>
-          </div>
-        </div>
+            <div class="composer-shell">
+              <div class="composer-toolbar" aria-label="작성 옵션">
+                <button type="button">＋ 첨부</button>
+                <button type="button">자료 검색</button>
+                <button type="button" class="branch-toggle">호외로 보내기</button>
+                <span class="composer-context">현재 분기: 폼 검증 · Parent T2</span>
+              </div>
+              <div class="composer-input-row">
+                <textarea aria-label="메시지 입력" placeholder="메시지를 입력하세요. 필요한 경우 이 지점에서 호외를 발행할 수 있습니다." rows="1"></textarea>
+                <button class="send-btn" type="submit">
+                  <span>보내기</span>
+                  <small>⌘↵</small>
+                </button>
+              </div>
+            </div>
+          </form>
+        </main>
 
-      </article>
+        <aside class="context-panel" aria-label="현재 대화 맥락">
+          <section class="context-card">
+            <header class="context-card-head">
+              <h2>지면 구성도</h2>
+              <button type="button">확대</button>
+            </header>
+            <div class="branch-breadcrumb">
+              <button type="button">ROOT</button>
+              <span>/</span>
+              <button type="button">폼 검증</button>
+              <span>/</span>
+              <strong>React Hook Form</strong>
+            </div>
+            <div class="branch-map" role="tree" aria-label="대화 분기 지도">
+              <svg viewBox="0 0 100 105" aria-hidden="true">
+                <path class="branch-map-line" d="M50 12 V 34"/>
+                <path class="branch-map-line" d="M50 34 V 58"/>
+                <path class="branch-map-line is-branch" d="M50 58 H72 V 82"/>
+                <path class="branch-map-line" d="M50 58 V 86"/>
+              </svg>
+              <button class="branch-node is-root" type="button" role="treeitem" data-target-message="message-t1" style="--x:50%;--y:12%">시작</button>
+              <button class="branch-node" type="button" role="treeitem" data-target-message="message-t1" style="--x:50%;--y:34%">에러 처리</button>
+              <button class="branch-node is-current" type="button" role="treeitem" aria-current="page" data-target-message="message-b1" style="--x:72%;--y:58%">폼 검증</button>
+              <button class="branch-node" type="button" role="treeitem" data-target-message="message-b1-t1" style="--x:72%;--y:82%">코드 예시</button>
+              <button class="branch-node" type="button" role="treeitem" data-target-message="message-error" style="--x:50%;--y:86%">재시도</button>
+            </div>
+          </section>
 
-      <!-- RIGHT SIDE -->
-      <aside class="news-col">
-        <div class="side-box">
-          <h4>현재 위치</h4>
-          <div class="item"><span class="label">호</span><span class="val">VOL. 142</span></div>
-          <div class="item"><span class="label">기사</span><span class="val">TOP STORY</span></div>
-          <div class="item"><span class="label">분기</span><span class="val">B1 · 폼 검증</span></div>
-          <div class="item"><span class="label">기자</span><span class="val">OPUS 4.6</span></div>
-        </div>
+          <section class="context-card">
+            <header class="context-card-head">
+              <h2>현재 위치</h2>
+            </header>
+            <ul class="context-list">
+              <li><b>호</b>VOL. 142 · Front Page</li>
+              <li><b>분기</b>B1 · 폼 검증 케이스</li>
+              <li><b>모델</b>OPUS 4.6 · 분석 모드</li>
+              <li><b>사용량</b>38 / 50 메시지</li>
+            </ul>
+          </section>
 
-        <div class="side-box">
-          <h4>지면 구성도</h4>
-          <div class="map-canvas">
-            <svg viewBox="0 0 100 105" style="position:absolute;inset:0;width:100%;height:100%">
-              <path d="M50 14 V 30" stroke="#2A211B" stroke-width=".5" fill="none"/>
-              <path d="M50 30 V 50" stroke="#2A211B" stroke-width=".5" fill="none"/>
-              <path d="M50 50 H 75 V 66" stroke="#A03028" stroke-width=".8" fill="none"/>
-              <path d="M50 50 V 78" stroke="#2A211B" stroke-width=".5" fill="none"/>
-              <path d="M75 66 V 90" stroke="#A03028" stroke-width=".8" fill="none"/>
-            </svg>
-            <div class="mnode root" style="left:50%; top:14%">ROOT</div>
-            <div class="mnode" style="left:50%; top:30%">T1</div>
-            <div class="mnode" style="left:50%; top:50%">T2</div>
-            <div class="mnode" style="left:50%; top:78%">T3</div>
-            <div class="mnode active" style="left:75%; top:66%">B1</div>
-            <div class="mnode branch" style="left:75%; top:90%">B1·T1</div>
-          </div>
-          <div class="map-legend">
-            <div><span class="a"></span> 루트 메시지</div>
-            <div><span class="b"></span> 일반 단락(T)</div>
-            <div><span class="c"></span> 현재 분기(B)</div>
-          </div>
-        </div>
-
-        <div class="side-box">
-          <h4>오늘의 통계</h4>
-          <div class="item"><span class="label">이번 달 메시지</span><span class="val">142</span></div>
-          <div class="item"><span class="label">생성한 분기</span><span class="val">18</span></div>
-          <div class="item"><span class="label">총 대화</span><span class="val">27</span></div>
-        </div>
-
-        <div class="ad-box">
-          <div class="small">— 광고 —</div>
-          <div class="big"><i>AIT</i> Premium<br/>구독</div>
-          <div class="desc">무제한 분기 · 우선 응답 · 그래프 PDF로 인쇄</div>
-          <button class="btn btn-red" style="width:100%">구독하기 ₩19,900/월</button>
-        </div>
-      </aside>
-
-    </div>
-
-    <!-- 작성 영역 (편집국에 기고하기) -->
-    <div class="composer-wrap">
-      <div class="composer-head">— 편집국에 기고하기 ─ Send a Letter to the Editor —</div>
-      <div class="composer">
-        <textarea placeholder="이번 호에 다룰 새 질문을 적어주세요..."></textarea>
-        <button class="send">기고 ▸</button>
-      </div>
-      <div class="composer-tools">
-        <span>＋ 자료 첨부</span>
-        <span>⎇ 호외로 보내기</span>
-        <span>🜨 자료 검색</span>
-        <span style="margin-left:auto; color:var(--ink-faint)">⌘ + Return 으로 발행</span>
+          <section class="context-card">
+            <header class="context-card-head">
+              <h2>자료</h2>
+              <button type="button">추가</button>
+            </header>
+            <div class="source-chip">validation-rules.md · 4개 인용 가능</div>
+            <div class="source-chip">react-hook-form notes · 최근 열람</div>
+          </section>
+        </aside>
       </div>
     </div>
   </div>
@@ -1330,6 +2250,78 @@
     The AIT Times · 신문 콘셉트 디자인 시안 · MMXXVI
   </div>
 </footer>
+
+<script>
+  (() => {
+    const chat = document.querySelector('#chat');
+    if (!chat) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast breaking';
+    toast.setAttribute('role', 'status');
+    toast.textContent = '속보 · 저장되었습니다';
+    document.body.appendChild(toast);
+
+    let toastTimer;
+    const showToast = (message) => {
+      toast.textContent = message;
+      toast.classList.add('is-visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 1600);
+    };
+
+    const composer = chat.querySelector('.composer-dock');
+    const textarea = composer?.querySelector('textarea');
+    const sendLabel = composer?.querySelector('.send-btn span');
+
+    const fitTextarea = () => {
+      if (!textarea) return;
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
+    };
+
+    textarea?.addEventListener('input', fitTextarea);
+    textarea?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        composer?.requestSubmit();
+      }
+    });
+    if (textarea) fitTextarea();
+
+    composer?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (sendLabel) {
+        sendLabel.textContent = '중단';
+        setTimeout(() => { sendLabel.textContent = '보내기'; }, 1200);
+      }
+      showToast('속보 · 메시지 발행 준비 중');
+    });
+
+    chat.querySelectorAll('.branch-node[data-target-message]').forEach((node) => {
+      node.addEventListener('click', () => {
+        const targetId = node.getAttribute('data-target-message');
+        const target = targetId ? document.getElementById(targetId) : null;
+        if (!target) return;
+
+        chat.querySelectorAll('.message-card.is-highlighted').forEach((card) => {
+          card.classList.remove('is-highlighted');
+        });
+        target.classList.add('is-highlighted');
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+
+    chat.querySelectorAll('.message-actions button').forEach((button) => {
+      button.addEventListener('click', () => {
+        const label = button.textContent.trim();
+        if (label === '복사') showToast('속보 · 복사되었습니다');
+        if (label === '인용') showToast('속보 · 인용문이 입력창에 추가됩니다');
+        if (label === '호외 발행') showToast('속보 · 이 메시지에서 호외를 발행합니다');
+      });
+    });
+  })();
+</script>
 
 </body>
 </html>
