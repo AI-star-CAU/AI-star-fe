@@ -11,18 +11,16 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, sub, loading }) => (
   <div
     style={{
       padding: '18px 22px',
-      borderRight: '1.5px solid var(--ink)',
+      borderRight: '1px solid var(--paper-aged)',
       textAlign: 'center',
     }}
     className="stat-cell-item"
   >
     <div
       style={{
-        fontFamily: 'var(--type)',
+        fontFamily: 'var(--body)',
         fontSize: 10,
-        letterSpacing: '0.22em',
         color: 'var(--ink-3)',
-        textTransform: 'uppercase',
       }}
     >
       {label}
@@ -42,7 +40,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, sub, loading }) => (
       <div
         style={{
           fontFamily: 'var(--serif-display)',
-          fontWeight: 900,
+          fontWeight: 600,
           fontSize: 42,
           lineHeight: 1,
           color: 'var(--ink)',
@@ -55,10 +53,9 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, sub, loading }) => (
     {sub && (
       <div
         style={{
-          fontFamily: 'var(--type)',
+          fontFamily: 'var(--body)',
           fontSize: 10,
           color: 'var(--ink-3)',
-          letterSpacing: '0.16em',
         }}
       >
         {sub}

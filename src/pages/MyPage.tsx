@@ -104,51 +104,52 @@ const MyPage: React.FC = () => {
             cursor: 'pointer',
           }}
         >
-          구독 해지
+          로그아웃
         </button>
       </header>
 
       <header className="nm-masthead">
         <div className="nm-mast-top">
-          <span>READER'S DESK</span>
+          <span>MY PAGE</span>
           <span>{new Date().toLocaleDateString('ko-KR')}</span>
-          <span className="nm-mast-badge">SUBSCRIBER · {plan.toUpperCase()}</span>
+          <span className="nm-mast-badge">PLAN · {plan.toUpperCase()}</span>
         </div>
         <h1 className="nm-mast-name">
-          <span className="the">The</span>AIT<span className="pulse" />Times
+          마이페이지
         </h1>
-        <div className="nm-mast-tagline">— 독자 카드 · Profile of a Subscriber —</div>
+        <div className="nm-mast-tagline">프로필과 사용량을 확인합니다</div>
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-10">
         <ProfileCard user={user} />
 
-        <div className="nm-ornament" style={{ margin: '22px 0' }}>❦</div>
-
         <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
           <div className="space-y-4">
-            <span className="nm-kicker">CIRCULATION · 이번 달 발행 통계</span>
+            <span className="nm-kicker">이번 달 사용 현황</span>
             <div
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
-                border: '1.5px solid var(--ink)',
+                border: '1px solid var(--paper-aged)',
+                borderRadius: 12,
+                overflow: 'hidden',
+                background: 'var(--paper-card)',
               }}
             >
               <StatCard
-                label="발행한 호"
+                label="전체 대화"
                 value={stats.totalConversations}
-                sub="개의 루트 대화"
+                sub="개의 대화"
                 loading={convsLoading}
               />
               <StatCard
-                label="호외 발행"
+                label="분기"
                 value={stats.totalBranches}
                 sub="개의 분기 생성"
                 loading={convsLoading}
               />
               <StatCard
-                label="누적 단락"
+                label="대화 턴"
                 value={stats.totalTurns}
                 sub="번의 대화 턴"
                 loading={convsLoading}

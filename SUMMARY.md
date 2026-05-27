@@ -39,6 +39,123 @@
 
 ---
 
+## 2026-05-27 — Codex (AI 응답 타이핑 속도 추가 조정)
+
+**유형:** style
+**범위:** features/chat/components
+
+### 변경 내용
+- AI 응답 타이핑 효과를 45ms마다 1글자에서 85ms마다 1글자로 늦춰 GPT 응답 체감 속도에 가깝게 조정.
+- 타이핑 간격 값을 상수로 분리해 후속 조정이 쉽도록 정리.
+
+### 영향 범위
+- UI 표시 속도만 변경. 메시지 전송/스트리밍/API 로직 변경 없음.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/features/chat/components/MessageBubble.tsx](src/features/chat/components/MessageBubble.tsx)
+
+---
+
+## 2026-05-27 — Codex (AI 응답 타이핑 속도 완화)
+
+**유형:** style
+**범위:** features/chat/components
+
+### 변경 내용
+- AI 응답 타이핑 효과를 여러 글자 단위가 아니라 45ms마다 1글자씩 표시하도록 조정.
+
+### 영향 범위
+- UI 표시 속도만 변경. 메시지 전송/스트리밍/API 로직 변경 없음.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/features/chat/components/MessageBubble.tsx](src/features/chat/components/MessageBubble.tsx)
+
+---
+
+## 2026-05-27 — Codex (AI 응답 타이핑 효과 유지 수정)
+
+**유형:** fix
+**범위:** features/chat/components
+
+### 변경 내용
+- assistant 응답이 스트리밍 live 메시지에서 서버 히스토리 메시지로 교체돼도 같은 메시지 id면 타이핑 효과를 이어가도록 수정.
+- 빠르게 도착한 chunk 때문에 타이핑 interval 이 계속 재시작되며 전체 답변이 한 번에 보일 수 있던 흐름을 보완.
+
+### 영향 범위
+- UI 표시 방식만 변경. 메시지 전송/스트리밍/API 로직 변경 없음.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/features/chat/components/MessageBubble.tsx](src/features/chat/components/MessageBubble.tsx)
+
+---
+
+## 2026-05-27 — Codex (채팅 헤더·입력 하단·AI 타이핑 표시 정리)
+
+**유형:** style
+**범위:** features/chat/components, styles/index.css
+
+### 변경 내용
+- 채팅 헤더의 이미지 로고를 텍스트 `AIT` 워드마크로 교체.
+- 채팅 입력창 하단의 `AIT는 현재 백엔드 연결을 준비 중입니다.` 안내 문구 제거.
+- assistant 응답이 스트리밍 중 `content`를 받으면 로딩 점만 유지하지 않고, 본문을 타이핑 효과로 점진 표시하도록 변경.
+- 타이핑 중에는 복사/분기/재생성 액션이 노출되지 않도록 기존 생성 중 상태와 분리.
+
+### 영향 범위
+- 기능/API/라우팅 변경 없음. 응답 표시 UX만 변경.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/features/chat/components/ChatHeader.tsx](src/features/chat/components/ChatHeader.tsx), [src/features/chat/components/ChatInput.tsx](src/features/chat/components/ChatInput.tsx), [src/features/chat/components/MessageBubble.tsx](src/features/chat/components/MessageBubble.tsx)
+
+---
+
+## 2026-05-27 — Codex (포인트 컬러 그레이스케일 정리)
+
+**유형:** style
+**범위:** styles/index.css, features/graph/components, features/auth/components, features/member/components
+
+### 변경 내용
+- 주황/테라코타 계열 포인트 컬러를 제거하고 흰색·회색·검정 중심의 그레이스케일 팔레트로 전환.
+- `--red`, `--red-deep`, `--gold` 및 Tailwind `cyan`/`teal` 별칭을 기존 참조 호환은 유지하되 실제 색상은 차콜/그레이로 재매핑.
+- 그래프 노드 선택/강조/분기 색상과 에러 배경 rgba 값을 그레이스케일에 맞게 조정.
+
+### 영향 범위
+- 색상만 변경. 기능/API/라우팅 변경 없음.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/styles/index.css](src/styles/index.css), [src/features/graph/components/GraphPanel.tsx](src/features/graph/components/GraphPanel.tsx)
+
+---
+
+## 2026-05-27 — Codex (신문 테마 모던 에디토리얼 정리)
+
+**유형:** style
+**범위:** styles/index.css, pages, features/chat/components, features/auth/components, features/member/components, features/graph/components
+
+### 변경 내용
+- 신문 콘셉트의 큰 레이아웃은 유지하되 `구독/호외/편집국/독자` 중심 문구를 `로그인/회원가입/분기/AI/마이페이지/설정` 표현으로 정리.
+- 마스트헤드, 인장, 줄무늬, 강한 보더/그림자 등 무거운 장식을 줄이고 Pretendard 기반 sans 본문 + Lora 헤드라인 중심의 모던 에디토리얼 톤으로 조정.
+- 채팅 입력/메시지 액션/계정 삭제/플랜/최근 대화/사용량 카드의 버튼과 안내 문구를 현재 기능명에 맞게 변경.
+- `MessageBubble`의 분기 생성, 재생성, 수정, 복사 핸들러 및 마이페이지/설정/인증 동작 연결은 유지하고 UI 표현만 정리.
+
+### 영향 범위
+- 기능/API/라우팅 변경 없음. 단, 계정 삭제 모달의 확인 입력 문구가 `구독 해지`에서 `계정 삭제`로 바뀜.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/styles/index.css](src/styles/index.css), [src/pages/LoginPage.tsx](src/pages/LoginPage.tsx), [src/pages/MyPage.tsx](src/pages/MyPage.tsx), [src/pages/SettingsPage.tsx](src/pages/SettingsPage.tsx), [src/features/chat/components/MessageBubble.tsx](src/features/chat/components/MessageBubble.tsx)
+
+---
+
 ## 2026-05-27 — Codex (prototype에 신문 테마 병합 — 기능 보존 충돌 해결)
 
 **유형:** style

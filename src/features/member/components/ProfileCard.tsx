@@ -11,7 +11,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
   const [editedName, setEditedName] = useState(user?.name ?? '');
 
   const initial = (user?.name ?? '?')[0];
-  const displayName = editedName || user?.name || '독자';
+  const displayName = editedName || user?.name || '사용자';
 
   return (
     <div
@@ -21,39 +21,33 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         gap: 24,
         alignItems: 'center',
         padding: '24px 28px',
-        border: '1.5px solid var(--ink)',
-        background:
-          'repeating-linear-gradient(0deg, transparent, transparent 22px, rgba(40,30,20,.05) 22px, rgba(40,30,20,.05) 23px), var(--paper-card)',
+        border: '1px solid var(--paper-aged)',
+        borderRadius: 14,
+        background: 'var(--paper-card)',
       }}
     >
       <div
         style={{
           width: 84,
           height: 84,
-          border: '2.5px solid var(--red)',
+          border: '1px solid var(--paper-aged)',
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          flexDirection: 'column',
-          transform: 'rotate(-6deg)',
-          color: 'var(--red)',
+          background: 'var(--paper-2)',
+          color: 'var(--ink)',
         }}
       >
-        <span style={{ fontFamily: 'var(--type)', fontSize: 8, letterSpacing: '0.2em' }}>CERT.</span>
         <span
           style={{
             fontFamily: 'var(--serif-display)',
-            fontWeight: 900,
+            fontWeight: 600,
             fontSize: 30,
             lineHeight: 1,
-            margin: '2px 0',
           }}
         >
           {initial}
-        </span>
-        <span style={{ fontFamily: 'var(--type)', fontSize: 8, letterSpacing: '0.2em' }}>
-          SUBSCRIBER
         </span>
       </div>
 
@@ -67,7 +61,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
             textTransform: 'uppercase',
           }}
         >
-          SUBSCRIBER
+          PROFILE
         </span>
         {isEditingName ? (
           <div className="mt-1 flex gap-2 items-end">
@@ -119,7 +113,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
           <span
             style={{
               fontFamily: 'var(--serif)',
-              fontStyle: 'italic',
               color: 'var(--ink-3)',
               fontSize: 13,
             }}

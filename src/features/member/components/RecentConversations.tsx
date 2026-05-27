@@ -16,7 +16,7 @@ const RecentConversations: React.FC<RecentConversationsProps> = ({
 }) => (
   <div className="nm-side-box">
     <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
-      <h4 style={{ margin: 0 }}>최근 발행한 호</h4>
+      <h4 style={{ margin: 0 }}>최근 대화</h4>
       <Link
         to="/chat"
         style={{
@@ -28,7 +28,7 @@ const RecentConversations: React.FC<RecentConversationsProps> = ({
           borderBottom: '1px dotted var(--red-deep)',
         }}
       >
-        모두 보기 ▸
+        모두 보기
       </Link>
     </div>
 
@@ -50,14 +50,13 @@ const RecentConversations: React.FC<RecentConversationsProps> = ({
       <div className="text-center" style={{ padding: '20px 0' }}>
         <p
           style={{
-            fontFamily: 'var(--serif)',
-            fontStyle: 'italic',
+            fontFamily: 'var(--body)',
             color: 'var(--ink-3)',
             fontSize: 13,
             marginBottom: 8,
           }}
         >
-          발행한 호가 없습니다.
+          대화가 없습니다.
         </p>
         <Link
           to="/chat"
@@ -70,7 +69,7 @@ const RecentConversations: React.FC<RecentConversationsProps> = ({
             borderBottom: '1px solid var(--red-deep)',
           }}
         >
-          창간호 발행 ▸
+          새 대화 시작
         </Link>
       </div>
     ) : (
@@ -85,7 +84,7 @@ const RecentConversations: React.FC<RecentConversationsProps> = ({
               gap: 8,
               padding: '8px 0',
               borderBottom: '1px dotted var(--rule-thin)',
-              fontFamily: 'var(--serif)',
+              fontFamily: 'var(--body)',
               fontSize: 13,
             }}
           >
@@ -109,7 +108,7 @@ const RecentConversations: React.FC<RecentConversationsProps> = ({
                 flexShrink: 0,
               }}
             >
-              {conv.branches.length > 0 ? `${conv.branches.length} 호외` : '—'}
+              {conv.branches.length > 0 ? `${conv.branches.length}개 분기` : '—'}
               <span style={{ marginLeft: 8, color: 'var(--ink-faint)' }}>
                 {formatRelativeDate(conv.createdAt, now)}
               </span>

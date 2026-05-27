@@ -128,7 +128,7 @@ const EmailSignupForm: React.FC<EmailSignupFormProps> = ({ onSuccess }) => {
             paddingLeft: 10,
             paddingTop: 6,
             paddingBottom: 6,
-            background: 'rgba(160, 48, 40, 0.06)',
+            background: 'rgba(17, 19, 21, 0.05)',
           }}
         >
           {errorMessage}
@@ -141,7 +141,7 @@ const EmailSignupForm: React.FC<EmailSignupFormProps> = ({ onSuccess }) => {
         className="nm-btn nm-btn-red"
         style={{ width: '100%' }}
       >
-        {isPending ? '발행 중…' : '신규 구독 ▸'}
+        {isPending ? '처리 중...' : '회원가입'}
       </button>
     </form>
   );

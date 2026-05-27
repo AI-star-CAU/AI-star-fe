@@ -41,10 +41,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   );
 
   const composer = (
-    <div
-      className="nm-composer"
-      style={isFloating ? { boxShadow: '8px 8px 0 var(--paper-aged)' } : undefined}
-    >
+    <div className="nm-composer">
       <textarea
         ref={textareaRef}
         value={value}
@@ -64,7 +61,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           style={{ background: 'var(--red)', borderColor: 'var(--red)' }}
           aria-label="응답 생성 취소"
         >
-          {isCanceling ? '중단 중…' : '중단 ◼'}
+          {isCanceling ? '중지 중...' : '중지'}
         </button>
       ) : (
         <button
@@ -74,7 +71,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           className="send"
           aria-label="메시지 보내기"
         >
-          {isSending ? '발행 중…' : '발행 ▸'}
+          {isSending ? '생성 중...' : '보내기'}
         </button>
       )}
     </div>
@@ -88,25 +85,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
     <div
       style={{
         padding: '20px 32px 24px',
-        borderTop: '1px solid var(--rule)',
-        background: 'linear-gradient(180deg, transparent 0%, var(--paper-aged) 100%)',
+        borderTop: '1px solid var(--paper-aged)',
+        background: 'var(--paper)',
         flexShrink: 0,
       }}
     >
       {composer}
-      <p
-        style={{
-          textAlign: 'center',
-          marginTop: 10,
-          fontFamily: 'var(--type)',
-          fontSize: 10,
-          letterSpacing: '0.22em',
-          textTransform: 'uppercase',
-          color: 'var(--ink-faint)',
-        }}
-      >
-        AIT는 현재 백엔드 연결을 준비 중입니다.
-      </p>
     </div>
   );
 };

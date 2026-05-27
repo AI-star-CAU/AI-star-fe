@@ -14,20 +14,21 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   error = null,
 }) => {
   const [confirmText, setConfirmText] = useState('');
-  const canDelete = confirmText === '구독 해지' && !isDeleting;
+  const canDelete = confirmText === '계정 삭제' && !isDeleting;
 
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50 p-4"
-      style={{ background: 'rgba(24, 20, 16, 0.55)' }}
+      style={{ background: 'rgba(26, 29, 31, 0.55)' }}
     >
       <div
         className="w-full max-w-md"
         style={{
           background: 'var(--paper-card)',
-          border: '1.5px solid var(--ink)',
+          border: '1px solid var(--paper-aged)',
+          borderRadius: 14,
           padding: '28px 26px',
-          boxShadow: '10px 10px 0 rgba(40,30,20,0.25)',
+          boxShadow: '0 18px 40px rgba(26,29,31,0.16)',
         }}
       >
         <div
@@ -41,15 +42,14 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
             marginBottom: 6,
           }}
         >
-          — FINAL NOTICE —
+          ACCOUNT DELETE
         </div>
         <h3 className="nm-headline md text-center" style={{ marginBottom: 10 }}>
-          구독을 해지하시겠습니까?
+          계정을 삭제하시겠습니까?
         </h3>
         <p
           style={{
-            fontFamily: 'var(--serif)',
-            fontStyle: 'italic',
+            fontFamily: 'var(--body)',
             fontSize: 14,
             color: 'var(--ink-2)',
             lineHeight: 1.55,
@@ -57,16 +57,16 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
             textAlign: 'center',
           }}
         >
-          모든 호와 호외 데이터가 보관함에서 영구 제거됩니다.
+          모든 대화와 분기 데이터가 영구 삭제됩니다.
           <br />
           계속하려면 아래에{' '}
-          <b style={{ color: 'var(--red-deep)', fontStyle: 'normal' }}>구독 해지</b>를 입력하세요.
+          <b style={{ color: 'var(--red-deep)', fontStyle: 'normal' }}>계정 삭제</b>를 입력하세요.
         </p>
         <input
           type="text"
           value={confirmText}
           onChange={e => setConfirmText(e.target.value)}
-          placeholder="구독 해지"
+          placeholder="계정 삭제"
           className="nm-input"
           style={{ marginBottom: 12 }}
         />
@@ -82,7 +82,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
               paddingLeft: 10,
               paddingTop: 6,
               paddingBottom: 6,
-              background: 'rgba(160, 48, 40, 0.06)',
+              background: 'rgba(17, 19, 21, 0.05)',
               marginBottom: 12,
             }}
           >
@@ -106,7 +106,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
             className="nm-btn nm-btn-red"
             style={{ flex: 1 }}
           >
-            {isDeleting ? '해지 중…' : '구독 해지 ▸'}
+            {isDeleting ? '삭제 중...' : '계정 삭제'}
           </button>
         </div>
       </div>

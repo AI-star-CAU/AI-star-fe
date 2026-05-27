@@ -8,8 +8,8 @@ import { PATHS } from '../app/router/routes';
 type AuthMode = 'login' | 'signup';
 
 const HERO_FEATURES = [
-  { title: '① 분기 관리', desc: '대화를 DAG 구조로 보관해 어떤 가지로든 되돌아갈 수 있습니다.' },
-  { title: '② 지면 구성도', desc: '호의 전체 구조를 한 장의 그래프로 펼쳐 한눈에 봅니다.' },
+  { title: '① 분기 관리', desc: '대화를 DAG 구조로 보관해 원하는 가지로 되돌아갈 수 있습니다.' },
+  { title: '② 그래프 보기', desc: '대화와 분기의 연결 구조를 한 장의 그래프로 확인합니다.' },
   { title: '③ 맥락 보존', desc: '각 분기는 독립된 컨텍스트를 가져 흐름이 섞이지 않습니다.' },
 ];
 
@@ -33,25 +33,25 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen">
       <header className="nm-masthead">
         <div className="nm-mast-top">
-          <span>SUBSCRIPTION DESK</span>
-          <span>창간 1주년 기념호</span>
-          <span className="nm-mast-badge">DAILY · KR</span>
+          <span>AIT</span>
+          <span>Branching AI Workspace</span>
+          <span className="nm-mast-badge">Beta</span>
         </div>
         <h1 className="nm-mast-name">
-          <span className="the">The</span>AIT<span className="pulse" />Times
+          AIT
         </h1>
-        <div className="nm-mast-tagline">— 분기 그래프 위에 적힌 대화의 일지, 오늘부터 받아보세요 —</div>
+        <div className="nm-mast-tagline">대화를 분기하고 맥락을 이어가는 AI workspace</div>
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-12 grid lg:grid-cols-2 gap-12">
         <div className="hidden lg:flex flex-col gap-6">
-          <span className="nm-kicker">SINCE 2026 · 매일 새 호 발행</span>
+          <span className="nm-kicker">Branching chat workspace</span>
           <h2 className="nm-headline lg">
-            대화의 흐름을<br />잃지 않는 신문.
+            대화를 원하는 지점에서<br />다시 이어가세요.
           </h2>
           <p className="nm-subhead">
-            AIT는 채팅을 한 줄의 흐름이 아니라, <b style={{ color: 'var(--ink)' }}>지면의 호와 분기로 엮인 작은 신문</b>처럼 보관합니다.
-            오늘 묻고, 내일 다시 펼쳐보세요.
+            AIT는 채팅을 하나의 긴 흐름으로만 두지 않고, <b style={{ color: 'var(--ink)' }}>대화와 분기의 구조</b>로 정리합니다.
+            필요한 순간 이전 맥락으로 돌아가 새 방향을 시작하세요.
           </p>
 
           <div
@@ -62,14 +62,13 @@ const LoginPage: React.FC = () => {
               textAlign: 'center',
               fontFamily: 'var(--serif-display)',
               fontSize: 22,
-              fontStyle: 'italic',
               color: 'var(--ink)',
               lineHeight: 1.35,
             }}
           >
             <span style={{ color: 'var(--red)', fontWeight: 900 }}>“</span>
             원하는 지점에서 언제든<br />
-            <b style={{ fontStyle: 'normal' }}>새로운 호외</b>를 발행하세요.
+            <b style={{ fontStyle: 'normal' }}>새로운 분기</b>를 시작하세요.
             <span style={{ color: 'var(--red)', fontWeight: 900 }}>”</span>
           </div>
 
@@ -113,10 +112,11 @@ const LoginPage: React.FC = () => {
           <div
             className="w-full max-w-sm"
             style={{
-              border: '1.5px solid var(--ink)',
+              border: '1px solid var(--paper-aged)',
+              borderRadius: 14,
               background: 'var(--paper-card)',
               padding: '28px 26px',
-              boxShadow: '8px 8px 0 var(--paper-aged)',
+              boxShadow: '0 18px 40px rgba(26, 29, 31, 0.08)',
             }}
           >
             <div
@@ -129,10 +129,10 @@ const LoginPage: React.FC = () => {
                 color: 'var(--red-deep)',
               }}
             >
-              — {isLoginMode ? 'SUBSCRIBE TODAY' : 'NEW READER'} —
+              {isLoginMode ? 'LOGIN' : 'SIGN UP'}
             </div>
             <h2 className="nm-headline md text-center mb-5">
-              {isLoginMode ? '구독 신청' : '신규 구독'}
+              {isLoginMode ? '로그인' : '회원가입'}
             </h2>
 
             {isLoginMode ? (
@@ -151,7 +151,7 @@ const LoginPage: React.FC = () => {
                 color: 'var(--ink-3)',
               }}
             >
-              {isLoginMode ? '아직 독자가 아니신가요? ' : '이미 독자이신가요? '}
+              {isLoginMode ? '계정이 없으신가요? ' : '이미 계정이 있으신가요? '}
               <button
                 type="button"
                 onClick={() => setMode(isLoginMode ? 'signup' : 'login')}
@@ -167,16 +167,15 @@ const LoginPage: React.FC = () => {
                   padding: 0,
                 }}
               >
-                {isLoginMode ? '신규 구독' : '구독 신청'}
+                {isLoginMode ? '회원가입' : '로그인'}
               </button>
             </div>
 
             <p
               className="text-center mt-4"
               style={{
-                fontFamily: 'var(--serif)',
+                fontFamily: 'var(--body)',
                 fontSize: 11,
-                fontStyle: 'italic',
                 color: 'var(--ink-faint)',
                 lineHeight: 1.5,
               }}

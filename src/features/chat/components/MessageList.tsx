@@ -31,7 +31,7 @@ const skeletonBar: React.CSSProperties = {
   opacity: 0.6,
 };
 
-/** 초기 로딩 스켈레톤 — 신문 기사/편지 박스 형태. */
+/** 초기 로딩 스켈레톤 — 메시지 박스 형태. */
 const MessageListSkeleton: React.FC = () => (
   <div className="space-y-6" aria-hidden="true">
     {[
@@ -41,7 +41,7 @@ const MessageListSkeleton: React.FC = () => (
       { letter: false, lines: 3 },
     ].map((row, i) => (
       <div key={i} className={row.letter ? 'nm-letter' : 'nm-article'}>
-        {row.letter && <p className="nm-letter-from">FROM. ...</p>}
+        {row.letter && <p className="nm-letter-from">메시지 ...</p>}
         <div className="flex flex-col gap-2">
           {Array.from({ length: row.lines }).map((_, j) => (
             <div
@@ -69,7 +69,7 @@ const OlderLoadingSkeleton: React.FC = () => (
           color: 'var(--ink-3)',
         }}
       >
-        — 이전 호 불러오는 중 —
+        이전 대화 불러오는 중
       </span>
     </div>
     <div className="space-y-1">
@@ -181,7 +181,18 @@ const MessageList: React.FC<MessageListProps> = ({
               {shouldShowBranchMarker && index === branchStartIndex && (
                 <BranchMarker label={branchMarkerLabel} />
               )}
-              <MessageBubble message={msg} userName={userName} onBranch={onBranch} onRegenerate={onRegenerate} onEdit={onEdit} canRegenerate={index === lastAssistantIndex} />
+              <MessageBubble
+                message={msg}
+                userName={userName}
+                onBranch={onBranch}
+                onRegenerate={onRegenerate}
+                onEdit={onEdit}
+                canRegenerate={index === lastAssistantIndex}
+                animateTyping={
+                  msg.role === 'assistant' &&
+                  (msg.isPending === true || msg.status === 'STREAMING')
+                }
+              />
             </React.Fragment>
           ))}
           {shouldShowBranchMarker && branchStartIndex === messages.length && (

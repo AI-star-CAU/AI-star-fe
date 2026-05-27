@@ -9,7 +9,8 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
     return (
       <div
         style={{
-          border: '2px solid var(--ink)',
+          border: '1px solid var(--paper-aged)',
+          borderRadius: 12,
           padding: '18px 16px',
           background: 'var(--paper-card)',
           textAlign: 'center',
@@ -24,7 +25,7 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
             textTransform: 'uppercase',
           }}
         >
-          — 구독 현황 —
+          플랜 현황
         </div>
         <div
           style={{
@@ -36,12 +37,11 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
             lineHeight: 1.1,
           }}
         >
-          <i style={{ color: 'var(--gold)', fontStyle: 'italic' }}>Premium</i> 독자
+          <span style={{ color: 'var(--gold)' }}>Premium</span> 사용자
         </div>
         <div
           style={{
             fontFamily: 'var(--serif)',
-            fontStyle: 'italic',
             color: 'var(--ink-3)',
             fontSize: 12,
             marginBottom: 10,
@@ -59,11 +59,11 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   return (
     <div
       style={{
-        border: '2px solid var(--ink)',
+        border: '1px solid var(--paper-aged)',
+        borderRadius: 12,
         padding: '18px 16px',
         textAlign: 'center',
-        background:
-          'repeating-linear-gradient(-45deg, transparent, transparent 6px, rgba(40,30,20,0.04) 6px, rgba(40,30,20,0.04) 7px), var(--paper-aged)',
+        background: 'var(--paper-card)',
       }}
     >
       <div
@@ -75,7 +75,7 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
           textTransform: 'uppercase',
         }}
       >
-        — 구독 안내 —
+        플랜 안내
       </div>
       <div
         style={{
@@ -87,20 +87,19 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
           lineHeight: 1.1,
         }}
       >
-        <i style={{ color: 'var(--red)', fontStyle: 'italic' }}>Premium</i>
+        <span style={{ color: 'var(--red)' }}>Premium</span>
         <br />
         으로 업그레이드
       </div>
       <div
         style={{
           fontFamily: 'var(--serif)',
-          fontStyle: 'italic',
           color: 'var(--ink-3)',
           fontSize: 12,
           marginBottom: 10,
         }}
       >
-        무제한 발행 · 최신 모델 · 호외 슬롯 확장
+        무제한 대화 · 최신 모델 · 분기 슬롯 확장
       </div>
       <div
         style={{
@@ -125,7 +124,7 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
         </span>
       </div>
       <button type="button" className="nm-btn nm-btn-red" style={{ width: '100%' }}>
-        업그레이드 ▸
+        업그레이드
       </button>
     </div>
   );

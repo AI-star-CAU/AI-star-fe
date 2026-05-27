@@ -13,10 +13,8 @@ const Gauge: React.FC<{ label: string; current: number; max: number }> = ({
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          fontFamily: 'var(--type)',
+          fontFamily: 'var(--body)',
           fontSize: 11,
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
           color: 'var(--ink-3)',
           marginBottom: 4,
         }}
@@ -30,7 +28,8 @@ const Gauge: React.FC<{ label: string; current: number; max: number }> = ({
         style={{
           height: 14,
           background: 'var(--paper-aged)',
-          border: '1.5px solid var(--ink)',
+          border: '1px solid var(--paper-aged)',
+          borderRadius: 999,
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -40,8 +39,7 @@ const Gauge: React.FC<{ label: string; current: number; max: number }> = ({
             display: 'block',
             height: '100%',
             width: `${pct}%`,
-            background:
-              'repeating-linear-gradient(45deg, var(--ink) 0 4px, var(--paper) 4px 8px)',
+            background: 'linear-gradient(90deg, var(--gold), var(--red))',
             transition: 'width 0.7s',
           }}
         />
@@ -63,7 +61,8 @@ const UsageMeter: React.FC = () => {
   return (
   <div
     style={{
-      border: '1.5px solid var(--ink)',
+      border: '1px solid var(--paper-aged)',
+      borderRadius: 12,
       padding: '18px 22px',
       background: 'var(--paper-card)',
     }}
@@ -84,8 +83,7 @@ const UsageMeter: React.FC = () => {
     ) : isError || !usage ? (
       <p
         style={{
-          fontFamily: 'var(--serif)',
-          fontStyle: 'italic',
+          fontFamily: 'var(--body)',
           color: 'var(--ink-3)',
           fontSize: 14,
           marginTop: 10,
@@ -96,8 +94,7 @@ const UsageMeter: React.FC = () => {
     ) : usage.tokenLimit === 0 ? (
       <p
         style={{
-          fontFamily: 'var(--serif)',
-          fontStyle: 'italic',
+          fontFamily: 'var(--body)',
           color: 'var(--ink-2)',
           fontSize: 14,
           marginTop: 10,
@@ -110,10 +107,9 @@ const UsageMeter: React.FC = () => {
         <Gauge label="토큰 사용" current={usage.tokensUsed} max={usage.tokenLimit} />
         <p
           style={{
-            fontFamily: 'var(--type)',
+            fontFamily: 'var(--body)',
             fontSize: 10,
             color: usage.warningLevel === 'CRITICAL' ? 'var(--red-deep)' : 'var(--ink-3)',
-            letterSpacing: '0.16em',
             marginTop: 8,
           }}
         >

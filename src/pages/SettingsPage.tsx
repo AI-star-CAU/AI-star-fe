@@ -27,8 +27,8 @@ const SettingsRow: React.FC<SettingsRowProps> = ({ title, description, control }
     <div>
       <b
         style={{
-          fontFamily: 'var(--serif-display)',
-          fontWeight: 700,
+          fontFamily: 'var(--body)',
+          fontWeight: 600,
           fontSize: 17,
           display: 'block',
           color: 'var(--ink)',
@@ -38,8 +38,7 @@ const SettingsRow: React.FC<SettingsRowProps> = ({ title, description, control }
       </b>
       <span
         style={{
-          fontFamily: 'var(--serif)',
-          fontStyle: 'italic',
+          fontFamily: 'var(--body)',
           color: 'var(--ink-3)',
           fontSize: 13,
         }}
@@ -133,24 +132,24 @@ const SettingsPage: React.FC = () => {
 
       <header className="nm-masthead">
         <div className="nm-mast-top">
-          <span>EDITORIAL DESK</span>
-          <span>설정 · Preferences</span>
-          <span className="nm-mast-badge">DESK 02</span>
+          <span>SETTINGS</span>
+          <span>환경 설정</span>
+          <span className="nm-mast-badge">Preferences</span>
         </div>
         <h1 className="nm-mast-name">
-          <span className="the">The</span>AIT<span className="pulse" />Times
+          설정
         </h1>
-        <div className="nm-mast-tagline">— 발행 정책과 편집 환경을 조정합니다 —</div>
+        <div className="nm-mast-tagline">기본 모델과 화면 환경을 조정합니다</div>
       </header>
 
       <main
         className="max-w-3xl mx-auto"
         style={{ padding: '30px 32px 48px' }}
       >
-        <SettingsSection title="기사 작성 Composing" isFirst>
+        <SettingsSection title="AI 모델" isFirst>
           <SettingsRow
-            title="기본 기자(모델)"
-            description="새 호를 발행할 때 호출할 기자"
+            title="기본 모델"
+            description="새 대화를 시작할 때 사용할 모델"
             control={
               <SettingsSelect
                 id="default-llm-model"
@@ -165,10 +164,10 @@ const SettingsPage: React.FC = () => {
           />
         </SettingsSection>
 
-        <SettingsSection title="발행 환경 General">
+        <SettingsSection title="일반">
           <SettingsRow
-            title="지면 테마"
-            description="화면을 어떤 종이 톤으로 출력할지 결정합니다"
+            title="화면 테마"
+            description="인터페이스 표시 방식을 결정합니다"
             control={
               <SettingsSelect
                 id="theme-mode"
@@ -180,7 +179,7 @@ const SettingsPage: React.FC = () => {
           />
           <SettingsRow
             title="언어"
-            description="편집국이 사용할 언어"
+            description="인터페이스 언어"
             control={
               <SettingsSelect
                 id="language"
@@ -196,13 +195,12 @@ const SettingsPage: React.FC = () => {
           style={{
             textAlign: 'center',
             marginTop: 30,
-            fontFamily: 'var(--serif)',
-            fontStyle: 'italic',
+            fontFamily: 'var(--body)',
             color: 'var(--ink-faint)',
             fontSize: 12,
           }}
         >
-          — Printed in Seoul · 편집국 02번 데스크 —
+          AIT settings
         </p>
       </main>
     </div>

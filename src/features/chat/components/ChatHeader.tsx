@@ -75,19 +75,13 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           className="inline-flex items-center hover:opacity-80 transition"
           aria-label="AIT"
         >
-          <img
-            src="/AI-star-logo.svg"
-            alt="AIT"
-            className="h-9 w-9 rounded-xl"
-          />
+          <span className="nm-mini-mast">AIT</span>
         </Link>
         <span
           className="hidden sm:block"
           style={{
-            fontFamily: 'var(--type)',
-            fontSize: 11,
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
+            fontFamily: 'var(--body)',
+            fontSize: 12,
             color: 'var(--ink-3)',
             borderLeft: '1px solid var(--rule-thin)',
             paddingLeft: 12,
@@ -108,8 +102,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             className="absolute right-0 top-11 w-52 p-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50"
             style={{
               background: 'var(--paper-card)',
-              border: '1.5px solid var(--ink)',
-              boxShadow: '4px 4px 0 var(--paper-aged)',
+              border: '1px solid var(--paper-aged)',
+              borderRadius: 12,
+              boxShadow: '0 12px 28px rgba(26, 29, 31, 0.10)',
             }}
           >
             <div
@@ -118,7 +113,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             >
               <p
                 className="text-sm font-bold truncate"
-                style={{ color: 'var(--ink)', fontFamily: 'var(--serif-display)' }}
+                style={{ color: 'var(--ink)', fontFamily: 'var(--body)' }}
               >
                 {userName}
               </p>
@@ -126,8 +121,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                 className="text-xs truncate"
                 style={{
                   color: 'var(--ink-3)',
-                  fontFamily: 'var(--type)',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--body)',
                 }}
               >
                 {userEmail}
@@ -138,26 +132,22 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
               className="flex w-full text-left px-3 py-2 transition"
               style={{
                 color: 'var(--ink-2)',
-                fontFamily: 'var(--type)',
-                fontSize: 11,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                fontFamily: 'var(--body)',
+                fontSize: 13,
               }}
             >
-              독자 카드
+              마이페이지
             </Link>
             <Link
               to={PATHS.SETTINGS}
               className="flex w-full text-left px-3 py-2 transition"
               style={{
                 color: 'var(--ink-2)',
-                fontFamily: 'var(--type)',
-                fontSize: 11,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                fontFamily: 'var(--body)',
+                fontSize: 13,
               }}
             >
-              편집국 설정
+              설정
             </Link>
             <button
               onClick={() => {
@@ -167,16 +157,14 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
               className="w-full text-left px-3 py-2"
               style={{
                 color: 'var(--red-deep)',
-                fontFamily: 'var(--type)',
-                fontSize: 11,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
+                fontFamily: 'var(--body)',
+                fontSize: 13,
                 borderTop: '1px solid var(--rule-thin)',
                 cursor: 'pointer',
                 background: 'transparent',
               }}
             >
-              구독 해지
+              로그아웃
             </button>
           </div>
         </div>
