@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import Button from '../../../shared/components/ui/Button';
 import SearchPanel from '../../search/components/SearchPanel';
@@ -30,6 +30,9 @@ interface ConversationRowProps {
 interface BranchRowProps {
   branch: Branch;
   isActive: boolean;
+  hasChildren: boolean;
+  isCollapsed: boolean;
+  onToggleCollapse: (branchId: string) => void;
   onSelect: (branchId: string) => void;
 }
 
@@ -43,7 +46,32 @@ const ConversationSkeleton: React.FC = () => (
   </div>
 );
 
-const BranchRow: React.FC<BranchRowProps> = ({ branch, isActive, onSelect }) => {
+/**
+ * 파일 탐색기형 펼침 삼각형. 닫힘=오른쪽(▶), 열림=아래(▼)로 회전한다.
+ * (FG-4: 대화 기록을 파일 탐색기처럼 표현)
+ */
+const DisclosureTriangle: React.FC<{ open: boolean; className?: string }> = ({
+  open,
+  className = '',
+}) => (
+  <svg
+    className={`w-3 h-3 transition-transform duration-150 ${open ? 'rotate-90' : ''} ${className}`}
+    viewBox="0 0 12 12"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M4 2.5l4 3.5-4 3.5z" />
+  </svg>
+);
+
+const BranchRow: React.FC<BranchRowProps> = ({
+  branch,
+  isActive,
+  hasChildren,
+  isCollapsed,
+  onToggleCollapse,
+  onSelect,
+}) => {
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [title, setTitle] = useState(branch.title);
@@ -74,14 +102,32 @@ const BranchRow: React.FC<BranchRowProps> = ({ branch, isActive, onSelect }) => 
     }
   };
 
+  // Phase 4 §2.1: 손자 분기(depth ≥ 2)는 들여쓰기로 트리 깊이를 표현한다.
+  const indent = Math.max(0, (branch.depth ?? 1) - 1) * 12;
+
   return (
-    <div className={`flex items-center gap-1 px-2 py-1.5 rounded-lg group ${
-      isActive ? 'bg-amber-500/15 text-amber-300' : 'hover:bg-slate-800/50 text-slate-400 hover:text-slate-200'
-    }`}>
-      <svg className="w-3.5 h-3.5 flex-shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
+    <div
+      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg group ${
+        isActive ? 'bg-amber-500/15 text-amber-300' : 'hover:bg-slate-800/50 text-slate-400 hover:text-slate-200'
+      }`}
+      style={indent ? { marginLeft: indent } : undefined}
+    >
+      {hasChildren ? (
+        // 하위 분기가 있는 분기: 회전하는 삼각형으로 접기/펼치기
+        <button
+          type="button"
+          onClick={e => { e.stopPropagation(); onToggleCollapse(branch.id); }}
+          className="flex-shrink-0 p-0.5 -ml-0.5 text-amber-500 hover:text-amber-300"
+          aria-label={isCollapsed ? '하위 분기 펼치기' : '하위 분기 접기'}
+        >
+          <DisclosureTriangle open={!isCollapsed} />
+        </button>
+      ) : (
+        // 말단 분기: 작은 삼각형 마커(문서 아이콘 대체)
+        <span className="flex-shrink-0 w-4 flex justify-center text-amber-500/60" aria-hidden="true">
+          <DisclosureTriangle open={false} />
+        </span>
+      )}
 
       {editing ? (
         <input
@@ -153,7 +199,7 @@ const BranchRow: React.FC<BranchRowProps> = ({ branch, isActive, onSelect }) => 
         </div>
       )}
 
-      {!editing && !confirming && (
+      {!editing && !confirming && branch.forkAtTurnIndex > 0 && (
         <span className="text-[10px] text-slate-600 flex-shrink-0">T{branch.forkAtTurnIndex}</span>
       )}
     </div>
@@ -170,6 +216,40 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
 }) => {
   const hasBranches = conversation.branches.length > 0;
 
+  // 파일 트리: 개별 분기 하위를 접을 수 있도록 접힌 분기 id 를 보관한다.
+  const [collapsedBranchIds, setCollapsedBranchIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const toggleBranchCollapse = (branchId: string) =>
+    setCollapsedBranchIds(prev => {
+      const next = new Set(prev);
+      if (next.has(branchId)) next.delete(branchId);
+      else next.add(branchId);
+      return next;
+    });
+
+  const branchById = useMemo(
+    () => new Map(conversation.branches.map(b => [b.id, b])),
+    [conversation.branches],
+  );
+  // 하위 분기를 가진 분기 id (= 부모로 등장하는 id) 집합.
+  const parentBranchIds = useMemo(
+    () => new Set(conversation.branches.map(b => b.parentConvId)),
+    [conversation.branches],
+  );
+  // 접힌 조상 분기를 가진 분기는 숨긴다.
+  const visibleBranches = useMemo(() => {
+    if (collapsedBranchIds.size === 0) return conversation.branches;
+    return conversation.branches.filter(branch => {
+      let pid: string | undefined = branch.parentConvId;
+      while (pid && pid !== conversation.id) {
+        if (collapsedBranchIds.has(pid)) return false;
+        pid = branchById.get(pid)?.parentConvId;
+      }
+      return true;
+    });
+  }, [conversation.branches, conversation.id, collapsedBranchIds, branchById]);
+
   return (
     <div className="group/conv relative">
       <button
@@ -177,16 +257,18 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
         onClick={() => onSelectConversation(conversation.id)}
         className={`w-full text-left ${activeId === conversation.id ? 'sidebar-item-active' : 'sidebar-item'}`}
       >
-        <div className="flex items-start justify-between gap-1">
-          <div className="min-w-0">
+        <div className="flex items-start gap-1.5">
+          {hasBranches ? (
+            <span className="mt-0.5 flex-shrink-0 text-slate-500">
+              <DisclosureTriangle open={isExpanded} />
+            </span>
+          ) : (
+            <span className="w-3 flex-shrink-0" aria-hidden="true" />
+          )}
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold truncate pr-6">{conversation.title}</p>
             <p className="text-xs text-slate-600 truncate mt-0.5">{conversation.preview}</p>
           </div>
-          {hasBranches && (
-            <span className="text-slate-600 text-xs mt-0.5 flex-shrink-0">
-              {isExpanded ? '▾' : '▸'}
-            </span>
-          )}
         </div>
       </button>
 
@@ -204,11 +286,14 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
 
       {hasBranches && isExpanded && (
         <div className="ml-3 mt-0.5 space-y-0.5 border-l border-slate-700/60 pl-2">
-          {conversation.branches.map(branch => (
+          {visibleBranches.map(branch => (
             <BranchRow
               key={branch.id}
               branch={branch}
               isActive={activeId === branch.id}
+              hasChildren={parentBranchIds.has(branch.id)}
+              isCollapsed={collapsedBranchIds.has(branch.id)}
+              onToggleCollapse={toggleBranchCollapse}
               onSelect={onSelectBranch}
             />
           ))}

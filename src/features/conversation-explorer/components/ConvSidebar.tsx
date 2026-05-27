@@ -23,7 +23,6 @@ interface ConvSidebarProps {
   isOpen: boolean;
   width: number;
   graphRootId?: string | null;
-  graphQueryId?: string | null;
   optimisticBranch?: CreateBranchResponse | null;
 }
 
@@ -67,6 +66,27 @@ function mergeOptimisticBranch(
   };
 }
 
+function mergeGraphSnapshots(
+  previous: GraphResponse | undefined,
+  next: GraphResponse,
+): GraphResponse {
+  if (!previous || previous.rootChatId !== next.rootChatId) {
+    return next;
+  }
+
+  const chatsById = new Map(previous.chats.map(chat => [chat.chatId, chat]));
+  next.chats.forEach(chat => chatsById.set(chat.chatId, chat));
+
+  const turnsById = new Map(previous.turns.map(turn => [turn.turnId, turn]));
+  next.turns.forEach(turn => turnsById.set(turn.turnId, turn));
+
+  return {
+    ...next,
+    chats: [...chatsById.values()],
+    turns: [...turnsById.values()],
+  };
+}
+
 const ConvSidebar: React.FC<ConvSidebarProps> = ({
   conversations,
   isLoading,
@@ -76,12 +96,10 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   isOpen,
   width,
   graphRootId,
-  graphQueryId,
   optimisticBranch,
 }) => {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>();
-  const [graphCenterTurnId, setGraphCenterTurnId] = useState<number | undefined>();
 
   const { size: convListHeight, onMouseDown: onVerticalDrag } = useResizeDrag(240, 'y', 80, 520);
 
@@ -166,12 +184,13 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     [conversations, deleteChat, activeId, navigate],
   );
 
-  const graphRequestId = graphQueryId ?? activeParentId;
+  const graphRequestId = activeParentId;
   const numericChatId = graphRequestId ? Number(graphRequestId) : null;
   const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
   const { data: baseGraphData, isFetching: isGraphFetching } = useGraph(
     validChatId,
-    graphCenterTurnId,
+    undefined,
+    { up: 100, down: 100 },
   );
   const [mergedGraphData, setMergedGraphData] = React.useState<typeof baseGraphData>(undefined);
 
@@ -181,7 +200,8 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
       return;
     }
 
-    setMergedGraphData(mergeOptimisticBranch(baseGraphData, optimisticBranch));
+    const nextGraphData = mergeOptimisticBranch(baseGraphData, optimisticBranch);
+    setMergedGraphData(prev => mergeGraphSnapshots(prev, nextGraphData));
   }, [baseGraphData, optimisticBranch]);
 
   const handleRestore = useCallback(async (chatId: string) => {
@@ -209,12 +229,10 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   }, [validChatId]);
 
   const handleCreateConversation = useCallback(() => {
-    setGraphCenterTurnId(undefined);
     navigate('/chat/new');
   }, [navigate]);
 
   const handleSelectConversation = useCallback((conversationId: string) => {
-    setGraphCenterTurnId(undefined);
     navigate(`/chat/${conversationId}`);
     setExpandedId(currentId => {
       const currentExpandedId = currentId === undefined ? activeParentId : currentId;
@@ -228,16 +246,13 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     );
 
     if (parent) setExpandedId(parent.id);
-    setGraphCenterTurnId(undefined);
     navigate(`/chat/${branchId}`);
   }, [conversations, navigate]);
 
   const handleNodeClick = useCallback((action: NodeAction) => {
     if (action.type === 'turn') {
-      setGraphCenterTurnId(action.turnId);
       navigate(`/chat/${action.chatId}?turnId=${action.turnId}`);
     } else {
-      setGraphCenterTurnId(undefined);
       navigate(`/chat/${action.chatId}`);
     }
   }, [navigate]);

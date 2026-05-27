@@ -19,10 +19,14 @@ function hasAsyncPending(data: GraphResponse | undefined): boolean {
   return false;
 }
 
-export const useGraph = (chatId: number | null, centerTurnId?: number) =>
+export const useGraph = (
+  chatId: number | null,
+  centerTurnId?: number,
+  options?: { up?: number; down?: number; includeDeleted?: boolean },
+) =>
   useQuery({
-    queryKey: ['graph', chatId, centerTurnId],
-    queryFn: () => graphApi.getGraph(chatId!, { centerTurnId }),
+    queryKey: ['graph', chatId, centerTurnId, options],
+    queryFn: () => graphApi.getGraph(chatId!, { centerTurnId, ...options }),
     enabled: chatId !== null,
     staleTime: 0,
     refetchInterval: query =>

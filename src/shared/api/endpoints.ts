@@ -28,4 +28,13 @@ export const ENDPOINTS = {
     graphExpand: (chatId: number) => `/chats/${chatId}/graph/expand`,
     restore: (chatId: number) => `/chats/${chatId}/restore`,
   },
+  // Phase 4 §2: 대화 탐색기 트리.
+  explorer: {
+    tree: '/chats/explorer',
+    singleTree: (rootChatId: number) => `/chats/explorer/${rootChatId}`,
+  },
+  // Phase 4 §3.3: 토큰 사용량.
+  usage: {
+    me: '/usage/me',
+  },
 } as const;

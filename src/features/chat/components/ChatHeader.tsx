@@ -2,6 +2,33 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../../shared/components/ui/Button';
 import { PATHS } from '../../../app/router/routes';
+import { useUsage } from '../../usage/hooks/useUsage';
+
+/** Phase 4 §5.3: 토큰 사용량이 임계(WARN/CRITICAL)에 닿으면 헤더에 경고 칩을 띄운다. */
+const UsageWarningChip: React.FC = () => {
+  const { data: usage } = useUsage();
+  if (!usage || usage.warningLevel === 'NONE' || usage.usageRatio == null) {
+    return null;
+  }
+
+  const percent = Math.round(usage.usageRatio * 100);
+  const isCritical = usage.warningLevel === 'CRITICAL';
+
+  return (
+    <Link
+      to={PATHS.MY_PAGE}
+      title={`이번 기간 토큰 사용량 ${percent}% · 남은 토큰 ${(usage.remainingTokens ?? 0).toLocaleString()}개`}
+      className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
+        isCritical
+          ? 'bg-red-500/15 text-red-300 hover:bg-red-500/25'
+          : 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25'
+      }`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${isCritical ? 'bg-red-400' : 'bg-amber-400'}`} />
+      토큰 {percent}%
+    </Link>
+  );
+};
 
 interface ChatHeaderProps {
   userName: string | undefined;
@@ -49,6 +76,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-3">
+        <UsageWarningChip />
         {plan === 'free' && (
           <span className="badge-free hidden sm:inline-flex">FREE</span>
         )}

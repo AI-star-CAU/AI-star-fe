@@ -5,6 +5,7 @@ import { streamMessage } from '../api/messageStream';
 import { ApiError } from '../../../shared/api/client';
 import { resolveErrorMessage } from '../../../shared/api/errorCodes';
 import { showToast } from '../../../shared/utils/toastEvents';
+import { notifyCompression } from '../utils/compressionNotice';
 import type { CreateChatRequest, Message } from '../types';
 
 function toastFromError(err: unknown, fallback: string): void {
@@ -141,8 +142,9 @@ export const useSendMessage = (
             accumulated += d.text;
             patchAi({ content: accumulated });
           },
-          onTurnCompleted: () => {
-            /* 확정은 서버 refetch 로 처리 */
+          onTurnCompleted: d => {
+            // 확정은 서버 refetch 로 처리. Phase 4 §3.2: 압축 적용 시 사용자 안내.
+            notifyCompression(d);
           },
           // 명세 §2.5: cancelled 는 정상 종료 경로. 부분 content 보존.
           onCancelled: d => {
@@ -160,6 +162,8 @@ export const useSendMessage = (
         setLiveMessages([]);
         queryClient.invalidateQueries({ queryKey: ['conversations'] });
         queryClient.invalidateQueries({ queryKey: ['graph'] });
+        // Phase 4 §3.3: LLM 호출 완료 후 토큰 사용량 누적분을 갱신.
+        queryClient.invalidateQueries({ queryKey: ['usage'] });
         if (isNewConversation) {
           options?.onConversationCreated?.(targetId);
         }

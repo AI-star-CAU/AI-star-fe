@@ -19,12 +19,21 @@ export interface ChunkData {
   text: string;
 }
 
-/** Phase 3 §4.1: summary 제거, summaryStatus 추가. */
+/**
+ * Phase 3 §4.1: summary 제거, summaryStatus 추가.
+ * Phase 4 §3.4: 맥락 압축 결과 3필드 추가(서버가 압축을 적용한 경우에만 의미 있음).
+ */
 export interface TurnCompletedData {
   turnId: number;
   aiMessageId: number;
   answerToken: number;
   summaryStatus: 'PENDING';
+  /** Phase 4: 압축 적용 후 LLM 에 실제 전달된 입력 토큰 수. */
+  contextTokens?: number;
+  /** Phase 4: 압축(summary 치환 또는 truncation)이 1턴 이상 적용됐는지. */
+  compressionApplied?: boolean;
+  /** Phase 4: 본 호출에서 압축된 turn 수. compressionApplied=false 이면 0. */
+  compressedTurnCount?: number;
 }
 
 /** 취소 이벤트 (Phase 2 §2.5, send message 전용). */

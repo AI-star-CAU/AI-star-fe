@@ -39,6 +39,57 @@
 
 ---
 
+## 2026-05-27 — Claude (사이드바 대화 트리 — 파일 탐색기형 삼각형 토글)
+
+**유형:** style
+**범위:** features/conversation-explorer/components/ConversationList.tsx
+
+### 변경 내용
+- **root 대화 펼침 표시**를 행 맨 오른쪽의 `▸/▾` 텍스트 → **제목 앞(왼쪽)의 회전 삼각형**으로 이동. 펼침 시 90° 회전(▶→▼), `transition-transform`.
+- **분기 행의 문서 아이콘 → 삼각형 마커로 교체.** 하위 분기가 있는 분기는 회전 삼각형 + 클릭 시 그 하위 트리를 접기/펼치기(파일 트리), 말단 분기는 작은 정적 삼각형.
+- 공용 `DisclosureTriangle` 컴포넌트 추가(회전 삼각형 svg).
+- `ConversationRow` 에 분기 접힘 상태(`collapsedBranchIds`) + 가시성 계산(`visibleBranches`, 접힌 조상 분기의 하위는 숨김) 추가. 상태는 컴포넌트 로컬이라 ConvSidebar 등 상위는 변경 없음.
+
+### 영향 범위
+- 사이드바 트리의 시각적 변경만. 데이터/라우팅/선택 동작은 그대로(행 클릭=이동+root 펼침, 분기 삼각형 클릭=하위 접기 토글).
+- `tsc -b` / `eslint` / `vite build` 통과.
+
+### 관련
+- 관련 파일: [ConversationList.tsx](src/features/conversation-explorer/components/ConversationList.tsx)
+
+---
+
+## 2026-05-27 — Claude (Phase 4 구현 — 대화 탐색기 + 토큰 사용량 + 맥락 압축 통보)
+
+**유형:** feat
+**범위:** features/conversation-explorer, features/usage, features/chat, features/member, features/branch, pages, shared/api
+
+### 변경 내용
+- **대화 탐색기 (FG-4, 명세 §2.1).** 신규 `features/conversation-explorer/api`·`types`·`utils`:
+  - `explorerApi.getExplorerPage` / `getExplorerTree` — `GET /chats/explorer`(트리 페이지), `GET /chats/explorer/{rootChatId}`(단일 트리, §2.2 선택) 클라이언트 + zod 스키마.
+  - `explorerMappers.mapExplorerPageToConversations` — 탐색기 평탄 노드(depth/parentChatId)를 기존 `Conversation`/`Branch` 모델로 변환.
+- **[BREAKING] 사이드바 데이터 소스 교체.** `useConversations` 가 `/chats`(루트만) → `/chats/explorer`(루트 + 하위 분기 트리)를 호출하도록 변경. 결과를 동일한 `Conversation[]` 으로 매핑하므로 소비처 인터페이스는 동일하나, **이제 사이드바 목록에 분기 트리가 함께 채워진다**(이전에는 분기가 그래프에서만 보임). 정렬 기본값 `recent`(lastActivityAt DESC). `titleStatus: PENDING` 동안 3초 폴링.
+- **토큰 사용량 (FR-5.3, 명세 §3.3).** 신규 `features/usage`:
+  - `usageApi.getMyUsage`(`GET /usage/me`) + `useUsage` 훅(404 `USAGE_4041` 재시도 안 함).
+  - `UsageMeter` 를 실데이터(`tokensUsed/tokenLimit/usageRatio/warningLevel`)로 교체. 무제한(`tokenLimit=0`)·경고색(WARN/CRITICAL) 처리.
+  - `ChatHeader` 에 사용량 경고 칩(§5.3) 추가 — WARN/CRITICAL 시 `토큰 N%` 표시, 클릭 시 마이페이지 이동.
+- **SSE `turn_completed` 확장 (명세 §3.4).** `TurnCompletedData` 에 `contextTokens`·`compressionApplied`·`compressedTurnCount` 추가. 압축 적용 시 info 토스트(`compressionNotice`), 송신/재생성/수정 완료 시 `['usage']` 무효화로 사용량 즉시 갱신.
+- **에러 코드/엔드포인트.** `EXPLORER_4001`·`CONTEXT_4001`·`USAGE_4041` 메시지 매핑, `ENDPOINTS.explorer`·`ENDPOINTS.usage` 추가.
+- **Branch 모델 확장.** `depth`·`branchPointTurnId`(옵션) 추가 → 사이드바 깊이 들여쓰기 + 활성 분기 fork 위치 재계산. `ConversationList` 가 depth 로 손자 분기를 들여쓰고, turn 인덱스 미상 분기는 `T{n}` 배지를 숨김.
+- **ChatLayout 활성 분기 보정.** 탐색기 분기는 turn 인덱스를 모르므로(`forkAtTurnIndex=0`), `branchPointTurnId` + 부모 메시지로 fork 위치를 항상 재계산하도록 `activeBranch`/`metaBranchPointTurnId` 수정.
+
+### 영향 범위
+- **사이드바 미리보기 텍스트 변화:** 탐색기 응답에는 `lastMessagePreview` 가 없어(명세 §8.1 payload 최소화), 루트 미리보기가 마지막 메시지 발췌 → `"{turnCount}개의 턴"` 으로 바뀜.
+- `chatApi.getConversations` / `mapChatListItemToConversation` 은 이번 교체로 사용처가 사라졌으나(다른 곳에서 호출될 수 있어) 제거하지 않고 보존.
+- 신규 API: `GET /chats/explorer`, `GET /chats/explorer/{rootChatId}`, `GET /usage/me`. 의존성/환경변수 변경 없음.
+- `npx tsc -b` / `eslint` / `vite build` 통과.
+
+### 관련
+- 명세: [api_phase4_v6.md](../document/phase4/api_phase4_v6.md), BE 요약(AI-star-be `docs/phase4_document/phase4_summary.md`)
+- 관련 파일: [features/conversation-explorer/](src/features/conversation-explorer/), [features/usage/](src/features/usage/)
+
+---
+
 ## 2026-05-26 — Claude ([BREAKING] 디자인 컬러 리뉴얼 — 웜 라떼 라이트 테마)
 
 **유형:** style

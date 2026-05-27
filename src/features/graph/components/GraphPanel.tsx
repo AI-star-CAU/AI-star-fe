@@ -35,6 +35,23 @@ const getNodeWidth = (node: GraphNode): number =>
 const getUserTurnMessages = (messages: Message[]) =>
   messages.filter(message => !message.isPending && message.role === 'user');
 
+const numericId = (id: string): number => {
+  const parsed = Number(id);
+  return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
+};
+
+function getBranchDepth(
+  branchId: string,
+  branchById: Map<string, NonNullable<Conversation['branches']>[number]>,
+  rootId: string | undefined,
+): number {
+  const branch = branchById.get(branchId);
+  if (!branch) return 1;
+  if (branch.depth != null) return branch.depth;
+  if (!rootId || branch.parentConvId === rootId) return 1;
+  return getBranchDepth(branch.parentConvId, branchById, rootId) + 1;
+}
+
 function buildMainNodes(messages: Message[], conv: Conversation | undefined) {
   const nonPending = messages.filter(m => !m.isPending);
   const userTurnMessages = getUserTurnMessages(nonPending);
@@ -64,66 +81,93 @@ function buildGraph(
   conv: Conversation | undefined,
   branchMessagesById: Record<string, Message[]>,
 ) {
-  const branches = conv?.branches ?? [];
-  const mainNodes = buildMainNodes(messages, conv);
-
-  const forkNodeIdx = (turnIndex: number): number =>
-    Math.max(0, Math.min(turnIndex - 1, mainNodes.length - 1));
-
-  const branchNodes: GraphNode[] = [];
-  const branchEdges: GraphEdge[] = [];
-
-  branches.forEach((branch, branchIndex) => {
-    if (mainNodes.length === 0) return;
-
-    const branchNumber = branchIndex + 1;
-    const forkIndex = forkNodeIdx(branch.forkAtTurnIndex);
-    const branchColumnIndex = branches.length - branchIndex;
-    const branchX = ROOT_X + BRANCH_X_GAP * branchColumnIndex;
-    const branchRootId = `b${branchIndex}-root`;
-
-    branchNodes.push({
-      id: branchRootId,
-      x: branchX,
-      y: ROOT_Y + forkIndex * NODE_Y_GAP + BRANCH_MARKER_Y_GAP,
-      label: `B${branchNumber}`,
-      isBranch: true,
-      isRoot: false,
-      chatId: branch.id,
-      groupId: branch.id,
-    });
-    branchEdges.push({ from: `n${forkIndex}`, to: branchRootId, groupId: branch.id });
-
-    const branchTurnMessages = getUserTurnMessages(branchMessagesById[branch.id] ?? []);
-    branchTurnMessages.forEach((message, turnIndex) => {
-      const turnNumber = turnIndex + 1;
-      const nodeId = `b${branchIndex}-t${turnNumber}`;
-
-      branchNodes.push({
-        id: nodeId,
-        x: branchX,
-        y: ROOT_Y + forkIndex * NODE_Y_GAP + BRANCH_MARKER_Y_GAP + turnNumber * NODE_Y_GAP,
-        label: `B${branchNumber}-T${turnNumber}`,
-        isBranch: false,
-        isRoot: false,
-        turnId: message.turnId,
-        chatId: branch.id,
-        groupId: branch.id,
-      });
-      branchEdges.push({
-        from: turnNumber === 1 ? branchRootId : `b${branchIndex}-t${turnNumber - 1}`,
-        to: nodeId,
-        groupId: branch.id,
-      });
-    });
+  const branchById = new Map((conv?.branches ?? []).map(branch => [branch.id, branch]));
+  const branches = [...(conv?.branches ?? [])].sort((a, b) => {
+    const depthDiff = getBranchDepth(a.id, branchById, conv?.id)
+      - getBranchDepth(b.id, branchById, conv?.id);
+    return depthDiff || numericId(a.id) - numericId(b.id);
   });
-
+  const mainNodes = buildMainNodes(messages, conv);
   const mainEdges = mainNodes.slice(0, -1).map((_, i) => ({
     from: `n${i}`,
     to: `n${i + 1}`,
     groupId: conv?.id,
     toTurnIndex: i + 2,
   }));
+
+  const branchNodes: GraphNode[] = [];
+  const branchEdges: GraphEdge[] = [];
+  const turnNodeByTurnId = new Map<number, GraphNode>();
+  const firstNodeByChatId = new Map<string, GraphNode>();
+  const chatStartY = new Map<string, number>();
+
+  mainNodes.forEach(node => {
+    if (node.turnId != null) turnNodeByTurnId.set(node.turnId, node);
+    if (node.chatId && !firstNodeByChatId.has(node.chatId)) {
+      firstNodeByChatId.set(node.chatId, node);
+      chatStartY.set(node.chatId, ROOT_Y);
+    }
+  });
+
+  branches.forEach((branch, branchIndex) => {
+    const branchNumber = branchIndex + 1;
+    const branchX = ROOT_X + BRANCH_X_GAP * branchNumber;
+    const fallbackParentNode = firstNodeByChatId.get(branch.parentConvId) ?? mainNodes[0];
+    const fallbackForkIndex = Math.max(1, branch.forkAtTurnIndex || 1);
+    const fallbackForkY = (chatStartY.get(branch.parentConvId) ?? ROOT_Y)
+      + (fallbackForkIndex - 1) * NODE_Y_GAP;
+    const branchPointNode = branch.branchPointTurnId != null
+      ? turnNodeByTurnId.get(branch.branchPointTurnId)
+      : undefined;
+    const markerY = (branchPointNode?.y ?? fallbackParentNode?.y ?? fallbackForkY)
+      + BRANCH_MARKER_Y_GAP;
+    const markerId = `branch-marker-${branch.id}`;
+
+    branchNodes.push({
+      id: markerId,
+      x: branchX,
+      y: markerY,
+      label: `B${branchNumber}`,
+      isBranch: true,
+      isRoot: false,
+      chatId: branch.id,
+      groupId: branch.id,
+    });
+    chatStartY.set(branch.id, markerY);
+
+    const edgeFrom = branchPointNode?.id ?? fallbackParentNode?.id;
+    if (edgeFrom) {
+      branchEdges.push({ from: edgeFrom, to: markerId, groupId: branch.id });
+    }
+
+    const branchTurnMessages = getUserTurnMessages(branchMessagesById[branch.id] ?? []);
+    branchTurnMessages.forEach((message, turnIndex) => {
+      const turnNumber = turnIndex + 1;
+      const nodeId = `branch-${branch.id}-turn-${turnNumber}`;
+      const node: GraphNode = {
+        id: nodeId,
+        x: branchX,
+        y: markerY + turnNumber * NODE_Y_GAP,
+        label: `B${branchNumber}-T${turnNumber}`,
+        isBranch: false,
+        isRoot: false,
+        turnId: message.turnId,
+        turnIndex: turnNumber,
+        chatId: branch.id,
+        groupId: branch.id,
+      };
+
+      branchNodes.push(node);
+      if (message.turnId != null) turnNodeByTurnId.set(message.turnId, node);
+      if (!firstNodeByChatId.has(branch.id)) firstNodeByChatId.set(branch.id, node);
+      branchEdges.push({
+        from: turnNumber === 1 ? markerId : `branch-${branch.id}-turn-${turnNumber - 1}`,
+        to: nodeId,
+        groupId: branch.id,
+      });
+    });
+  });
+
   const allNodes = [...mainNodes, ...branchNodes];
   const vw = allNodes.reduce((m, n) => Math.max(m, n.x + getNodeWidth(n) / 2 + 24), 160);
   const vh = allNodes.reduce((m, n) => Math.max(m, n.y + 40), 80);
@@ -161,10 +205,10 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
     const node: GraphNode = {
       id: `turn-${turn.turnId}`,
       x: ROOT_X,
-      y: ROOT_Y + i * NODE_Y_GAP,
-      label: i === 0 ? 'root' : label,
+      y: ROOT_Y + (turn.turnSequence - 1) * NODE_Y_GAP,
+      label: turn.turnSequence === 1 ? 'root' : label,
       isBranch: false,
-      isRoot: i === 0,
+      isRoot: turn.turnSequence === 1,
       turnId: turn.turnId,
       turnIndex: turn.turnSequence,
       chatId: String(turn.chatId),
@@ -172,7 +216,10 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
     };
     nodes.push(node);
     turnNodeMap.set(turn.turnId, node);
-    if (i > 0) {
+    if (
+      i > 0 &&
+      rootTurns[i - 1].turnSequence === turn.turnSequence - 1
+    ) {
       edges.push({
         from: `turn-${rootTurns[i - 1].turnId}`,
         to: node.id,
@@ -214,7 +261,7 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
       const node: GraphNode = {
         id: `turn-${turn.turnId}`,
         x: branchX,
-        y: startY + (i + 1) * NODE_Y_GAP,
+        y: startY + turn.turnSequence * NODE_Y_GAP,
         label,
         isBranch: false,
         isRoot: false,
@@ -225,8 +272,18 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
       };
       nodes.push(node);
       turnNodeMap.set(turn.turnId, node);
-      const prevId = i === 0 ? markerId : `turn-${branchTurns[i - 1].turnId}`;
-      edges.push({ from: prevId, to: node.id, groupId: String(turn.chatId) });
+      if (turn.turnSequence === 1) {
+        edges.push({ from: markerId, to: node.id, groupId: String(turn.chatId) });
+      } else if (
+        i > 0 &&
+        branchTurns[i - 1].turnSequence === turn.turnSequence - 1
+      ) {
+        edges.push({
+          from: `turn-${branchTurns[i - 1].turnId}`,
+          to: node.id,
+          groupId: String(turn.chatId),
+        });
+      }
     });
   }
 
@@ -277,9 +334,11 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
 }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const graph = useMemo(
-    () => graphData && graphData.turns.length > 0
-      ? buildGraphFromApiData(graphData)
-      : buildGraph(messages, conv, branchMessagesById),
+    () => conv
+      ? buildGraph(messages, conv, branchMessagesById)
+      : graphData && graphData.turns.length > 0
+        ? buildGraphFromApiData(graphData)
+        : buildGraph(messages, conv, branchMessagesById),
     [graphData, messages, conv, branchMessagesById],
   );
   const nodeMap = useMemo(
@@ -299,9 +358,54 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
     () => conv?.branches.find(branch => branch.id === highlightedGroupId),
     [conv, highlightedGroupId],
   );
+  const apiHighlightPath = useMemo(() => {
+    if (!graphData || !highlightedGroupId) return null;
+
+    const highlightedChatId = Number(highlightedGroupId);
+    if (!Number.isFinite(highlightedChatId)) return null;
+
+    const chatsById = new Map(graphData.chats.map(chat => [chat.chatId, chat]));
+    let chat = chatsById.get(highlightedChatId);
+    if (!chat) return null;
+
+    const chatIds = new Set<number>();
+    const cutoffSequenceByChatId = new Map<number, number>();
+
+    while (chat) {
+      chatIds.add(chat.chatId);
+
+      if (chat.parentChatId != null && chat.branchPointTurnId != null) {
+        const branchPointTurnId = chat.branchPointTurnId;
+        const branchPointTurn = graphData.turns.find(
+          turn => turn.turnId === branchPointTurnId,
+        );
+        if (branchPointTurn) {
+          cutoffSequenceByChatId.set(
+            chat.parentChatId,
+            branchPointTurn.turnSequence,
+          );
+        }
+      }
+
+      chat = chat.parentChatId == null ? undefined : chatsById.get(chat.parentChatId);
+    }
+
+    return { chatIds, cutoffSequenceByChatId };
+  }, [graphData, highlightedGroupId]);
 
   const isNodeInHighlightedPath = (node: GraphNode): boolean => {
     if (!highlightedGroupId) return false;
+    if (node.isRoot) return true;
+    if (apiHighlightPath && node.groupId) {
+      const nodeChatId = Number(node.groupId);
+      if (!Number.isFinite(nodeChatId) || !apiHighlightPath.chatIds.has(nodeChatId)) {
+        return false;
+      }
+      const cutoffSequence = apiHighlightPath.cutoffSequenceByChatId.get(nodeChatId);
+      return cutoffSequence === undefined
+        || node.isBranch
+        || (node.turnIndex !== undefined && node.turnIndex <= cutoffSequence);
+    }
     if (node.groupId === highlightedGroupId) return true;
     return !!highlightedBranch
       && node.groupId === conv?.id
@@ -311,12 +415,35 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
 
   const isEdgeInHighlightedPath = (edge: GraphEdge): boolean => {
     if (!highlightedGroupId) return false;
+    if (apiHighlightPath && edge.groupId) {
+      const edgeChatId = Number(edge.groupId);
+      if (!Number.isFinite(edgeChatId) || !apiHighlightPath.chatIds.has(edgeChatId)) {
+        return false;
+      }
+      const cutoffSequence = apiHighlightPath.cutoffSequenceByChatId.get(edgeChatId);
+      const toNode = nodeMap[edge.to];
+      return cutoffSequence === undefined
+        || toNode?.isBranch
+        || (toNode?.turnIndex !== undefined && toNode.turnIndex <= cutoffSequence);
+    }
     if (edge.groupId === highlightedGroupId) return true;
     return !!highlightedBranch
       && edge.groupId === conv?.id
       && edge.toTurnIndex !== undefined
       && edge.toTurnIndex <= highlightedBranch.forkAtTurnIndex;
   };
+
+  const hasHighlight = highlightedGroupId !== undefined && highlightedGroupId !== null;
+  const orderedEdges = [...graph.edges].sort(
+    (a, b) => Number(isEdgeInHighlightedPath(a)) - Number(isEdgeInHighlightedPath(b)),
+  );
+  const orderedNodes = [...graph.nodes].sort((a, b) => {
+    const priority = (node: GraphNode) => {
+      if (node.id === selectedNodeId) return 2;
+      return isNodeInHighlightedPath(node) ? 1 : 0;
+    };
+    return priority(a) - priority(b);
+  });
 
   const handleClick = (node: GraphNode) => {
     setSelectedNodeId(node.id);
@@ -346,11 +473,17 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
       viewBox={`0 0 ${graph.vw} ${totalVh}`}
       className="block flex-shrink-0"
     >
-      {graph.edges.map(e => {
+      <defs>
+        <filter id="graph-dim-blur">
+          <feGaussianBlur stdDeviation="1.1" />
+        </filter>
+      </defs>
+      {orderedEdges.map(e => {
         const a = nodeMap[e.from];
         const b = nodeMap[e.to];
         if (!a || !b) return null;
         const isHighlighted = isEdgeInHighlightedPath(e);
+        const isDimmed = hasHighlight && !isHighlighted;
         return (
           <line
             key={`${e.from}-${e.to}`}
@@ -358,6 +491,8 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
             stroke={isHighlighted ? '#2dd4bf' : '#334155'}
             strokeWidth={isHighlighted ? '3' : '2'}
             strokeLinecap="round"
+            opacity={isDimmed ? 0.22 : 1}
+            filter={isDimmed ? 'url(#graph-dim-blur)' : undefined}
           />
         );
       })}
@@ -370,14 +505,17 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
         </g>
       ))}
 
-      {graph.nodes.map(node => {
+      {orderedNodes.map(node => {
         const isSelected = node.id === selectedNodeId;
         const isInHighlightedPath = isNodeInHighlightedPath(node) && !isSelected;
+        const isDimmed = hasHighlight && !isSelected && !isInHighlightedPath;
 
         if (node.isDeleted) {
           return (
             <g key={node.id} style={{ cursor: onRestore ? 'pointer' : 'default' }}
-              onClick={() => node.chatId && onRestore?.(node.chatId)}>
+              onClick={() => node.chatId && onRestore?.(node.chatId)}
+              opacity={isDimmed ? 0.28 : 1}
+              filter={isDimmed ? 'url(#graph-dim-blur)' : undefined}>
               <rect
                 x={node.x - getNodeWidth(node) / 2}
                 y={node.y - 14}
@@ -406,6 +544,8 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
             key={node.id}
             onClick={() => handleClick(node)}
             style={{ cursor: onNodeClick ? 'pointer' : 'default' }}
+            opacity={isDimmed ? 0.28 : 1}
+            filter={isDimmed ? 'url(#graph-dim-blur)' : undefined}
           >
             <rect
               x={node.x - getNodeWidth(node) / 2 - 4}

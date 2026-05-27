@@ -108,15 +108,22 @@ src/
 │   │   │   ├── useSendMessage.ts # 메시지 전송/취소 상태 관리
 │   │   │   └── useTurnSummary.ts # 비동기 턴 요약 상태 갱신 hook
 │   │   ├── utils/           # 채팅 유틸
-│   │   │   └── messageHelpers.ts # 분기 표시용 메시지 가공 함수
+│   │   │   ├── messageHelpers.ts # 분기 표시용 메시지 가공 함수
+│   │   │   └── compressionNotice.ts # 맥락 압축 적용 시 토스트 안내 (Phase 4 §3.2)
 │   │   └── types.ts         # 채팅/메시지 타입
 │   │
-│   ├── conversation-explorer/ # 대화 탐색기/사이드바
+│   ├── conversation-explorer/ # 대화 탐색기/사이드바 (Phase 4 FG-4)
+│   │   ├── api/             # 탐색기 API 호출
+│   │   │   ├── explorerApi.ts # GET /chats/explorer(트리)·/{rootChatId}(단일)
+│   │   │   └── schemas.ts   # 탐색기 응답 zod 스키마
 │   │   ├── components/      # 대화 목록 UI
-│   │   │   ├── ConversationList.tsx # 최근 대화/분기 목록
+│   │   │   ├── ConversationList.tsx # 최근 대화/분기 트리 목록
 │   │   │   └── ConvSidebar.tsx # 좌측 사이드바와 그래프 영역 조립
-│   │   └── hooks/           # 대화 탐색 hooks
-│   │       └── useConversations.ts # 대화 목록 조회 hook
+│   │   ├── hooks/           # 대화 탐색 hooks
+│   │   │   └── useConversations.ts # 탐색기 트리 → Conversation[] 조회 hook
+│   │   ├── utils/           # 탐색기 유틸
+│   │   │   └── explorerMappers.ts # 탐색기 평탄 노드 → Conversation/Branch 변환
+│   │   └── types.ts         # 탐색기 타입(ExplorerNode/Tree/Page)
 │   │
 │   ├── graph/               # 분기 그래프 기능
 │   │   ├── api/             # 그래프 API 호출
@@ -154,15 +161,23 @@ src/
 │   │   │   └── useConversationSearch.ts # 로드된 대화/분기 목록 검색
 │   │   └── types.ts         # 검색 결과 타입
 │   │
-│   └── settings/            # 환경 설정 기능
-│       ├── components/      # 설정 UI
-│       │   └── SettingsSelect.tsx # 설정 선택 필드
-│       ├── hooks/           # 설정 hooks
-│       │   └── useSettings.ts # 설정 읽기/갱신 hook
-│       ├── utils/           # 설정 유틸
-│       │   └── settingsStorage.ts # localStorage 설정 저장소
-│       ├── constants.ts     # 기본 설정과 옵션 목록
-│       └── types.ts         # 설정 타입
+│   ├── settings/            # 환경 설정 기능
+│   │   ├── components/      # 설정 UI
+│   │   │   └── SettingsSelect.tsx # 설정 선택 필드
+│   │   ├── hooks/           # 설정 hooks
+│   │   │   └── useSettings.ts # 설정 읽기/갱신 hook
+│   │   ├── utils/           # 설정 유틸
+│   │   │   └── settingsStorage.ts # localStorage 설정 저장소
+│   │   ├── constants.ts     # 기본 설정과 옵션 목록
+│   │   └── types.ts         # 설정 타입
+│   │
+│   └── usage/               # 토큰 사용량 기능 (Phase 4 FR-5.3)
+│       ├── api/             # 사용량 API 호출
+│       │   ├── usageApi.ts  # GET /usage/me
+│       │   └── schemas.ts   # 사용량 응답 zod 스키마
+│       ├── hooks/           # 사용량 hooks
+│       │   └── useUsage.ts  # 사용량 조회 hook (['usage'])
+│       └── types.ts         # 사용량 타입(UsageInfo/WarningLevel)
 │
 ├── shared/                  # 공용 모듈
 │   ├── api/                 # 공용 API 인프라

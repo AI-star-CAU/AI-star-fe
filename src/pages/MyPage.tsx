@@ -124,7 +124,7 @@ const MyPage: React.FC = () => {
               </div>
             </div>
 
-            <UsageMeter plan={plan} />
+            <UsageMeter />
 
             <RecentConversations
               conversations={recentConversations}

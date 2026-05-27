@@ -5,6 +5,10 @@ export interface Branch {
   parentConvId: string;
   title: string;
   forkAtTurnIndex: number;
+  /** Phase 4 §2.1: 탐색기 트리 깊이(root 직속 분기는 1). 사이드바 들여쓰기용. */
+  depth?: number;
+  /** Phase 4 §2.1: 부모 chat 에서 분기된 turn id. forkAtTurnIndex 재계산용. */
+  branchPointTurnId?: number | null;
 }
 
 export interface UpdateBranchRequest {

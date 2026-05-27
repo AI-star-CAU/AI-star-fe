@@ -136,7 +136,6 @@ const ChatLayout: React.FC = () => {
     }
     return activeConvId;
   }, [activeConvId, optimisticBranch, chatMeta]);
-  const graphQueryId = activeConvId === 'new' ? null : activeConvId;
   const listedActiveBranch = useMemo(
     () => conversations.flatMap(c => c.branches).find(branch => branch.id === activeConvId),
     [conversations, activeConvId],
@@ -159,6 +158,10 @@ const ChatLayout: React.FC = () => {
     if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {
       return optimisticBranch.branchPointTurnId;
     }
+    // Phase 4 §2.1: 탐색기에서 내려온 분기 노드는 branchPointTurnId 를 갖는다.
+    if (listedActiveBranch?.branchPointTurnId != null) {
+      return listedActiveBranch.branchPointTurnId;
+    }
     if (
       chatMeta &&
       String(chatMeta.chatId) === activeConvId &&
@@ -167,13 +170,16 @@ const ChatLayout: React.FC = () => {
       return chatMeta.branchPointTurnId;
     }
     return null;
-  }, [optimisticBranch, activeConvId, chatMeta]);
+  }, [optimisticBranch, activeConvId, chatMeta, listedActiveBranch]);
   const { data: parentMessages = [], isLoading: parentMsgsLoading } = useMessages(
     metaBranchParentId ?? '',
   );
   const activeBranch = useMemo<Branch | undefined>(() => {
-    if (listedActiveBranch) return listedActiveBranch;
-    if (!metaBranchParentId || metaBranchPointTurnId == null) return undefined;
+    // Phase 4 §2.1: 탐색기에서 온 분기는 turn 인덱스를 모르므로(forkAtTurnIndex=0)
+    // branchPointTurnId + 부모 메시지로 정확한 fork 위치를 항상 재계산한다.
+    if (!metaBranchParentId || metaBranchPointTurnId == null) {
+      return listedActiveBranch ?? undefined;
+    }
 
     const parentForkIndex =
       getForkTurnIndexByTurnId(
@@ -184,8 +190,10 @@ const ChatLayout: React.FC = () => {
     return {
       id: activeConvId,
       parentConvId: metaBranchParentId,
-      title: activeConv?.title ?? '제목없음',
+      title: listedActiveBranch?.title ?? activeConv?.title ?? '제목없음',
       forkAtTurnIndex: parentForkIndex,
+      depth: listedActiveBranch?.depth,
+      branchPointTurnId: metaBranchPointTurnId,
     };
   }, [
     listedActiveBranch,
@@ -367,7 +375,6 @@ const ChatLayout: React.FC = () => {
           isOpen={sidebarOpen}
           width={sidebarWidth}
           graphRootId={graphRootId}
-          graphQueryId={graphQueryId}
           optimisticBranch={optimisticBranch}
         />
 

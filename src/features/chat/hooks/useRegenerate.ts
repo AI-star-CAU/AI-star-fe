@@ -10,6 +10,7 @@ import {
   type TurnCompletedData,
   type StreamErrorData,
 } from '../api/streamTypes';
+import { notifyCompression } from '../utils/compressionNotice';
 import type { Message } from '../types';
 
 export const useRegenerate = (conversationId: string) => {
@@ -75,6 +76,7 @@ export const useRegenerate = (conversationId: string) => {
         } else if (event === 'turn_completed') {
           const parsed = parseEventData<TurnCompletedData>(data);
           if (!parsed) continue;
+          notifyCompression(parsed);
           setLiveMessages(prev =>
             prev.map(message =>
               message.role === 'assistant'
@@ -102,6 +104,8 @@ export const useRegenerate = (conversationId: string) => {
           });
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
           queryClient.invalidateQueries({ queryKey: ['graph'] });
+          // Phase 4 §3.3: 재생성도 새 LLM 호출이므로 사용량을 갱신.
+          queryClient.invalidateQueries({ queryKey: ['usage'] });
           setLiveMessages([]);
         }
       }
