@@ -397,6 +397,7 @@ const ChatLayout: React.FC = () => {
             />
           ) : (
             <ConversationView
+              conversationId={activeConvId}
               visibleMessages={visibleMessages}
               isMessagesLoading={isMessagesLoading}
               userName={user?.name ?? '나'}

@@ -30,7 +30,7 @@ const statusTextStyle: React.CSSProperties = {
   fontSize: 12,
 };
 
-const TYPING_INTERVAL_MS = 85;
+const TYPING_INTERVAL_MS = 30;
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,

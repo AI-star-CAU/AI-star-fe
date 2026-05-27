@@ -1,8 +1,9 @@
-import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useReducer, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import type { Message } from '../types';
 
 interface MessageListProps {
+  conversationId: string;
   messages: Message[];
   isLoading: boolean;
   userName: string;
@@ -81,7 +82,62 @@ const OlderLoadingSkeleton: React.FC = () => (
 
 const SCROLL_TOP_THRESHOLD = 64;
 
+interface TypingAnimationState {
+  conversationId: string;
+  animatedIds: Set<string>;
+  typingIds: Set<string>;
+}
+
+type TypingAnimationAction = {
+  conversationId: string;
+  messages: Message[];
+};
+
+const assistantIdsWithContent = (messages: Message[]) =>
+  messages
+    .filter(message => message.role === 'assistant' && message.content.length > 0)
+    .map(message => message.id);
+
+const typingAnimationReducer = (
+  state: TypingAnimationState,
+  action: TypingAnimationAction,
+): TypingAnimationState => {
+  const contentIds = assistantIdsWithContent(action.messages);
+
+  if (state.conversationId !== action.conversationId) {
+    return {
+      conversationId: action.conversationId,
+      animatedIds: new Set(contentIds),
+      typingIds: new Set(),
+    };
+  }
+
+  let nextAnimatedIds = state.animatedIds;
+  let nextTypingIds = state.typingIds;
+  let changed = false;
+
+  for (const id of contentIds) {
+    if (!nextAnimatedIds.has(id)) {
+      if (!changed) {
+        nextAnimatedIds = new Set(state.animatedIds);
+        nextTypingIds = new Set(state.typingIds);
+        changed = true;
+      }
+      nextAnimatedIds.add(id);
+      nextTypingIds.add(id);
+    }
+  }
+
+  if (!changed) return state;
+  return {
+    conversationId: state.conversationId,
+    animatedIds: nextAnimatedIds,
+    typingIds: nextTypingIds,
+  };
+};
+
 const MessageList: React.FC<MessageListProps> = ({
+  conversationId,
   messages,
   isLoading,
   userName,
@@ -96,6 +152,11 @@ const MessageList: React.FC<MessageListProps> = ({
   targetTurnId,
   onTargetTurnReached,
 }) => {
+  const [typingAnimation, syncTypingAnimation] = useReducer(typingAnimationReducer, {
+    conversationId,
+    animatedIds: new Set(assistantIdsWithContent(messages)),
+    typingIds: new Set<string>(),
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   // prepend(과거 로드) 시 스크롤 점프를 막기 위한 직전 scrollHeight 기억.
@@ -107,6 +168,10 @@ const MessageList: React.FC<MessageListProps> = ({
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].role === 'assistant') { lastAssistantIndex = i; break; }
   }
+
+  useLayoutEffect(() => {
+    syncTypingAnimation({ conversationId, messages });
+  }, [conversationId, messages]);
 
   const handleScroll = () => {
     const el = containerRef.current;
@@ -190,7 +255,9 @@ const MessageList: React.FC<MessageListProps> = ({
                 canRegenerate={index === lastAssistantIndex}
                 animateTyping={
                   msg.role === 'assistant' &&
-                  (msg.isPending === true || msg.status === 'STREAMING')
+                  (msg.isPending === true ||
+                    msg.status === 'STREAMING' ||
+                    typingAnimation.typingIds.has(msg.id))
                 }
               />
             </React.Fragment>

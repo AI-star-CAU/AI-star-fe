@@ -9,6 +9,7 @@ interface VisibleMessages {
 }
 
 interface ConversationViewProps {
+  conversationId: string;
   // 메시지 리스트
   visibleMessages: VisibleMessages;
   isMessagesLoading: boolean;
@@ -37,6 +38,7 @@ interface ConversationViewProps {
  * (스트리밍 시작 직후의 옵티미스틱 메시지도 여기서 렌더링.)
  */
 const ConversationView: React.FC<ConversationViewProps> = ({
+  conversationId,
   visibleMessages,
   isMessagesLoading,
   userName,
@@ -58,6 +60,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 }) => (
   <>
     <MessageList
+      conversationId={conversationId}
       messages={visibleMessages.messages}
       isLoading={isMessagesLoading}
       userName={userName}

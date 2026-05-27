@@ -39,6 +39,62 @@
 
 ---
 
+## 2026-05-27 — Codex (AI 응답 타이핑 속도 빠르게 조정)
+
+**유형:** style
+**범위:** features/chat/components
+
+### 변경 내용
+- AI 응답 타이핑 간격을 55ms에서 30ms로 줄여 더 빠르게 표시되도록 조정.
+
+### 영향 범위
+- UI 표시 속도만 변경. 메시지 전송/스트리밍/API 로직 변경 없음.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/features/chat/components/MessageBubble.tsx](src/features/chat/components/MessageBubble.tsx)
+
+---
+
+## 2026-05-27 — Codex (AI 응답 타이핑 속도 재조정)
+
+**유형:** style
+**범위:** features/chat/components
+
+### 변경 내용
+- AI 응답 타이핑 간격을 85ms에서 55ms로 줄여 답답하지 않게 조정.
+
+### 영향 범위
+- UI 표시 속도만 변경. 메시지 전송/스트리밍/API 로직 변경 없음.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/features/chat/components/MessageBubble.tsx](src/features/chat/components/MessageBubble.tsx)
+
+---
+
+## 2026-05-27 — Codex (새 AI 메시지 강제 타이핑 표시)
+
+**유형:** fix
+**범위:** features/chat/components, pages/chat
+
+### 변경 내용
+- 서버 히스토리에서 완료된 assistant 메시지가 한 번에 내려와도 새 메시지 id면 타이핑 대상으로 잡도록 `MessageList`에 타이핑 애니메이션 상태를 추가.
+- 대화 진입 시 기존 히스토리는 애니메이션하지 않고, 현재 세션에서 새로 내용이 생긴 assistant 메시지만 타이핑 표시하도록 분리.
+- `ConversationView`/`MessageList`에 현재 대화 id를 전달해 대화 전환 시 타이핑 대상 추적이 섞이지 않도록 조정.
+
+### 영향 범위
+- UI 표시 방식만 변경. 메시지 전송/스트리밍/API 로직 변경 없음.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/features/chat/components/MessageList.tsx](src/features/chat/components/MessageList.tsx), [src/features/chat/components/MessageBubble.tsx](src/features/chat/components/MessageBubble.tsx)
+
+---
+
 ## 2026-05-27 — Codex (AI 응답 타이핑 속도 추가 조정)
 
 **유형:** style
