@@ -149,6 +149,10 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
           parentConvId: String(optimisticBranch.parentId),
           title: optimisticBranch.title ?? '제목없음',
           forkAtTurnIndex: optimisticForkTurnIndex,
+          branchPointTurnId: optimisticBranch.branchPointTurnId,
+          depth: (graphConversation.branches.find(
+            branch => branch.id === String(optimisticBranch.parentId),
+          )?.depth ?? 0) + 1,
         },
       ],
     };
