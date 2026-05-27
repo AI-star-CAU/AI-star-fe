@@ -313,41 +313,54 @@ const ConversationList: React.FC<ConversationListProps> = ({
   onSelectConversation,
   onSelectBranch,
   onDeleteConversation,
-}) => (
-  <>
-    <div className="p-3 flex-shrink-0">
-      <Button onClick={onCreateConversation} variant="primary" fullWidth>
-        <span className="text-lg leading-none">+</span> 새 채팅
-      </Button>
-    </div>
+}) => {
+  const [isRecentOpen, setIsRecentOpen] = useState(true);
 
-    <SearchPanel />
-
+  return (
     <div
-      className="overflow-y-auto flex-shrink-0 px-2 pb-3"
-      style={{ height }}
+      className="flex-shrink-0 min-h-0 flex flex-col overflow-hidden"
+      style={isRecentOpen ? { height } : undefined}
     >
-      <p className="section-label px-2 py-1.5">최근 대화</p>
+      <div className="p-3 flex-shrink-0">
+        <Button onClick={onCreateConversation} variant="primary" fullWidth>
+          <span className="text-lg leading-none">+</span> 새 채팅
+        </Button>
+      </div>
 
-      {isLoading ? (
-        <ConversationSkeleton />
-      ) : conversations.length === 0 ? (
-        <p className="text-xs text-slate-600 px-3 py-4 text-center">대화가 없습니다</p>
-      ) : (
-        conversations.map(conversation => (
-          <ConversationRow
-            key={conversation.id}
-            conversation={conversation}
-            activeId={activeId}
-            isExpanded={expandedId === conversation.id}
-            onSelectConversation={onSelectConversation}
-            onSelectBranch={onSelectBranch}
-            onDeleteConversation={onDeleteConversation}
-          />
-        ))
+      <SearchPanel />
+
+      <button
+        type="button"
+        onClick={() => setIsRecentOpen(prev => !prev)}
+        className="section-label px-4 py-2 flex items-center gap-1.5 text-left hover:text-slate-300 transition-colors"
+      >
+        <DisclosureTriangle open={isRecentOpen} />
+        최근 대화
+      </button>
+
+      {isRecentOpen && (
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+          {isLoading ? (
+            <ConversationSkeleton />
+          ) : conversations.length === 0 ? (
+            <p className="text-xs text-slate-600 px-3 py-4 text-center">대화가 없습니다</p>
+          ) : (
+            conversations.map(conversation => (
+              <ConversationRow
+                key={conversation.id}
+                conversation={conversation}
+                activeId={activeId}
+                isExpanded={expandedId === conversation.id}
+                onSelectConversation={onSelectConversation}
+                onSelectBranch={onSelectBranch}
+                onDeleteConversation={onDeleteConversation}
+              />
+            ))
+          )}
+        </div>
       )}
     </div>
-  </>
-);
+  );
+};
 
 export default ConversationList;

@@ -100,8 +100,9 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>();
+  const [graphZoom, setGraphZoom] = useState(1);
 
-  const { size: convListHeight, onMouseDown: onVerticalDrag } = useResizeDrag(240, 'y', 80, 520);
+  const { size: convListHeight, onMouseDown: onVerticalDrag } = useResizeDrag(320, 'y', 180, 760);
 
   const activeParentIdFromList = useMemo(
     () => conversations.find(conversation =>
@@ -277,8 +278,29 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
       <ResizeHandle direction="y" onMouseDown={onVerticalDrag} />
 
       <div className="flex-1 overflow-hidden flex flex-col border-t border-slate-800">
-        <div className="px-4 py-2 flex-shrink-0">
+        <div className="px-4 py-2 flex-shrink-0 flex items-center justify-between gap-2">
           <p className="section-label">분기 구조</p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setGraphZoom(value => Math.max(0.6, Math.round((value - 0.1) * 10) / 10))}
+              className="w-6 h-6 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              aria-label="그래프 축소"
+            >
+              -
+            </button>
+            <span className="w-10 text-center text-[10px] font-semibold text-slate-500">
+              {Math.round(graphZoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => setGraphZoom(value => Math.min(1.8, Math.round((value + 0.1) * 10) / 10))}
+              className="w-6 h-6 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              aria-label="그래프 확대"
+            >
+              +
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-auto px-4 pb-3">
           <GraphPanel
@@ -290,6 +312,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
             graphData={isGraphFetching && !mergedGraphData ? undefined : mergedGraphData}
             onExpand={handleExpand}
             onRestore={handleRestore}
+            zoom={graphZoom}
           />
         </div>
       </div>

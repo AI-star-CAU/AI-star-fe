@@ -29,6 +29,44 @@ const NODE_Y_GAP = 60;
 const BRANCH_X_GAP = 92;
 const BRANCH_MARKER_Y_GAP = 42;
 
+const GRAPH_NODE_COLORS = {
+  selected: {
+    fill: '#be123c',
+    stroke: '#fb7185',
+    text: '#ffffff',
+  },
+  highlighted: {
+    fill: '#0f766e',
+    stroke: '#2dd4bf',
+    text: '#ffffff',
+  },
+  branch: {
+    fill: '#d97706',
+    stroke: '#f59e0b',
+    text: '#ffffff',
+  },
+  root: {
+    fill: '#475569',
+    stroke: '#64748b',
+    text: '#ffffff',
+  },
+  default: {
+    fill: '#1e293b',
+    stroke: '#334155',
+    text: '#94a3b8',
+  },
+  deleted: {
+    fill: '#0f172a',
+    stroke: '#475569',
+    text: '#475569',
+    subtext: '#64748b',
+  },
+  edge: {
+    default: '#334155',
+    highlighted: '#2dd4bf',
+  },
+} as const;
+
 const getNodeWidth = (node: GraphNode): number =>
   Math.max(34, node.label.length * 6 + 16);
 
@@ -293,22 +331,25 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
 }
 
 function nodeFill(n: GraphNode, isSelected: boolean, isInHighlightedPath: boolean): string {
-  if (isSelected) return '#be123c';
-  if (isInHighlightedPath) return '#0f766e';
-  if (n.isBranch) return '#d97706';
-  if (n.isRoot) return '#475569';
-  return '#1e293b';
+  if (isSelected) return GRAPH_NODE_COLORS.selected.fill;
+  if (isInHighlightedPath) return GRAPH_NODE_COLORS.highlighted.fill;
+  if (n.isBranch) return GRAPH_NODE_COLORS.branch.fill;
+  if (n.isRoot) return GRAPH_NODE_COLORS.root.fill;
+  return GRAPH_NODE_COLORS.default.fill;
 }
 function nodeStroke(n: GraphNode, isSelected: boolean, isInHighlightedPath: boolean): string {
-  if (isSelected) return '#fb7185';
-  if (isInHighlightedPath) return '#2dd4bf';
-  if (n.isBranch) return '#f59e0b';
-  if (n.isRoot) return '#64748b';
-  return '#334155';
+  if (isSelected) return GRAPH_NODE_COLORS.selected.stroke;
+  if (isInHighlightedPath) return GRAPH_NODE_COLORS.highlighted.stroke;
+  if (n.isBranch) return GRAPH_NODE_COLORS.branch.stroke;
+  if (n.isRoot) return GRAPH_NODE_COLORS.root.stroke;
+  return GRAPH_NODE_COLORS.default.stroke;
 }
 function nodeTextFill(n: GraphNode, isSelected: boolean, isInHighlightedPath: boolean): string {
-  if (isSelected || isInHighlightedPath || n.isBranch || n.isRoot) return '#fff';
-  return '#94a3b8';
+  if (isSelected) return GRAPH_NODE_COLORS.selected.text;
+  if (isInHighlightedPath) return GRAPH_NODE_COLORS.highlighted.text;
+  if (n.isBranch) return GRAPH_NODE_COLORS.branch.text;
+  if (n.isRoot) return GRAPH_NODE_COLORS.root.text;
+  return GRAPH_NODE_COLORS.default.text;
 }
 
 interface GraphPanelProps {
@@ -320,6 +361,7 @@ interface GraphPanelProps {
   graphData?: GraphResponse;
   onExpand?: (fromTurnId: number, direction: 'UP' | 'DOWN') => void;
   onRestore?: (chatId: string) => void;
+  zoom?: number;
 }
 
 const GraphPanel: React.FC<GraphPanelProps> = ({
@@ -331,6 +373,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
   graphData,
   onExpand,
   onRestore,
+  zoom = 1,
 }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const graph = useMemo(
@@ -468,8 +511,8 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
 
   return (
     <svg
-      width={graph.vw}
-      height={totalVh}
+      width={graph.vw * zoom}
+      height={totalVh * zoom}
       viewBox={`0 0 ${graph.vw} ${totalVh}`}
       className="block flex-shrink-0"
     >
@@ -488,7 +531,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
           <line
             key={`${e.from}-${e.to}`}
             x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-            stroke={isHighlighted ? '#2dd4bf' : '#334155'}
+            stroke={isHighlighted ? GRAPH_NODE_COLORS.edge.highlighted : GRAPH_NODE_COLORS.edge.default}
             strokeWidth={isHighlighted ? '3' : '2'}
             strokeLinecap="round"
             opacity={isDimmed ? 0.22 : 1}
@@ -522,17 +565,17 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
                 width={getNodeWidth(node)}
                 height="28"
                 rx="10"
-                fill="#0f172a"
-                stroke="#475569"
+                fill={GRAPH_NODE_COLORS.deleted.fill}
+                stroke={GRAPH_NODE_COLORS.deleted.stroke}
                 strokeWidth="1.5"
                 strokeDasharray="4 2"
               />
               <text x={node.x} y={node.y} textAnchor="middle" dominantBaseline="middle"
-                fontSize="9" fontWeight="700" fill="#475569">
+                fontSize="9" fontWeight="700" fill={GRAPH_NODE_COLORS.deleted.text}>
                 {node.label}
               </text>
               <text x={node.x} y={node.y + 16} textAnchor="middle" dominantBaseline="middle"
-                fontSize="8" fill="#64748b">
+                fontSize="8" fill={GRAPH_NODE_COLORS.deleted.subtext}>
                 복구
               </text>
             </g>
