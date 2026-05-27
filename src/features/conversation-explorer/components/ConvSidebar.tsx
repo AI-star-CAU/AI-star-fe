@@ -12,7 +12,7 @@ import { useResizeDrag } from '../../../shared/hooks/useResizeDrag';
 import ResizeHandle from '../../../shared/components/layout/ResizeHandle';
 import type { Conversation, Message } from '../../chat/types';
 import type { CreateBranchResponse } from '../../branch/types';
-import type { GraphResponse, NodeAction } from '../../graph/types';
+import type { GraphResponse, GraphViewMode, NodeAction } from '../../graph/types';
 
 interface ConvSidebarProps {
   conversations: Conversation[];
@@ -101,6 +101,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>();
   const [graphZoom, setGraphZoom] = useState(1);
+  const [graphViewMode, setGraphViewMode] = useState<GraphViewMode>('structure');
 
   const { size: convListHeight, onMouseDown: onVerticalDrag } = useResizeDrag(320, 'y', 180, 760);
 
@@ -306,6 +307,34 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
             </button>
           </div>
         </div>
+        <div className="px-4 pb-2 flex-shrink-0">
+          <div className="grid grid-cols-2 overflow-hidden rounded-md border border-slate-800 bg-slate-950">
+            <button
+              type="button"
+              onClick={() => setGraphViewMode('focused')}
+              className={`h-7 text-[10px] font-semibold transition-colors ${
+                graphViewMode === 'focused'
+                  ? 'bg-cyan-500/20 text-cyan-700'
+                  : 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-300'
+              }`}
+              aria-pressed={graphViewMode === 'focused'}
+            >
+              대화 보기
+            </button>
+            <button
+              type="button"
+              onClick={() => setGraphViewMode('structure')}
+              className={`h-7 text-[10px] font-semibold transition-colors ${
+                graphViewMode === 'structure'
+                  ? 'bg-cyan-500/20 text-cyan-700'
+                  : 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-300'
+              }`}
+              aria-pressed={graphViewMode === 'structure'}
+            >
+              구조 보기
+            </button>
+          </div>
+        </div>
         <div className="flex-1 overflow-auto px-4 pb-3">
           <GraphPanel
             messages={graphMessages}
@@ -317,6 +346,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
             onExpand={handleExpand}
             onRestore={handleRestore}
             zoom={graphZoom}
+            viewMode={graphViewMode}
           />
         </div>
       </div>
