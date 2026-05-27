@@ -8,14 +8,62 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ label, value, sub, loading }) => (
-  <div className="card-inner p-5">
-    <p className="section-label mb-2">{label}</p>
+  <div
+    style={{
+      padding: '18px 22px',
+      borderRight: '1.5px solid var(--ink)',
+      textAlign: 'center',
+    }}
+    className="stat-cell-item"
+  >
+    <div
+      style={{
+        fontFamily: 'var(--type)',
+        fontSize: 10,
+        letterSpacing: '0.22em',
+        color: 'var(--ink-3)',
+        textTransform: 'uppercase',
+      }}
+    >
+      {label}
+    </div>
     {loading ? (
-      <div className="h-8 w-16 bg-slate-700 rounded-lg animate-pulse" />
+      <div
+        style={{
+          height: 42,
+          width: 60,
+          margin: '6px auto',
+          background: 'var(--paper-aged)',
+          opacity: 0.6,
+        }}
+        className="animate-pulse"
+      />
     ) : (
-      <p className="text-3xl font-black text-white">{value}</p>
+      <div
+        style={{
+          fontFamily: 'var(--serif-display)',
+          fontWeight: 900,
+          fontSize: 42,
+          lineHeight: 1,
+          color: 'var(--ink)',
+          margin: '6px 0',
+        }}
+      >
+        {value}
+      </div>
     )}
-    {sub && <p className="text-xs text-slate-600 mt-1">{sub}</p>}
+    {sub && (
+      <div
+        style={{
+          fontFamily: 'var(--type)',
+          fontSize: 10,
+          color: 'var(--ink-3)',
+          letterSpacing: '0.16em',
+        }}
+      >
+        {sub}
+      </div>
+    )}
   </div>
 );
 

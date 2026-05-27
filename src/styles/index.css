@@ -1,61 +1,83 @@
 @import "tailwindcss";
 
-/* ── Theme: Warm Latte (Light) ───────────────────────────────────
- * 디자인 리뉴얼: 4색 팔레트 기반 따뜻한 라이트 테마.
- * 빈도 순서(많이 → 적게):
- *   1) #EDE9E6  크림   — 배경/표면 (가장 많이)
- *   2) #C9996B  카멜   — 액센트(버튼·유저버블·링크·활성·포커스)
- *   3) #5C4F4A  브라운 — 본문/주요 텍스트
- *   4) #5C766D  세이지 — 그라디언트 끝색 등 희소 강조 (가장 적게)
+/* ── Theme: The AIT Times — Newspaper (Light) ──────────────────
+ * Phase 1: 디자인 토큰만 교체. 컴포넌트 구조/클래스명은 그대로 두고
+ *          Tailwind 팔레트(slate/cyan/teal)를 신문 색상에 다시 매핑한다.
  *
- * Tailwind 기본 팔레트 이름을 재정의하므로 컴포넌트의 `bg-slate-900`,
- * `text-cyan-400` 등은 수정 없이 새 색을 따른다.
- *   - slate : 크림↔브라운 중립 스케일. **반전** — 높은 번호=밝은 배경,
- *             낮은 번호=어두운 텍스트 (다크→라이트 전환).
- *   - cyan  : 카멜 액센트. 채움 셰이드(500~700)는 어둡게 두어
- *             밝은 텍스트(text-white/cream)가 대비를 확보한다.
- *   - teal  : 세이지. 그라디언트 끝색 위주.
- * amber/red/emerald/rose 등 의미색은 그대로 둔다.
- * ──────────────────────────────────────────────────────────────── */
+ * 팔레트:
+ *   1) #F4ECD8 paper       — 페이지 배경 (가장 많이)
+ *   2) #FAF4E2 paper-card  — 카드/표면
+ *   3) #181410 ink         — 본문 텍스트
+ *   4) #A03028 red         — 액센트 (kicker, 강조)
+ *   5) #A88A3F gold        — 희소 강조
+ *
+ * Tailwind 별칭은 기존 의미를 유지한다:
+ *   - slate : paper↔ink 중립 스케일 (반전, 950=가장 밝은 종이, 50=잉크)
+ *   - cyan  : red 액센트
+ *   - teal  : gold 강조
+ * ──────────────────────────────────────────────────────────── */
+
+:root {
+  /* 신문 디자인 시스템 변수 — design-newspaper.html :root 원본값. */
+  --paper: #f4ecd8;
+  --paper-2: #efe6cf;
+  --paper-aged: #e7dcc0;
+  --paper-card: #faf4e2;
+  --ink: #181410;
+  --ink-2: #3d332b;
+  --ink-3: #6b5a47;
+  --ink-faint: #a99a82;
+  --rule: #2a211b;
+  --rule-thin: #867159;
+  --red: #a03028;
+  --red-deep: #7e2018;
+  --gold: #a88a3f;
+
+  --serif-display: 'Playfair Display', 'Nanum Myeongjo', Georgia, serif;
+  --serif: 'Playfair Display', 'Noto Serif KR', Georgia, serif;
+  --body: 'Noto Serif KR', 'Playfair Display', Georgia, serif;
+  --type: 'Special Elite', 'Courier Prime', ui-monospace, monospace;
+}
+
 @theme {
-  /* slate → 크림↔브라운 (반전: 950=배경 크림, 200=본문 브라운) */
-  --color-slate-50:  #3a312d;
-  --color-slate-100: #4a403b;
-  --color-slate-200: #5c4f4a;
-  --color-slate-300: #685b55;
-  --color-slate-400: #75685f;
-  --color-slate-500: #8c7f77;
-  --color-slate-600: #b2a69c;
-  --color-slate-700: #ccc1b8;
-  --color-slate-800: #ddd5ce;
-  --color-slate-900: #e8e2dd;
-  --color-slate-950: #ede9e6;
+  /* slate → paper↔ink (반전: 950=종이 배경, 50=잉크 텍스트) */
+  --color-slate-50:  #181410;
+  --color-slate-100: #2a221b;
+  --color-slate-200: #3d332b;
+  --color-slate-300: #6b5a47;
+  --color-slate-400: #867159;
+  --color-slate-500: #a99a82;
+  --color-slate-600: #c3b598;
+  --color-slate-700: #d5c8aa;
+  --color-slate-800: #e7dcc0;
+  --color-slate-900: #efe6cf;
+  --color-slate-950: #f4ecd8;
 
-  /* cyan → 카멜 액센트 (#C9996B at 300; 채움은 500~700에서 어둡게) */
-  --color-cyan-50:  #f4ece2;
-  --color-cyan-100: #ebdac8;
-  --color-cyan-200: #dcc0a0;
-  --color-cyan-300: #c9996b;
-  --color-cyan-400: #bc8755;
-  --color-cyan-500: #a5703f;
-  --color-cyan-600: #8c5d34;
-  --color-cyan-700: #6e4a2c;
-  --color-cyan-800: #573b25;
-  --color-cyan-900: #46301f;
-  --color-cyan-950: #2a1c12;
+  /* cyan → red 액센트 (#A03028 at 500) */
+  --color-cyan-50:  #fbeae8;
+  --color-cyan-100: #f5d2cf;
+  --color-cyan-200: #e9a8a1;
+  --color-cyan-300: #d97a70;
+  --color-cyan-400: #ba514a;
+  --color-cyan-500: #a03028;
+  --color-cyan-600: #8a261f;
+  --color-cyan-700: #7e2018;
+  --color-cyan-800: #5e1812;
+  --color-cyan-900: #40100c;
+  --color-cyan-950: #260906;
 
-  /* teal → 세이지 (#5C766D at 500) */
-  --color-teal-50:  #eaf0ee;
-  --color-teal-100: #d3dfda;
-  --color-teal-200: #aec2ba;
-  --color-teal-300: #88a398;
-  --color-teal-400: #6e8c81;
-  --color-teal-500: #5c766d;
-  --color-teal-600: #4e645c;
-  --color-teal-700: #3f524b;
-  --color-teal-800: #344440;
-  --color-teal-900: #2c3835;
-  --color-teal-950: #19211f;
+  /* teal → gold 강조 (#A88A3F at 500) */
+  --color-teal-50:  #f6efd6;
+  --color-teal-100: #ecdfae;
+  --color-teal-200: #d8bf75;
+  --color-teal-300: #c1a352;
+  --color-teal-400: #b29647;
+  --color-teal-500: #a88a3f;
+  --color-teal-600: #8a7033;
+  --color-teal-700: #6c5728;
+  --color-teal-800: #4e3f1d;
+  --color-teal-900: #322811;
+  --color-teal-950: #1c1609;
 }
 
 /* ── Base layer ──────────────────────────────────────────────── */
@@ -70,10 +92,33 @@
   }
 
   body {
-    @apply bg-slate-950 text-gray-900;
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-      'Noto Sans KR', sans-serif;
+    font-family: var(--body);
+    line-height: 1.55;
+    color: var(--ink);
+    background:
+      radial-gradient(at 20% 10%, rgba(168, 138, 63, 0.05), transparent 50%),
+      radial-gradient(at 80% 80%, rgba(160, 48, 40, 0.04), transparent 55%),
+      var(--paper);
+    font-feature-settings: "liga", "kern";
+  }
+
+  /* 종이 질감 (전역 노이즈 오버레이) */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.30 0 0 0 0 0.22 0 0 0 0.45 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+    opacity: 0.35;
+  }
+
+  /* 노이즈 오버레이 위로 앱 컨텐츠가 올라오도록 */
+  #root {
+    position: relative;
+    z-index: 1;
   }
 
   /* 스크롤바 커스텀 */
@@ -94,6 +139,439 @@
 
 /* ── Components layer ────────────────────────────────────────── */
 @layer components {
+  /* ── Newspaper (AIT Times) 의미 클래스
+     design-newspaper.html 의 패턴을 그대로 옮긴 것. React 컴포넌트들이
+     이 클래스를 className 으로 사용해 신문 룩을 갖춘다. */
+
+  /* 마스트헤드 (제호 영역) */
+  .nm-masthead {
+    padding: 18px 36px 14px;
+    border-bottom: 3px double var(--rule);
+    background: linear-gradient(180deg, var(--paper-card) 0%, var(--paper-2) 100%);
+  }
+  .nm-mast-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-family: var(--type);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-bottom: 1px solid var(--rule-thin);
+    padding-bottom: 8px;
+    gap: 12px;
+  }
+  .nm-mast-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--ink);
+    color: var(--paper);
+    letter-spacing: 0.2em;
+  }
+  .nm-mast-name {
+    text-align: center;
+    padding: 14px 0 6px;
+    font-family: var(--serif-display);
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    color: var(--ink);
+    margin: 0;
+  }
+  .nm-mast-name .the {
+    font-style: italic;
+    font-weight: 400;
+    font-size: 0.55em;
+    vertical-align: 0.5em;
+    margin-right: 6px;
+    letter-spacing: 0.04em;
+  }
+  .nm-mast-name .pulse {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--red);
+    margin: 0 8px;
+    vertical-align: middle;
+    box-shadow: 0 0 0 4px rgba(160, 48, 40, 0.18);
+  }
+  .nm-mast-tagline {
+    text-align: center;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-3);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    border-top: 1px solid var(--rule);
+    padding-top: 8px;
+    margin-top: 6px;
+  }
+
+  /* 미니 마스트헤드 (페이지 상단 바 — 채팅 화면) */
+  .nm-mini-mast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--serif-display);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .nm-mini-mast .the {
+    font-style: italic;
+    font-weight: 400;
+    font-size: 0.6em;
+    vertical-align: 0.4em;
+    letter-spacing: 0.04em;
+  }
+  .nm-mini-mast .pulse {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 0 3px rgba(160, 48, 40, 0.18);
+  }
+
+  /* 키커 (붉은 라벨) */
+  .nm-kicker {
+    font-family: var(--type);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--red-deep);
+    border-top: 2px solid var(--red);
+    border-bottom: 1px solid var(--rule-thin);
+    padding: 6px 0;
+    display: inline-block;
+  }
+
+  /* 헤드라인 */
+  .nm-headline {
+    font-family: var(--serif-display);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0 0 8px;
+  }
+  .nm-headline.xl { font-size: 48px; }
+  .nm-headline.lg { font-size: 36px; }
+  .nm-headline.md { font-size: 24px; }
+  .nm-headline.sm { font-size: 18px; }
+
+  /* 서브헤드 / 리드 */
+  .nm-subhead {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-3);
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  .nm-lede {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink-3);
+    line-height: 1.5;
+  }
+
+  /* 바이라인 */
+  .nm-byline {
+    font-family: var(--type);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-bottom: 1px solid var(--rule-thin);
+    padding-bottom: 8px;
+  }
+
+  /* 장식: 더블 룰, 싱글 룰, 오너먼트 */
+  .nm-rule-double {
+    border-top: 3px double var(--rule);
+  }
+  .nm-rule-single {
+    border-top: 1px solid var(--rule);
+  }
+  .nm-ornament {
+    text-align: center;
+    font-family: var(--serif);
+    color: var(--ink-3);
+    letter-spacing: 1em;
+  }
+  .nm-ornament::before,
+  .nm-ornament::after {
+    content: " ";
+    display: inline-block;
+    width: 48px;
+    border-top: 1px solid var(--rule-thin);
+    vertical-align: middle;
+    margin: 0 12px;
+  }
+
+  /* 프레임 (페이지 컨테이너) */
+  .nm-frame {
+    background: var(--paper-card);
+    border: 1px solid var(--rule);
+    box-shadow:
+      0 1px 0 var(--paper-aged) inset,
+      0 30px 50px -30px rgba(40, 30, 20, 0.35),
+      0 6px 16px -6px rgba(40, 30, 20, 0.20);
+  }
+
+  /* 독자의 질문 (USER 메시지) */
+  .nm-letter {
+    border: 1.5px solid var(--ink);
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(160, 48, 40, 0.06) 24px, rgba(160, 48, 40, 0.06) 25px),
+      var(--paper-card);
+    padding: 18px 20px 16px;
+    position: relative;
+  }
+  .nm-letter::before {
+    content: "독자의 질문";
+    position: absolute;
+    top: -10px;
+    left: 18px;
+    background: var(--paper-card);
+    padding: 0 10px;
+    font-family: var(--type);
+    font-size: 10px;
+    color: var(--red-deep);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .nm-letter-from {
+    font-family: var(--type);
+    font-size: 10px;
+    color: var(--ink-3);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .nm-letter-body {
+    font-family: var(--body);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  /* AI 응답 = 기사 */
+  .nm-article {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 20px;
+  }
+  .nm-article-body {
+    font-family: var(--body);
+    font-size: 14.5px;
+    color: var(--ink);
+    line-height: 1.65;
+    white-space: pre-wrap;
+  }
+
+  /* 호외 태그 (분기) */
+  .nm-extra-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--red);
+    color: var(--paper);
+    font-family: var(--type);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    transform: skew(-6deg);
+  }
+
+  /* 스탬프 (뱃지 대체) */
+  .nm-stamp {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1.5px solid var(--red);
+    color: var(--red);
+    background: transparent;
+    font-family: var(--type);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    transform: rotate(-2deg);
+  }
+  .nm-stamp.bw {
+    border-color: var(--ink);
+    color: var(--ink);
+    transform: rotate(0deg);
+  }
+  .nm-stamp.gold {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* 신문 버튼 */
+  .nm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 42px;
+    padding: 0 18px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper-card);
+    color: var(--ink);
+    font-family: var(--type);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nm-btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .nm-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .nm-btn-red {
+    background: var(--red);
+    color: var(--paper);
+    border-color: var(--red);
+  }
+  .nm-btn-red:hover {
+    background: var(--red-deep);
+    border-color: var(--red-deep);
+  }
+  .nm-btn-ghost {
+    background: transparent;
+    border-color: var(--rule-thin);
+    color: var(--ink-2);
+  }
+  .nm-btn-ghost:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: transparent;
+  }
+
+  /* Composer (메시지 입력 박스) */
+  .nm-composer {
+    border: 1.5px solid var(--ink);
+    background: var(--paper-card);
+    padding: 14px 18px;
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    box-shadow: 6px 6px 0 var(--paper-aged);
+  }
+  .nm-composer textarea {
+    flex: 1;
+    border: none;
+    outline: none;
+    resize: none;
+    background: transparent;
+    font-family: var(--body);
+    font-size: 16px;
+    color: var(--ink);
+    min-height: 36px;
+    max-height: 140px;
+    font-style: italic;
+  }
+  .nm-composer textarea::placeholder {
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+  .nm-composer .send {
+    border: 1.5px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--type);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    padding: 9px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .nm-composer .send:hover:not(:disabled) {
+    background: var(--red);
+    border-color: var(--red);
+  }
+  .nm-composer .send:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .nm-composer-head {
+    text-align: center;
+    font-family: var(--type);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--red-deep);
+  }
+
+  /* StatCard 행 — 마지막 셀의 우측 보더 제거 */
+  .stat-cell-item:last-child {
+    border-right: none !important;
+  }
+
+  /* 사이드 박스 (그래프 패널 등) */
+  .nm-side-box {
+    border: 1px solid var(--rule);
+    background: var(--paper-card);
+    padding: 14px 16px;
+  }
+  .nm-side-box h4 {
+    font-family: var(--type);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--red-deep);
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule-thin);
+  }
+
+  /* 신문 입력 필드 (로그인 등) */
+  .nm-input {
+    width: 100%;
+    background: var(--paper);
+    border: none;
+    border-bottom: 1.5px solid var(--ink);
+    padding: 10px 4px;
+    font-family: var(--body);
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .nm-input::placeholder {
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+  .nm-input:focus {
+    border-bottom-color: var(--red);
+  }
+  .nm-label {
+    display: block;
+    font-family: var(--type);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 6px;
+  }
+
+  /* 기존 컴포넌트 클래스 (워밍 라떼 시대) — 점진 폐기 예정.
+     Phase 2에서 위 nm-* 의미 클래스로 교체. */
+
   /* 카드 */
   .card {
     @apply bg-slate-900 border border-slate-800 rounded-3xl;

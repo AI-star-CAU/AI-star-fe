@@ -1,29 +1,50 @@
 import React from 'react';
-import Button from '../../../shared/components/ui/Button';
 
 interface DangerZoneProps {
   onRequestDelete: () => void;
 }
 
 const DangerZone: React.FC<DangerZoneProps> = ({ onRequestDelete }) => (
-  <div className="bg-slate-900 border border-red-500/10 rounded-3xl p-5">
-    <p className="text-[11px] font-bold text-red-500/60 uppercase tracking-wider mb-4">위험 구역</p>
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-semibold text-slate-300">계정 삭제</p>
-        <p className="text-xs text-slate-600 mt-0.5">
-          모든 대화 기록과 분기 데이터가 삭제됩니다.
-        </p>
-      </div>
-      <Button
-        onClick={onRequestDelete}
-        variant="danger"
-        size="sm"
-        className="flex-shrink-0 ml-4"
+  <div
+    style={{
+      marginTop: 22,
+      padding: '18px 22px',
+      border: '1.5px solid var(--red)',
+      background:
+        'repeating-linear-gradient(-45deg, transparent 0 8px, rgba(160,48,40,0.08) 8px 9px), var(--paper-card)',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 18,
+    }}
+  >
+    <div>
+      <h4
+        style={{
+          margin: '0 0 4px',
+          fontFamily: 'var(--serif-display)',
+          fontWeight: 900,
+          color: 'var(--red-deep)',
+          fontSize: 18,
+        }}
       >
-        계정 삭제
-      </Button>
+        구독 해지 (계정 삭제)
+      </h4>
+      <p
+        style={{
+          margin: 0,
+          fontFamily: 'var(--serif)',
+          fontStyle: 'italic',
+          fontSize: 13,
+          color: 'var(--ink-2)',
+        }}
+      >
+        모든 호와 호외가 보관함에서 영구히 제거됩니다. 이 결정은 되돌릴 수 없습니다.
+      </p>
     </div>
+    <button type="button" className="nm-btn nm-btn-red" onClick={onRequestDelete}>
+      구독 해지 ▸
+    </button>
   </div>
 );
 

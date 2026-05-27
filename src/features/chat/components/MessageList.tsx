@@ -19,33 +19,37 @@ interface MessageListProps {
 }
 
 const BranchMarker: React.FC<{ label: string }> = ({ label }) => (
-  <div className="flex items-center gap-3 py-1">
-    <div className="h-px flex-1 border-t border-dashed border-amber-500/50" />
-    <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-300">
-      {label}
-    </span>
-    <div className="h-px flex-1 border-t border-dashed border-amber-500/50" />
+  <div className="flex items-center gap-3 py-2">
+    <div className="h-px flex-1" style={{ borderTop: '1px dashed var(--red)' }} />
+    <span className="nm-extra-tag">{label}</span>
+    <div className="h-px flex-1" style={{ borderTop: '1px dashed var(--red)' }} />
   </div>
 );
 
-/** 초기 로딩 스켈레톤 — 대화 버블 형태를 흉내낸 placeholder. */
+const skeletonBar: React.CSSProperties = {
+  background: 'var(--paper-aged)',
+  opacity: 0.6,
+};
+
+/** 초기 로딩 스켈레톤 — 신문 기사/편지 박스 형태. */
 const MessageListSkeleton: React.FC = () => (
   <div className="space-y-6" aria-hidden="true">
     {[
-      { me: false, w: 'w-3/5' },
-      { me: true, w: 'w-2/5' },
-      { me: false, w: 'w-4/5' },
-      { me: true, w: 'w-1/3' },
-      { me: false, w: 'w-1/2' },
+      { letter: true, lines: 2 },
+      { letter: false, lines: 4 },
+      { letter: true, lines: 1 },
+      { letter: false, lines: 3 },
     ].map((row, i) => (
-      <div
-        key={i}
-        className={`flex items-start gap-3 ${row.me ? 'flex-row-reverse' : ''}`}
-      >
-        <div className="w-7 h-7 rounded-lg bg-slate-800 animate-pulse flex-shrink-0" />
-        <div className={`flex flex-col gap-2 ${row.w}`}>
-          <div className="h-4 rounded-lg bg-slate-800 animate-pulse" />
-          <div className="h-4 w-3/4 rounded-lg bg-slate-800/70 animate-pulse" />
+      <div key={i} className={row.letter ? 'nm-letter' : 'nm-article'}>
+        {row.letter && <p className="nm-letter-from">FROM. ...</p>}
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: row.lines }).map((_, j) => (
+            <div
+              key={j}
+              className="h-3 animate-pulse"
+              style={{ ...skeletonBar, width: `${60 + (j * 7) % 35}%` }}
+            />
+          ))}
         </div>
       </div>
     ))}
@@ -54,16 +58,23 @@ const MessageListSkeleton: React.FC = () => (
 
 /** 과거 페이지를 불러오는 동안 목록 상단에 띄우는 작은 스켈레톤. */
 const OlderLoadingSkeleton: React.FC = () => (
-  <div className="space-y-3 pb-2" aria-hidden="true">
+  <div className="space-y-2 pb-2" aria-hidden="true">
     <div className="flex items-center justify-center">
-      <span className="text-[11px] text-slate-600">이전 대화 불러오는 중…</span>
+      <span
+        style={{
+          fontFamily: 'var(--type)',
+          fontSize: 10,
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-3)',
+        }}
+      >
+        — 이전 호 불러오는 중 —
+      </span>
     </div>
-    <div className="flex items-start gap-3">
-      <div className="w-7 h-7 rounded-lg bg-slate-800 animate-pulse flex-shrink-0" />
-      <div className="flex flex-col gap-2 w-1/2">
-        <div className="h-4 rounded-lg bg-slate-800 animate-pulse" />
-        <div className="h-4 w-2/3 rounded-lg bg-slate-800/70 animate-pulse" />
-      </div>
+    <div className="space-y-1">
+      <div className="h-3 animate-pulse" style={{ ...skeletonBar, width: '70%' }} />
+      <div className="h-3 animate-pulse" style={{ ...skeletonBar, width: '55%' }} />
     </div>
   </div>
 );

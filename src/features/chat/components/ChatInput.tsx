@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import Button from '../../../shared/components/ui/Button';
 
 interface ChatInputProps {
   value: string;
@@ -41,65 +40,73 @@ const ChatInput: React.FC<ChatInputProps> = ({
     [onSend],
   );
 
+  const composer = (
+    <div
+      className="nm-composer"
+      style={isFloating ? { boxShadow: '8px 8px 0 var(--paper-aged)' } : undefined}
+    >
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="무엇이든 물어보세요"
+        rows={1}
+        disabled={isSending}
+        style={{ minHeight: 36, maxHeight: 160 }}
+      />
+      {isSending && onCancel ? (
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isCanceling}
+          className="send"
+          style={{ background: 'var(--red)', borderColor: 'var(--red)' }}
+          aria-label="응답 생성 취소"
+        >
+          {isCanceling ? '중단 중…' : '중단 ◼'}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onSend}
+          disabled={!value.trim() || isSending}
+          className="send"
+          aria-label="메시지 보내기"
+        >
+          {isSending ? '발행 중…' : '발행 ▸'}
+        </button>
+      )}
+    </div>
+  );
+
+  if (isFloating) {
+    return composer;
+  }
+
   return (
     <div
-      className={
-        isFloating
-          ? 'w-full rounded-3xl border border-slate-700/70 bg-slate-900/95 p-3 shadow-2xl shadow-black/30'
-          : 'p-4 border-t border-slate-800 flex-shrink-0'
-      }
+      style={{
+        padding: '20px 32px 24px',
+        borderTop: '1px solid var(--rule)',
+        background: 'linear-gradient(180deg, transparent 0%, var(--paper-aged) 100%)',
+        flexShrink: 0,
+      }}
     >
-      <div className="flex gap-3 items-end">
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="무엇이든 물어보세요"
-          rows={1}
-          disabled={isSending}
-          className="flex-1 input-dark resize-none leading-relaxed disabled:opacity-60"
-          style={{ minHeight: '48px', maxHeight: '160px' }}
-        />
-        {isSending && onCancel ? (
-          <Button
-            onClick={onCancel}
-            disabled={isCanceling}
-            variant="primary"
-            size="icon"
-            className="flex-shrink-0 bg-red-600 hover:bg-red-700 text-white disabled:bg-slate-800 disabled:text-slate-500"
-            aria-label="응답 생성 취소"
-          >
-            {isCanceling ? (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <span className="w-3 h-3 bg-white rounded-[2px]" />
-            )}
-          </Button>
-        ) : (
-          <Button
-            onClick={onSend}
-            disabled={!value.trim() || isSending}
-            variant="primary"
-            size="icon"
-            className="flex-shrink-0 disabled:bg-slate-800 disabled:text-slate-500"
-            aria-label="메시지 보내기"
-          >
-            {isSending ? (
-              <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            )}
-          </Button>
-        )}
-      </div>
-      {!isFloating && (
-        <p className="text-[10px] text-slate-700 mt-2 text-center">
-          AIT는 현재 백엔드 연결을 준비 중입니다.
-        </p>
-      )}
+      {composer}
+      <p
+        style={{
+          textAlign: 'center',
+          marginTop: 10,
+          fontFamily: 'var(--type)',
+          fontSize: 10,
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-faint)',
+        }}
+      >
+        AIT는 현재 백엔드 연결을 준비 중입니다.
+      </p>
     </div>
   );
 };
