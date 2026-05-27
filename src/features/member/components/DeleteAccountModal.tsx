@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Button from '../../../shared/components/ui/Button';
 
 interface DeleteAccountModalProps {
   onConfirm: () => void;
@@ -15,46 +14,100 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   error = null,
 }) => {
   const [confirmText, setConfirmText] = useState('');
-  const canDelete = confirmText === '계정 삭제' && !isDeleting;
+  const canDelete = confirmText === '구독 해지' && !isDeleting;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-        <h3 className="text-lg font-bold text-white mb-2">계정을 삭제하시겠습니까?</h3>
-        <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-          모든 대화 기록과 분기 데이터가 삭제됩니다. 계속하려면 아래에
-          <span className="text-white font-bold"> 계정 삭제</span>를 입력하세요.
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{ background: 'rgba(24, 20, 16, 0.55)' }}
+    >
+      <div
+        className="w-full max-w-md"
+        style={{
+          background: 'var(--paper-card)',
+          border: '1.5px solid var(--ink)',
+          padding: '28px 26px',
+          boxShadow: '10px 10px 0 rgba(40,30,20,0.25)',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--type)',
+            fontSize: 11,
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'var(--red-deep)',
+            textAlign: 'center',
+            marginBottom: 6,
+          }}
+        >
+          — FINAL NOTICE —
+        </div>
+        <h3 className="nm-headline md text-center" style={{ marginBottom: 10 }}>
+          구독을 해지하시겠습니까?
+        </h3>
+        <p
+          style={{
+            fontFamily: 'var(--serif)',
+            fontStyle: 'italic',
+            fontSize: 14,
+            color: 'var(--ink-2)',
+            lineHeight: 1.55,
+            marginBottom: 16,
+            textAlign: 'center',
+          }}
+        >
+          모든 호와 호외 데이터가 보관함에서 영구 제거됩니다.
+          <br />
+          계속하려면 아래에{' '}
+          <b style={{ color: 'var(--red-deep)', fontStyle: 'normal' }}>구독 해지</b>를 입력하세요.
         </p>
         <input
           type="text"
           value={confirmText}
           onChange={e => setConfirmText(e.target.value)}
-          placeholder="계정 삭제"
-          className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-4 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
+          placeholder="구독 해지"
+          className="nm-input"
+          style={{ marginBottom: 12 }}
         />
         {error && (
-          <p className="text-xs text-red-400 mb-3" role="alert">
+          <p
+            role="alert"
+            style={{
+              fontFamily: 'var(--type)',
+              fontSize: 11,
+              letterSpacing: '0.12em',
+              color: 'var(--red-deep)',
+              borderLeft: '3px solid var(--red)',
+              paddingLeft: 10,
+              paddingTop: 6,
+              paddingBottom: 6,
+              background: 'rgba(160, 48, 40, 0.06)',
+              marginBottom: 12,
+            }}
+          >
             {error}
           </p>
         )}
         <div className="flex gap-3">
-          <Button
+          <button
+            type="button"
             onClick={onCancel}
-            variant="ghost"
-            fullWidth
             disabled={isDeleting}
+            className="nm-btn nm-btn-ghost"
+            style={{ flex: 1 }}
           >
             취소
-          </Button>
-          <Button
+          </button>
+          <button
+            type="button"
             onClick={onConfirm}
             disabled={!canDelete}
-            variant="danger"
-            fullWidth
-            className="bg-red-600 text-white hover:bg-red-700 disabled:bg-slate-700 disabled:text-slate-500 disabled:border-slate-700"
+            className="nm-btn nm-btn-red"
+            style={{ flex: 1 }}
           >
-            {isDeleting ? '삭제 중…' : '계정 삭제'}
-          </Button>
+            {isDeleting ? '해지 중…' : '구독 해지 ▸'}
+          </button>
         </div>
       </div>
     </div>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Button from '../../../shared/components/ui/Button';
 import PlanBadge from './PlanBadge';
 import type { User } from '../../auth/types';
 
@@ -11,45 +10,135 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(user?.name ?? '');
 
-  return (
-    <div className="card overflow-hidden">
-      <div className="h-24 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500" />
-      <div className="px-6 pb-6 text-center -mt-12">
-        <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-cyan-400 to-teal-500 border-4 border-slate-900 flex items-center justify-center text-3xl font-black text-slate-950 shadow-xl">
-          {user?.name?.[0] ?? '?'}
-        </div>
+  const initial = (user?.name ?? '?')[0];
+  const displayName = editedName || user?.name || '독자';
 
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'auto 1fr auto',
+        gap: 24,
+        alignItems: 'center',
+        padding: '24px 28px',
+        border: '1.5px solid var(--ink)',
+        background:
+          'repeating-linear-gradient(0deg, transparent, transparent 22px, rgba(40,30,20,.05) 22px, rgba(40,30,20,.05) 23px), var(--paper-card)',
+      }}
+    >
+      <div
+        style={{
+          width: 84,
+          height: 84,
+          border: '2.5px solid var(--red)',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          transform: 'rotate(-6deg)',
+          color: 'var(--red)',
+        }}
+      >
+        <span style={{ fontFamily: 'var(--type)', fontSize: 8, letterSpacing: '0.2em' }}>CERT.</span>
+        <span
+          style={{
+            fontFamily: 'var(--serif-display)',
+            fontWeight: 900,
+            fontSize: 30,
+            lineHeight: 1,
+            margin: '2px 0',
+          }}
+        >
+          {initial}
+        </span>
+        <span style={{ fontFamily: 'var(--type)', fontSize: 8, letterSpacing: '0.2em' }}>
+          SUBSCRIBER
+        </span>
+      </div>
+
+      <div className="min-w-0">
+        <span
+          style={{
+            fontFamily: 'var(--type)',
+            fontSize: 10,
+            letterSpacing: '0.22em',
+            color: 'var(--ink-3)',
+            textTransform: 'uppercase',
+          }}
+        >
+          SUBSCRIBER
+        </span>
         {isEditingName ? (
-          <div className="mt-4 flex gap-2">
+          <div className="mt-1 flex gap-2 items-end">
             <input
               value={editedName}
               onChange={e => setEditedName(e.target.value)}
-              className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 text-center"
+              className="nm-input"
+              style={{ maxWidth: 240 }}
               autoFocus
             />
-            <Button onClick={() => setIsEditingName(false)} size="sm">
+            <button
+              type="button"
+              onClick={() => setIsEditingName(false)}
+              className="nm-btn"
+              style={{ height: 36, padding: '0 14px' }}
+            >
               저장
-            </Button>
+            </button>
           </div>
         ) : (
-          <div
-            className="mt-4 group cursor-pointer"
-            onClick={() => { setEditedName(user?.name ?? ''); setIsEditingName(true); }}
+          <h2
+            style={{
+              margin: '0 0 4px',
+              fontFamily: 'var(--serif-display)',
+              fontWeight: 900,
+              fontSize: 26,
+              color: 'var(--ink)',
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+              setEditedName(user?.name ?? '');
+              setIsEditingName(true);
+            }}
+            title="클릭하여 이름 수정"
           >
-            <h2 className="text-lg font-bold text-white group-hover:text-cyan-200 transition">
-              {editedName || user?.name}
-            </h2>
-            <span className="text-[10px] text-slate-600 group-hover:text-slate-400 transition">
-              클릭하여 수정
-            </span>
-          </div>
+            {displayName}
+          </h2>
         )}
-
-        <p className="text-sm text-slate-500 mt-1">{user?.email}</p>
-        <div className="mt-3 flex justify-center">
+        <div
+          style={{
+            display: 'flex',
+            gap: 14,
+            marginTop: 8,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
           <PlanBadge plan={user?.plan ?? 'free'} />
+          <span
+            style={{
+              fontFamily: 'var(--serif)',
+              fontStyle: 'italic',
+              color: 'var(--ink-3)',
+              fontSize: 13,
+            }}
+          >
+            {user?.email}
+          </span>
         </div>
       </div>
+
+      <button
+        type="button"
+        className="nm-btn"
+        onClick={() => {
+          setEditedName(user?.name ?? '');
+          setIsEditingName(true);
+        }}
+      >
+        프로필 편집
+      </button>
     </div>
   );
 };

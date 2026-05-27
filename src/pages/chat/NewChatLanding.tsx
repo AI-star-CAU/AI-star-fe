@@ -33,14 +33,13 @@ const NewChatLanding: React.FC<NewChatLandingProps> = ({
   onSelectModel,
 }) => (
   <div className="flex-1 flex items-center justify-center px-5 pb-20">
-    <div className="w-full max-w-2xl">
-      <div className="mb-7 text-center">
-        <p className="text-3xl font-black tracking-tight text-white">
-          안녕하세요, {userName ?? '사용자'}님
-        </p>
-        <p className="mt-3 text-sm text-slate-500">
-          오늘은 어떤 대화를 시작해볼까요?
-        </p>
+    <div className="w-full max-w-2xl text-center">
+      <div className="mb-7">
+        <h1 className="nm-headline xl mb-3">
+          안녕하세요, <i style={{ color: 'var(--gold)', fontStyle: 'italic' }}>{userName ?? '사용자'}</i>님
+        </h1>
+        <p className="nm-lede">오늘은 어떤 대화를 시작해볼까요?</p>
+        <div className="nm-ornament mt-6 mb-2">❦</div>
       </div>
       <div className="mb-3 flex justify-center">
         <LlmModelSelect

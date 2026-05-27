@@ -39,6 +39,119 @@
 
 ---
 
+## 2026-05-27 — Claude ([BREAKING] 디자인 리뉴얼 Phase 2 — The AIT Times 컴포넌트 마이그레이션)
+
+**유형:** style
+**범위:** styles/index.css, pages/_, features/chat/components, features/auth/components, features/member/components, features/settings/components
+
+### 변경 내용
+Phase 1(토큰)에 이어 시안([design-newspaper.html](design-newspaper.html))의
+**컴포넌트 형태/타이포그래피/패턴을 실제 React 코드에 반영**.
+
+**styles/index.css — 신문 의미 클래스 일괄 추가**
+- `.nm-masthead / .nm-mast-top / .nm-mast-name / .nm-mast-tagline / .nm-mast-badge` (마스트헤드)
+- `.nm-mini-mast` (페이지 상단 작은 제호)
+- `.nm-kicker / .nm-headline (xl/lg/md/sm) / .nm-subhead / .nm-lede / .nm-byline / .nm-ornament` (타이포그래피)
+- `.nm-frame / .nm-side-box` (페이지 컨테이너)
+- `.nm-letter / .nm-letter-from / .nm-letter-body` (독자의 질문 = 사용자 메시지)
+- `.nm-article / .nm-article-body` (기사 = AI 메시지)
+- `.nm-extra-tag / .nm-stamp (bw/gold)` (도장/뱃지)
+- `.nm-btn / .nm-btn-red / .nm-btn-ghost` (버튼 3종)
+- `.nm-composer / .nm-composer-head` (메시지 입력 박스)
+- `.nm-input / .nm-label` (하단 보더 인풋)
+- `.stat-cell-item:last-child` (마지막 stat 셀 우측 보더 제거)
+
+**채팅 영역**
+- [ChatHeader.tsx](src/features/chat/components/ChatHeader.tsx) — 다크 헤더 → 페이퍼 카드 + 미니 마스트헤드 + 잉크 외곽선 드롭다운 (8x8 오프셋 그림자); 라벨 "독자 카드 / 편집국 설정 / 구독 해지". 로고는 `AIT`만 사용
+- [NewChatLanding.tsx](src/pages/chat/NewChatLanding.tsx) — 안 보이던 `text-white` 헤딩 → `.nm-headline xl` (이름 골드 이탤릭) + `.nm-lede` 부제 + `.nm-ornament` 장식
+- [MessageBubble.tsx](src/features/chat/components/MessageBubble.tsx) — 둥근 버블/아바타 → **사용자 = `.nm-letter`("독자의 질문" 라벨, 사선 빨강 줄무늬 배경)**, **AI = `.nm-article`(`BY. AIT · EDITORIAL` 바이라인 + 본문)**. 액션 버튼 typewriter 캡스(`⎘ 복사 / ⤴ 호외 발행 / ↻ 재집필 / ✎ 수정 / 재발신 ▸`)
+- [ChatInput.tsx](src/features/chat/components/ChatInput.tsx) — `.nm-composer` (잉크 외곽선 + 6~8px 오프셋 그림자 + 이탤릭 textarea). 발행 `발행 ▸` / 중단 `중단 ◼` typewriter 캡스. dock 변형은 위쪽 페이퍼-aged 그라디언트 룰
+
+**로그인 (No.03 Subscription)**
+- [LoginPage.tsx](src/pages/LoginPage.tsx) — 다크 풀스크린 → 풀 마스트헤드 + 2-col(좌: kicker/헤드라인/풀쿼트/4 features, 우: 잉크 보더 구독 카드)
+- [EmailLoginForm.tsx](src/features/auth/components/EmailLoginForm.tsx) / [EmailSignupForm.tsx](src/features/auth/components/EmailSignupForm.tsx) — 둥근 다크 인풋 → `.nm-input` 하단 보더 인풋 (포커스 시 빨강) + `.nm-label` typewriter + `.nm-btn-red` "구독 시작 ▸ / 신규 구독 ▸"
+
+**마이페이지 (No.04 Reader's Card)**
+- [MyPage.tsx](src/pages/MyPage.tsx) — 셸을 READER'S DESK 마스트헤드 + 풀폭 ProfileCard + 2-col 그리드(좌: stats+gauge, 우: PlanCard+RecentConversations) + DangerZone 으로 재구성
+- [ProfileCard.tsx](src/features/member/components/ProfileCard.tsx) — 그라디언트 카드 → reader-card 그리드 + **빨강 인장 도장(-6° 회전: CERT./이니셜/SUBSCRIBER)**
+- [StatCard.tsx](src/features/member/components/StatCard.tsx) — 둥근 카드 → 잉크 보더로 묶은 한 줄의 셀(42px Playfair 숫자 + typewriter 라벨/델타)
+- [UsageMeter.tsx](src/features/member/components/UsageMeter.tsx) — 그라디언트 막대 → **45° 사선 패턴 gauge** (잉크 보더 + 페이퍼 배경)
+- [PlanCard.tsx](src/features/member/components/PlanCard.tsx) — 그라디언트 카드 → 광고 박스 (-45° 빗금 배경 + 2px 잉크 보더 + ₩9,900 큰 세리프 + `업그레이드 ▸`)
+- [RecentConversations.tsx](src/features/member/components/RecentConversations.tsx) — 둥근 행 리스트 → `.nm-side-box` 점선 구분 행 ("X 호외" + 상대 시간)
+- [DangerZone.tsx](src/features/member/components/DangerZone.tsx) — 회색 카드 → 빨강 보더 + 45° 빨강 빗금 ("구독 해지 ▸")
+- [DeleteAccountModal.tsx](src/features/member/components/DeleteAccountModal.tsx) — 다크 모달 → 신문지 모달 (FINAL NOTICE 헤더, 입력 "구독 해지" 확인)
+- [PlanBadge.tsx](src/features/member/components/PlanBadge.tsx) — `badge-free/badge-pro` → `.nm-stamp bw / .nm-stamp gold`
+
+**설정 (No.05 Editorial Desk)**
+- [SettingsPage.tsx](src/pages/SettingsPage.tsx) — 다크 셸 → EDITORIAL DESK 마스트헤드 + 더블룰 구분 `.set-section` ("― 발행 환경 General ― / ― 기사 작성 Composing ―") + 점선 하단 보더 `.set-row` 패턴 + "Printed in Seoul · 편집국 02번 데스크" 푸터
+- [SettingsSelect.tsx](src/features/settings/components/SettingsSelect.tsx) — 다크 둥근 select → 잉크 보더 + typewriter 캡스 select (label prop 선택형으로 완화 — set-row 가 라벨 별도 렌더)
+
+### 영향 범위
+- **모든 페이지의 시각적 인상이 신문지로 통일됨**. 컴포넌트 함수 시그니처는 거의 그대로(SettingsSelect의 `label`만 optional 로 완화).
+- `text-white` 하드코딩 문제는 해당 컴포넌트들이 재작성되며 자연 해소(MessageBubble, MyPage, SettingsPage, LoginPage, NewChatLanding 헤더 모두 처리). 미터치 컴포넌트(ProtectedRoute, ConvSidebar 등)에는 여전히 잔존 — Phase 3 후속 작업으로 남김.
+- 기존 `.bubble-user / .bubble-ai / .card / .card-inner / .input-dark / .sidebar-item / .sidebar-item-active / .badge-free / .badge-pro / .section-label / .text-gradient-blue` 클래스는 미사용 컴포넌트가 아직 참조하므로 **삭제하지 않고 유지**(점진 폐기 예정).
+- 신문 메타포로 일부 한국어 문구가 바뀜: 마이페이지 → 독자 카드, 환경 설정 → 편집국 설정, 분기 → 호외, 계정 삭제 → 구독 해지, 회원가입 → 신규 구독, 로그인 → 구독 신청.
+- 그래프 패널, 사이드바, 검색 등 채팅 페이지의 잔여 컴포넌트는 미터치(Phase 3).
+
+### 관련
+- 시안: [design-newspaper.html](design-newspaper.html) (No.01~No.05 5개 화면)
+- 브랜치: `design/newspaper-theme`
+- 이전: [Phase 1 토큰 변경](#2026-05-27--claude-breaking-디자인-리뉴얼-phase-1--the-ait-times-신문-테마-토큰)
+- 다음 (Phase 3 후보):
+  - 채팅 사이드바(ConvSidebar) → "오늘의 목차" TOC 패턴
+  - 그래프 패널(GraphPanel) → 분기 지도(map-canvas) 패턴
+  - 잔여 `text-white` 정리 (ProtectedRoute, MessageList 등)
+
+---
+
+## 2026-05-27 — Claude ([BREAKING] 디자인 리뉴얼 Phase 1 — The AIT Times 신문 테마 토큰)
+
+**유형:** style
+**범위:** styles/index.css, index.html
+
+### 변경 내용
+- 전역 디자인 시스템을 **워밍 라떼 → AIT Times 신문 테마**로 1차 전환.
+  컴포넌트 클래스(.card, .bubble-user 등) 구조는 그대로 두고, **Tailwind
+  팔레트(slate/cyan/teal) 매핑만 신문 색상으로 재정의**.
+  팔레트(빈도 많이→적게) — 실제 신문지의 매트한 따뜻한 그레이 톤으로
+  채도를 낮춰서 따뜻한 크림보다 "인쇄용지"에 가깝게 조정:
+  1. `#DAD6CB` paper       — 페이지 배경 (그레이쪽으로 시프트)
+  2. `#E2DED3` paper-card  — 카드/표면 (살짝 밝게)
+  3. `#1A1612` ink         — 본문 텍스트
+  4. `#9A2C25` red         — 액센트 (살짝 채도 낮춤)
+  5. `#97793A` gold        — 희소 강조
+- Tailwind 별칭 매핑(의미 유지):
+  - `slate` — paper↔ink 중립 스케일(반전: 950=배경 종이, 50=잉크 텍스트)
+  - `cyan`  — red 액센트 스케일
+  - `teal`  — gold 강조 스케일
+- `:root`에 `--paper / --ink / --red / --gold / --rule / 폰트` 등 신문
+  디자인 변수 추가 (Phase 2 의미 클래스에서 직접 사용 예정).
+- `index.html`에 Google Fonts 추가: Playfair Display, Noto Serif KR,
+  Special Elite (preconnect 포함).
+- `body` 폰트를 `Noto Serif KR / Playfair Display` 세리프로 변경.
+- `body::before`에 SVG 노이즈 기반 **종이 질감 오버레이** 적용
+  (`mix-blend-mode: multiply`, opacity 0.35). 컨텐츠가 가려지지 않도록
+  `#root`에 `position: relative; z-index: 1`.
+
+### 영향 범위
+- 전 페이지의 배경/카드/액센트 색이 즉시 신문 톤으로 바뀐다.
+  컴포넌트 코드는 0줄 수정.
+- 본문 폰트가 sans → serif 로 바뀌어 가독·줄높이 인상이 달라진다.
+  좁은 컴포넌트(뱃지 등)에서 라인 정렬 미세 변화가 있을 수 있다.
+- `.bubble-user`가 `bg-cyan-700`을 사용 → 새 매핑상 **딥 레드**(`#7E2018`)
+  로 바뀐다. 신문 액센트로는 의도된 방향이지만 Phase 2에서 의미 클래스
+  (`독자의 질문` 편지 박스)로 교체될 예정.
+- 라운드 코너(`rounded-3xl` 등)와 그림자는 그대로다. 박스화/마스트헤드 등
+  형태 작업은 Phase 2 범위.
+- Google Fonts 외부 의존성이 추가됨(네트워크 첫 로드 시 폰트 다운로드).
+
+### 관련
+- 시안: [design-newspaper.html](design-newspaper.html)
+- 관련 파일: [src/styles/index.css](src/styles/index.css), [index.html](index.html)
+- 다음 단계: Phase 2 — 둥근 모서리 박스화, `.headline/.kicker/.byline` 의미 클래스, 채팅 페이지부터 컴포넌트 재단
+
+---
+
 ## 2026-05-26 — Claude ([BREAKING] 디자인 컬러 리뉴얼 — 웜 라떼 라이트 테마)
 
 **유형:** style

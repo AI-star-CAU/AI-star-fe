@@ -6,9 +6,9 @@ interface PlanBadgeProps {
 
 const PlanBadge: React.FC<PlanBadgeProps> = ({ plan }) =>
   plan === 'pro' ? (
-    <span className="badge-pro">PRO</span>
+    <span className="nm-stamp gold">PRO</span>
   ) : (
-    <span className="badge-free">FREE</span>
+    <span className="nm-stamp bw">FREE PLAN</span>
   );
 
 export default PlanBadge;

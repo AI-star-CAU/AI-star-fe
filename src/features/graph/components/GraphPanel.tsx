@@ -235,23 +235,28 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
   return { nodes, edges, vw, vh };
 }
 
+// 신문 분기 지도(map-canvas) 팔레트 — 시안 .mnode 패턴
+// root: 잉크 채움 / active(selected): 빨강 채움 / branch: 페이퍼 + 빨강 보더
+// hover path: 골드 강조 / 일반 turn: 페이퍼 + 잉크 보더
 function nodeFill(n: GraphNode, isSelected: boolean, isInHighlightedPath: boolean): string {
-  if (isSelected) return '#be123c';
-  if (isInHighlightedPath) return '#0f766e';
-  if (n.isBranch) return '#d97706';
-  if (n.isRoot) return '#475569';
-  return '#1e293b';
+  if (isSelected) return '#A03028';     // red
+  if (isInHighlightedPath) return '#A88A3F'; // gold
+  if (n.isBranch) return '#FAF4E2';     // paper-card (보더만 빨강)
+  if (n.isRoot) return '#181410';       // ink
+  return '#FAF4E2';                     // paper-card
 }
 function nodeStroke(n: GraphNode, isSelected: boolean, isInHighlightedPath: boolean): string {
-  if (isSelected) return '#fb7185';
-  if (isInHighlightedPath) return '#2dd4bf';
-  if (n.isBranch) return '#f59e0b';
-  if (n.isRoot) return '#64748b';
-  return '#334155';
+  if (isSelected) return '#7E2018';     // red-deep
+  if (isInHighlightedPath) return '#7E2018';
+  if (n.isBranch) return '#A03028';     // red border
+  if (n.isRoot) return '#181410';       // ink
+  return '#2A211B';                     // rule
 }
 function nodeTextFill(n: GraphNode, isSelected: boolean, isInHighlightedPath: boolean): string {
-  if (isSelected || isInHighlightedPath || n.isBranch || n.isRoot) return '#fff';
-  return '#94a3b8';
+  if (isSelected || n.isRoot) return '#F4ECD8';  // paper
+  if (isInHighlightedPath) return '#181410';     // ink on gold
+  if (n.isBranch) return '#7E2018';              // red-deep
+  return '#181410';                              // ink
 }
 
 interface GraphPanelProps {
@@ -355,16 +360,16 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
           <line
             key={`${e.from}-${e.to}`}
             x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-            stroke={isHighlighted ? '#2dd4bf' : '#334155'}
-            strokeWidth={isHighlighted ? '3' : '2'}
+            stroke={isHighlighted ? '#7E2018' : '#867159'}
+            strokeWidth={isHighlighted ? '2.5' : '1.5'}
             strokeLinecap="round"
           />
         );
       })}
       {upFrontier.map(f => (
         <g key={`up-${f.fromTurnId}`} onClick={() => onExpand?.(f.fromTurnId, 'UP')} style={{ cursor: 'pointer' }}>
-          <rect x={ROOT_X - 28} y={4} width={56} height={20} rx={10} fill="#1e293b" stroke="#334155" strokeWidth={1} />
-          <text x={ROOT_X} y={14} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontWeight={700} fill="#94a3b8">
+          <rect x={ROOT_X - 30} y={4} width={60} height={18} fill="#FAF4E2" stroke="#181410" strokeWidth={1.5} />
+          <text x={ROOT_X} y={13} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontWeight={700} letterSpacing="1.5" fill="#7E2018" fontFamily="var(--type)">
             ▲ 더 보기
           </text>
         </g>
@@ -383,18 +388,17 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
                 y={node.y - 14}
                 width={getNodeWidth(node)}
                 height="28"
-                rx="10"
-                fill="#0f172a"
-                stroke="#475569"
+                fill="#E7DCC0"
+                stroke="#867159"
                 strokeWidth="1.5"
                 strokeDasharray="4 2"
               />
               <text x={node.x} y={node.y} textAnchor="middle" dominantBaseline="middle"
-                fontSize="9" fontWeight="700" fill="#475569">
+                fontSize="9" fontWeight="700" fontFamily="var(--type)" fill="#867159">
                 {node.label}
               </text>
               <text x={node.x} y={node.y + 16} textAnchor="middle" dominantBaseline="middle"
-                fontSize="8" fill="#64748b">
+                fontSize="8" fontFamily="var(--type)" letterSpacing="1.5" fill="#7E2018">
                 복구
               </text>
             </g>
@@ -412,7 +416,6 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
               y={node.y - 18}
               width={getNodeWidth(node) + 8}
               height="36"
-              rx="12"
               fill="transparent"
             />
             <rect
@@ -420,15 +423,16 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
               y={node.y - 14}
               width={getNodeWidth(node)}
               height="28"
-              rx="10"
               fill={nodeFill(node, isSelected, isInHighlightedPath)}
               stroke={nodeStroke(node, isSelected, isInHighlightedPath)}
-              strokeWidth={isSelected ? '3' : '2'}
+              strokeWidth={isSelected ? '2.5' : '1.5'}
             />
             <text
               x={node.x} y={node.y}
               textAnchor="middle" dominantBaseline="middle"
               fontSize="9" fontWeight="700"
+              fontFamily="var(--type)"
+              letterSpacing="1.2"
               fill={nodeTextFill(node, isSelected, isInHighlightedPath)}
             >
               {node.label}
@@ -438,8 +442,8 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
       })}
       {downFrontier.map(f => (
         <g key={`down-${f.fromTurnId}`} onClick={() => onExpand?.(f.fromTurnId, 'DOWN')} style={{ cursor: 'pointer' }}>
-          <rect x={ROOT_X - 28} y={graph.vh + 4} width={56} height={20} rx={10} fill="#1e293b" stroke="#334155" strokeWidth={1} />
-          <text x={ROOT_X} y={graph.vh + 14} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontWeight={700} fill="#94a3b8">
+          <rect x={ROOT_X - 30} y={graph.vh + 4} width={60} height={18} fill="#FAF4E2" stroke="#181410" strokeWidth={1.5} />
+          <text x={ROOT_X} y={graph.vh + 13} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontWeight={700} letterSpacing="1.5" fill="#7E2018" fontFamily="var(--type)">
             ▼ 더 보기
           </text>
         </g>
