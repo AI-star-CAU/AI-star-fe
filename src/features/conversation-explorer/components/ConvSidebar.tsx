@@ -277,7 +277,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 
       <ResizeHandle direction="y" onMouseDown={onVerticalDrag} />
 
-      <div className="flex-1 overflow-hidden flex flex-col border-t border-slate-800">
+      <div className="flex-1 min-h-[220px] overflow-hidden flex flex-col border-t border-slate-800">
         <div className="px-4 py-2 flex-shrink-0 flex items-center justify-between gap-2">
           <p className="section-label">분기 구조</p>
           <div className="flex items-center gap-1">

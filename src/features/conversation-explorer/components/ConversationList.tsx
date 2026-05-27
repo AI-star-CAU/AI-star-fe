@@ -319,7 +319,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   return (
     <div
       className="flex-shrink-0 min-h-0 flex flex-col overflow-hidden"
-      style={isRecentOpen ? { height } : undefined}
+      style={isRecentOpen ? { height, maxHeight: 'calc(100% - 220px)' } : undefined}
     >
       <div className="p-3 flex-shrink-0">
         <Button onClick={onCreateConversation} variant="primary" fullWidth>
