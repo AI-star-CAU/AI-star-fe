@@ -66,9 +66,14 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 
         <Link
           to={PATHS.LOGIN}
-          className="text-xl font-black text-white tracking-tight hover:opacity-80 transition"
+          className="inline-flex items-center hover:opacity-80 transition"
+          aria-label="AIT"
         >
-          <span className="text-gradient-blue">A</span>IT
+          <img
+            src="/AI-star-logo.svg"
+            alt="AIT"
+            className="h-9 w-9 rounded-xl"
+          />
         </Link>
         <span className="text-slate-700 text-sm hidden sm:block">
           분기 그래프 기반 대화형 AI 에이전트

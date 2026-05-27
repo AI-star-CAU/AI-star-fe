@@ -33,9 +33,11 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-slate-950 flex">
       <div className="hidden lg:flex flex-1 flex-col justify-between p-16 border-r border-slate-800/60">
         <div>
-          <h1 className="text-4xl font-black text-white tracking-tight">
-            <span className="text-cyan-300">A</span>IT
-          </h1>
+          <img
+            src="/AI-star-logo.svg"
+            alt="AIT"
+            className="h-16 w-16 rounded-2xl"
+          />
           <p className="text-slate-500 text-sm mt-1">분기 그래프 기반 대화형 AI 에이전트</p>
         </div>
 
@@ -62,9 +64,11 @@ const LoginPage: React.FC = () => {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-12 text-center">
-            <h1 className="text-4xl font-black text-white tracking-tight">
-              <span className="text-cyan-300">A</span>IT
-            </h1>
+            <img
+              src="/AI-star-logo.svg"
+              alt="AIT"
+              className="mx-auto h-16 w-16 rounded-2xl"
+            />
             <p className="text-slate-500 text-sm mt-2">분기 그래프 기반 대화형 AI 에이전트</p>
           </div>
 
