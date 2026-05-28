@@ -43,6 +43,9 @@ const FOCUSED_SUMMARY_WIDTH = 226;
 const FOCUSED_SUMMARY_MIN_HEIGHT = 42;
 const FOCUSED_SUMMARY_LINE_HEIGHT = 12;
 const FOCUSED_SUMMARY_MAX_LINES = 3;
+const FRONTIER_BUTTON_WIDTH = 64;
+const FRONTIER_BUTTON_HEIGHT = 18;
+const FRONTIER_BUTTON_Y_GAP = 30;
 const SUMMARY_PENDING_TEXT = '요약 생성 중...';
 const SUMMARY_EMPTY_TEXT = '요약이 아직 없습니다.';
 
@@ -424,17 +427,24 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
   const turnNodeMap = new Map<number, GraphNode>();
+  const turnsByChatId = new Map<number, typeof turns>();
+  for (const turn of turns) {
+    const existing = turnsByChatId.get(turn.chatId) ?? [];
+    existing.push(turn);
+    turnsByChatId.set(turn.chatId, existing);
+  }
+  for (const chatTurns of turnsByChatId.values()) {
+    chatTurns.sort((a, b) => a.turnSequence - b.turnSequence);
+  }
 
-  const rootTurns = turns
-    .filter(t => t.chatId === rootChat.chatId)
-    .sort((a, b) => a.turnSequence - b.turnSequence);
+  const rootTurns = turnsByChatId.get(rootChat.chatId) ?? [];
 
   rootTurns.forEach((turn, i) => {
     const label = getTurnLabel(turn.turnSequence, turn.summary, turn.summaryStatus);
     const node: GraphNode = {
       id: `turn-${turn.turnId}`,
       x: ROOT_X,
-      y: ROOT_Y + (turn.turnSequence - 1) * NODE_Y_GAP,
+      y: ROOT_Y + i * NODE_Y_GAP,
       label,
       isBranch: false,
       isRoot: turn.turnSequence === 1,
@@ -467,16 +477,24 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
     const col = chatColumnMap.get(chat.chatId) ?? 1;
     const branchX = ROOT_X + BRANCH_X_GAP * col;
     const branchPointNode = chat.branchPointTurnId ? turnNodeMap.get(chat.branchPointTurnId) : null;
-    const startY = branchPointNode ? branchPointNode.y + BRANCH_MARKER_Y_GAP : ROOT_Y;
+    const parentMarker = chat.parentChatId != null
+      ? nodes.find(node => node.id === `branch-marker-${chat.parentChatId}`)
+      : undefined;
+    const parentTurns = chat.parentChatId != null
+      ? nodes.filter(node => node.chatId === String(chat.parentChatId) && !node.isBranch)
+      : [];
+    const parentAnchor = branchPointNode
+      ?? parentTurns[0]
+      ?? parentMarker;
+    const startY = parentAnchor ? parentAnchor.y + BRANCH_MARKER_Y_GAP : ROOT_Y;
+    const branchTurns = turnsByChatId.get(chat.chatId) ?? [];
 
     const markerId = `branch-marker-${chat.chatId}`;
     // 대화 보기 시간순 정렬용 createdAt:
     //   1순위 — 부모의 branchPoint turn 의 createdAt (분기가 일어난 시점)
     //   2순위 — 이 분기의 첫 turn 의 createdAt
     //   3순위 — chat.updatedAt (둘 다 window 밖일 때 fallback)
-    const firstBranchTurn = turns
-      .filter(t => t.chatId === chat.chatId)
-      .sort((a, b) => a.turnSequence - b.turnSequence)[0];
+    const firstBranchTurn = branchTurns[0];
     const markerCreatedAt = (chat.branchPointTurnId != null
       && turns.find(t => t.turnId === chat.branchPointTurnId)?.createdAt)
       || firstBranchTurn?.createdAt
@@ -500,16 +518,12 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
       edges.push({ from: branchPointNode.id, to: markerId, groupId: String(chat.chatId) });
     }
 
-    const branchTurns = turns
-      .filter(t => t.chatId === chat.chatId)
-      .sort((a, b) => a.turnSequence - b.turnSequence);
-
     branchTurns.forEach((turn, i) => {
       const label = getTurnLabel(turn.turnSequence, turn.summary, turn.summaryStatus);
       const node: GraphNode = {
         id: `turn-${turn.turnId}`,
         x: branchX,
-        y: startY + turn.turnSequence * NODE_Y_GAP,
+        y: startY + (i + 1) * NODE_Y_GAP,
         label,
         isBranch: false,
         isRoot: false,
@@ -827,8 +841,33 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
 
   const upFrontier = graphData?.frontier.up.filter(f => f.hasMore) ?? [];
   const downFrontier = graphData?.frontier.down.filter(f => f.hasMore) ?? [];
-  const extraHeight = (upFrontier.length > 0 ? 32 : 0) + (downFrontier.length > 0 ? 32 : 0);
-  const totalVh = renderGraph.vh + extraHeight;
+  const getFrontierNode = (fromTurnId: number) => renderNodeMap[`turn-${fromTurnId}`];
+  const upFrontierControls = upFrontier.map((f, index) => {
+    const node = getFrontierNode(f.fromTurnId);
+    return {
+      key: `up-${f.fromTurnId}-${index}`,
+      fromTurnId: f.fromTurnId,
+      direction: 'UP' as const,
+      x: node?.x ?? ROOT_X,
+      y: Math.max(4, (node?.y ?? ROOT_Y) - FRONTIER_BUTTON_Y_GAP - FRONTIER_BUTTON_HEIGHT / 2),
+    };
+  });
+  const downFrontierControls = downFrontier.map((f, index) => {
+    const node = getFrontierNode(f.fromTurnId);
+    return {
+      key: `down-${f.fromTurnId}-${index}`,
+      fromTurnId: f.fromTurnId,
+      direction: 'DOWN' as const,
+      x: node?.x ?? ROOT_X,
+      y: (node?.y ?? renderGraph.vh) + FRONTIER_BUTTON_Y_GAP,
+    };
+  });
+  const frontierControls = [...upFrontierControls, ...downFrontierControls];
+  const totalVh = Math.max(
+    renderGraph.vh,
+    ...frontierControls.map(control => control.y + FRONTIER_BUTTON_HEIGHT + 8),
+    80,
+  );
 
   // 대화 보기 요약 카드 lane x: 모든 노드의 max x + 여백.
   // 깊은 분기 노드가 카드 위에 얹히지 않도록 노드들 오른쪽 끝 너머에 정렬한다.
@@ -880,6 +919,37 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
     );
   };
 
+  const renderFrontierControl = (control: typeof frontierControls[number]) => (
+    <g
+      key={control.key}
+      onClick={() => onExpand?.(control.fromTurnId, control.direction)}
+      style={{ cursor: 'pointer' }}
+    >
+      <rect
+        x={control.x - FRONTIER_BUTTON_WIDTH / 2}
+        y={control.y}
+        width={FRONTIER_BUTTON_WIDTH}
+        height={FRONTIER_BUTTON_HEIGHT}
+        fill="#F6F7F8"
+        stroke="#111315"
+        strokeWidth={1.5}
+      />
+      <text
+        x={control.x}
+        y={control.y + FRONTIER_BUTTON_HEIGHT / 2}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize={9}
+        fontWeight={700}
+        letterSpacing="1.2"
+        fill="#303438"
+        fontFamily="var(--type)"
+      >
+        더 보기
+      </text>
+    </g>
+  );
+
   return (
     <svg
       width={focusedTotalVw * zoom}
@@ -910,14 +980,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
           />
         );
       })}
-      {upFrontier.map(f => (
-        <g key={`up-${f.fromTurnId}`} onClick={() => onExpand?.(f.fromTurnId, 'UP')} style={{ cursor: 'pointer' }}>
-          <rect x={ROOT_X - 30} y={4} width={60} height={18} fill="#F6F7F8" stroke="#111315" strokeWidth={1.5} />
-          <text x={ROOT_X} y={13} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontWeight={700} letterSpacing="1.5" fill="#303438" fontFamily="var(--type)">
-            ▲ 더 보기
-          </text>
-        </g>
-      ))}
+      {upFrontierControls.map(renderFrontierControl)}
 
       {orderedNodes.map(node => {
         const isSelected = node.id === selectedNodeId;
@@ -991,14 +1054,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
           </g>
         );
       })}
-      {downFrontier.map(f => (
-        <g key={`down-${f.fromTurnId}`} onClick={() => onExpand?.(f.fromTurnId, 'DOWN')} style={{ cursor: 'pointer' }}>
-          <rect x={ROOT_X - 30} y={renderGraph.vh + 4} width={60} height={18} fill="#F6F7F8" stroke="#111315" strokeWidth={1.5} />
-          <text x={ROOT_X} y={renderGraph.vh + 13} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontWeight={700} letterSpacing="1.5" fill="#303438" fontFamily="var(--type)">
-            ▼ 더 보기
-          </text>
-        </g>
-      ))}
+      {downFrontierControls.map(renderFrontierControl)}
     </svg>
   );
 };

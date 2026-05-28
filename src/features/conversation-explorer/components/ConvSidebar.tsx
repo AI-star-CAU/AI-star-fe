@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import ConversationList from './ConversationList';
 import GraphPanel from '../../graph/components/GraphPanel';
@@ -74,15 +75,18 @@ function mergeGraphSnapshots(
     return next;
   }
 
-  const chatsById = new Map(previous.chats.map(chat => [chat.chatId, chat]));
-  next.chats.forEach(chat => chatsById.set(chat.chatId, chat));
+  const activeChatIds = new Set(next.chats.map(chat => chat.chatId));
 
-  const turnsById = new Map(previous.turns.map(turn => [turn.turnId, turn]));
+  const turnsById = new Map(
+    previous.turns
+      .filter(turn => activeChatIds.has(turn.chatId))
+      .map(turn => [turn.turnId, turn]),
+  );
   next.turns.forEach(turn => turnsById.set(turn.turnId, turn));
 
   return {
     ...next,
-    chats: [...chatsById.values()],
+    chats: next.chats,
     turns: [...turnsById.values()],
   };
 }
@@ -99,6 +103,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   optimisticBranch,
 }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>();
   const [graphZoom, setGraphZoom] = useState(1);
   const [graphViewMode, setGraphViewMode] = useState<GraphViewMode>('structure');
@@ -193,10 +198,15 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   const graphRequestId = activeParentId;
   const numericChatId = graphRequestId ? Number(graphRequestId) : null;
   const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
-  const { data: baseGraphData, isFetching: isGraphFetching } = useGraph(
+  const {
+    data: baseGraphData,
+    isFetching: isGraphFetching,
+    isError: isGraphError,
+    error: graphError,
+  } = useGraph(
     validChatId,
     undefined,
-    { up: 100, down: 100 },
+    { up: 100, down: 100, includeDeleted: true },
   );
   const [mergedGraphData, setMergedGraphData] = React.useState<typeof baseGraphData>(undefined);
 
@@ -216,12 +226,18 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     await branchApi.restoreBranch(numericId);
     if (validChatId) {
       setMergedGraphData(undefined);
+      await queryClient.invalidateQueries({ queryKey: ['graph', validChatId], exact: false });
+      await queryClient.invalidateQueries({ queryKey: ['conversations'] });
     }
-  }, [validChatId]);
+  }, [queryClient, validChatId]);
 
   const handleExpand = useCallback(async (fromTurnId: number, direction: 'UP' | 'DOWN') => {
     if (!validChatId) return;
-    const result = await graphApi.expandGraph(validChatId, { fromTurnId, direction });
+    const result = await graphApi.expandGraph(validChatId, {
+      fromTurnId,
+      direction,
+      includeDeleted: true,
+    });
     setMergedGraphData(prev => {
       if (!prev) return prev;
       const existingIds = new Set(prev.turns.map(t => t.turnId));
@@ -262,6 +278,12 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
       navigate(`/chat/${action.chatId}`);
     }
   }, [navigate]);
+
+  const graphErrorMessage = isGraphError
+    ? graphError instanceof Error && graphError.message
+      ? graphError.message
+      : '그래프를 불러오지 못했습니다.'
+    : null;
 
   return (
     <aside
@@ -336,6 +358,14 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
           </div>
         </div>
         <div className="flex-1 overflow-auto px-4 pb-3">
+          {graphErrorMessage && (
+            <div
+              role="alert"
+              className="mb-2 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-[11px] leading-4 text-rose-200"
+            >
+              {graphErrorMessage}
+            </div>
+          )}
           <GraphPanel
             messages={graphMessages}
             conv={graphConversationWithOptimisticBranch ?? conv}
