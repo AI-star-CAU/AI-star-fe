@@ -39,6 +39,25 @@
 
 ---
 
+## 2026-05-28 — Codex (새 채팅 첫 응답 표시 복구)
+
+**유형:** fix
+**범위:** features/chat/hooks
+
+### 변경 내용
+- `/chat/new`에서 첫 메시지를 보낼 때 `createChat` 성공 직후 새 chatId 경로로 즉시 이동하도록 변경.
+- 스트림이 끝날 때까지 `/chat/new`에 머물러 live 메시지가 현재 대화 필터에서 빠질 수 있던 흐름을 수정.
+
+### 영향 범위
+- 새 채팅 첫 질문 전송 UX 수정. 메시지 전송 API/SSE 처리 자체는 변경 없음.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 관련 파일: [src/features/chat/hooks/useSendMessage.ts](src/features/chat/hooks/useSendMessage.ts)
+
+---
+
 ## 2026-05-27 — Codex (AI 응답 타이핑 속도 빠르게 조정)
 
 **유형:** style

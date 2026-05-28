@@ -55,12 +55,12 @@ export const useSendMessage = (
 
       // 1) 'new' 화면이면 먼저 chat 을 생성한다 (명세 §0.2.1 2단계 패턴).
       let targetId = conversationId;
-      const isNewConversation = conversationId === 'new';
       if (conversationId === 'new') {
         try {
           targetId = String(await chatApi.createChat({
             ...options?.chatOptions,
           }));
+          options?.onConversationCreated?.(targetId);
         } catch (err) {
           console.error('[sendMessage] chat creation failed:', err);
           // NFR-U-4: 사용자 메시지를 회색 풍선으로라도 남겨 무슨 일이 났는지 보이게 한다.
@@ -164,9 +164,6 @@ export const useSendMessage = (
         queryClient.invalidateQueries({ queryKey: ['graph'] });
         // Phase 4 §3.3: LLM 호출 완료 후 토큰 사용량 누적분을 갱신.
         queryClient.invalidateQueries({ queryKey: ['usage'] });
-        if (isNewConversation) {
-          options?.onConversationCreated?.(targetId);
-        }
         void cancelled;
         return true;
       } catch (err) {
