@@ -16,6 +16,10 @@ interface GraphNode {
   isDeleted?: boolean;
   summary?: string | null;
   summaryStatus?: SummaryStatus;
+  /** 대화 보기에서 시간순 정렬에 사용. ISO 8601. */
+  createdAt?: string;
+  /** 대화 보기 들여쓰기에 쓰는 트리 깊이. root chat = 0. */
+  depth?: number;
 }
 
 interface GraphEdge {
@@ -33,6 +37,7 @@ const BRANCH_MARKER_Y_GAP = 42;
 const FOCUSED_ROOT_X = 46;
 const FOCUSED_ROOT_Y = 42;
 const FOCUSED_NODE_Y_GAP = 78;
+const FOCUSED_INDENT = 22;
 const FOCUSED_SUMMARY_X = 86;
 const FOCUSED_SUMMARY_WIDTH = 226;
 const FOCUSED_SUMMARY_MIN_HEIGHT = 42;
@@ -191,6 +196,8 @@ function buildMainNodes(messages: Message[], conv: Conversation | undefined) {
       groupId: conv?.id,
       summary: getMessageSummary(message),
       summaryStatus: 'GENERATED',
+      createdAt: message.createdAt,
+      depth: 0,
     });
   });
 
@@ -244,6 +251,14 @@ function buildGraph(
       + BRANCH_MARKER_Y_GAP;
     const markerId = `branch-marker-${branch.id}`;
 
+    const branchPointMessage = branch.branchPointTurnId != null
+      ? messages.find(m => m.turnId === branch.branchPointTurnId)
+      : undefined;
+    const firstBranchMsg = (branchMessagesById[branch.id] ?? [])
+      .filter(m => !m.isPending && m.role === 'user')[0];
+    const markerCreatedAt = branchPointMessage?.createdAt
+      ?? firstBranchMsg?.createdAt
+      ?? '';
     branchNodes.push({
       id: markerId,
       x: branchX,
@@ -255,6 +270,8 @@ function buildGraph(
       groupId: branch.id,
       summary: branch.title,
       summaryStatus: 'GENERATED',
+      createdAt: markerCreatedAt,
+      depth: branch.depth ?? getBranchDepth(branch.id, branchById, conv?.id),
     });
     chatStartY.set(branch.id, markerY);
 
@@ -280,6 +297,8 @@ function buildGraph(
         groupId: branch.id,
         summary: getMessageSummary(message),
         summaryStatus: 'GENERATED',
+        createdAt: message.createdAt,
+        depth: branch.depth ?? getBranchDepth(branch.id, branchById, conv?.id),
       };
 
       branchNodes.push(node);
@@ -298,6 +317,91 @@ function buildGraph(
   const vh = allNodes.reduce((m, n) => Math.max(m, n.y + 40), 80);
 
   return { nodes: allNodes, edges: [...mainEdges, ...branchEdges], vw, vh };
+}
+
+/**
+ * window 절단으로 직접 부모가 보이지 않는 노드에 대해, 가장 가까운 보이는 조상으로
+ * 잇는 "backbone" 엣지를 추가한다. 모든 노드는 부모 노드와 엣지로 연결되어야 한다.
+ *
+ * 규칙:
+ *  - turn 노드 (chatId X, sequence N): N-1, N-2 … 1 순으로 같은 chat 의 turn 을 찾고,
+ *    없으면 chat X 의 marker, 그것도 없으면 chat X 의 parentChat 의 분기점 이전 turn …
+ *    재귀로 root 까지 거슬러 첫 visible 노드를 부모로 잡는다.
+ *  - branch marker (chatId X): chat X 의 parentChat 에서 branchPointSeq 이하 turn 중
+ *    가장 큰 sequence 의 visible turn → 없으면 parentChat 의 marker → 그 위로 재귀.
+ *  - root chat 의 T1 (isRoot): 부모 없음.
+ */
+function addBackboneEdges(
+  graphData: GraphResponse,
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+): GraphEdge[] {
+  const chatsById = new Map(graphData.chats.map(c => [c.chatId, c]));
+  const seqByTurnId = new Map(graphData.turns.map(t => [t.turnId, t.turnSequence]));
+
+  const turnNodeIdByKey = new Map<string, string>();
+  const markerIdByChatId = new Map<number, string>();
+  for (const node of nodes) {
+    if (node.isBranch && node.chatId) {
+      markerIdByChatId.set(Number(node.chatId), node.id);
+    } else if (node.turnIndex != null && node.chatId) {
+      turnNodeIdByKey.set(`${node.chatId}-${node.turnIndex}`, node.id);
+    }
+  }
+
+  const hasIncoming = new Set(edges.map(e => e.to));
+
+  function findVisibleAncestor(
+    chatId: number,
+    beforeSeq: number | null,
+  ): { id: string; groupId: string } | null {
+    if (beforeSeq != null && beforeSeq >= 1) {
+      const cap = beforeSeq;
+      for (let k = cap; k >= 1; k--) {
+        const id = turnNodeIdByKey.get(`${chatId}-${k}`);
+        if (id) return { id, groupId: String(chatId) };
+      }
+    }
+    const markerId = markerIdByChatId.get(chatId);
+    if (markerId) return { id: markerId, groupId: String(chatId) };
+    const chat = chatsById.get(chatId);
+    if (!chat || chat.parentChatId == null) return null;
+    const parentBranchPointSeq = chat.branchPointTurnId != null
+      ? seqByTurnId.get(chat.branchPointTurnId) ?? null
+      : null;
+    return findVisibleAncestor(chat.parentChatId, parentBranchPointSeq);
+  }
+
+  const extra: GraphEdge[] = [];
+  for (const node of nodes) {
+    if (node.isRoot) continue;
+    if (hasIncoming.has(node.id)) continue;
+
+    let ancestor: { id: string; groupId: string } | null = null;
+    if (node.isBranch && node.chatId) {
+      const chat = chatsById.get(Number(node.chatId));
+      if (chat && chat.parentChatId != null) {
+        const bpSeq = chat.branchPointTurnId != null
+          ? seqByTurnId.get(chat.branchPointTurnId) ?? null
+          : null;
+        ancestor = findVisibleAncestor(chat.parentChatId, bpSeq);
+      }
+    } else if (node.turnIndex != null && node.chatId) {
+      // 같은 chat 의 N-1 이하부터 찾는다
+      ancestor = findVisibleAncestor(Number(node.chatId), node.turnIndex - 1);
+      // 같은 chat 안에 없으면 (turnIndex === 1) marker 로
+      if (!ancestor) {
+        const markerId = markerIdByChatId.get(Number(node.chatId));
+        if (markerId) ancestor = { id: markerId, groupId: node.chatId };
+      }
+    }
+
+    if (ancestor && ancestor.id !== node.id) {
+      extra.push({ from: ancestor.id, to: node.id, groupId: ancestor.groupId });
+    }
+  }
+
+  return [...edges, ...extra];
 }
 
 function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buildGraph> {
@@ -340,6 +444,8 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
       groupId: String(turn.chatId),
       summary: turn.summary,
       summaryStatus: turn.summaryStatus,
+      createdAt: turn.createdAt,
+      depth: rootChat.depth ?? 0,
     };
     nodes.push(node);
     turnNodeMap.set(turn.turnId, node);
@@ -364,6 +470,17 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
     const startY = branchPointNode ? branchPointNode.y + BRANCH_MARKER_Y_GAP : ROOT_Y;
 
     const markerId = `branch-marker-${chat.chatId}`;
+    // 대화 보기 시간순 정렬용 createdAt:
+    //   1순위 — 부모의 branchPoint turn 의 createdAt (분기가 일어난 시점)
+    //   2순위 — 이 분기의 첫 turn 의 createdAt
+    //   3순위 — chat.updatedAt (둘 다 window 밖일 때 fallback)
+    const firstBranchTurn = turns
+      .filter(t => t.chatId === chat.chatId)
+      .sort((a, b) => a.turnSequence - b.turnSequence)[0];
+    const markerCreatedAt = (chat.branchPointTurnId != null
+      && turns.find(t => t.turnId === chat.branchPointTurnId)?.createdAt)
+      || firstBranchTurn?.createdAt
+      || chat.updatedAt;
     nodes.push({
       id: markerId,
       x: branchX,
@@ -376,6 +493,8 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
       isDeleted: chat.isDeleted,
       summary: chat.title,
       summaryStatus: chat.titleStatus === 'PENDING' ? 'PENDING' : 'GENERATED',
+      createdAt: markerCreatedAt,
+      depth: chat.depth,
     });
     if (branchPointNode) {
       edges.push({ from: branchPointNode.id, to: markerId, groupId: String(chat.chatId) });
@@ -400,6 +519,8 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
         groupId: String(turn.chatId),
         summary: turn.summary,
         summaryStatus: turn.summaryStatus,
+        createdAt: turn.createdAt,
+        depth: chat.depth,
       };
       nodes.push(node);
       turnNodeMap.set(turn.turnId, node);
@@ -420,7 +541,8 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
 
   const vw = nodes.reduce((m, n) => Math.max(m, n.x + getNodeWidth(n) / 2 + 24), 160);
   const vh = nodes.reduce((m, n) => Math.max(m, n.y + 40), 80);
-  return { nodes, edges, vw, vh };
+  const edgesWithBackbone = addBackboneEdges(graphData, nodes, edges);
+  return { nodes, edges: edgesWithBackbone, vw, vh };
 }
 
 // 모던 에디토리얼 그래프 팔레트.
@@ -448,25 +570,46 @@ function nodeTextFill(n: GraphNode, isSelected: boolean, isInHighlightedPath: bo
   return GRAPH_NODE_COLORS.default.text;
 }
 
+/**
+ * 대화 보기 레이아웃.
+ *
+ * 정책 (사용자 요구):
+ *  - 모든 노드를 항상 보여준다 (다른 분기를 클릭해도 접히지 않음).
+ *  - 시간순(createdAt ASC)으로 위→아래 정렬. 가장 늦은 것이 맨 아래.
+ *  - 엣지는 시간순 정렬 때문에 겹쳐도 무방.
+ *  - x 는 분기 깊이만큼 살짝 들여써서 같은 chat 끼리 한 lane 으로 보이게 한다.
+ */
 function buildFocusedGraph(nodes: GraphNode[], edges: GraphEdge[]): ReturnType<typeof buildGraph> {
-  const sortedNodes = [...nodes].sort(
-    (a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id, undefined, { numeric: true }),
-  );
+  const sortedNodes = [...nodes].sort((a, b) => {
+    const ac = a.createdAt ?? '';
+    const bc = b.createdAt ?? '';
+    if (ac !== bc) return ac < bc ? -1 : 1;
+    // 동시각 (분기 marker + 같은 createdAt 의 turn): 부모(낮은 depth) → 자식 순
+    const ad = a.depth ?? 0;
+    const bd = b.depth ?? 0;
+    if (ad !== bd) return ad - bd;
+    // 마지막 tiebreaker: 안정적 순서를 위해 id 비교
+    return a.id.localeCompare(b.id, undefined, { numeric: true });
+  });
   const focusedNodes = sortedNodes.map((node, index) => ({
     ...node,
-    x: FOCUSED_ROOT_X,
+    x: FOCUSED_ROOT_X + (node.depth ?? 0) * FOCUSED_INDENT,
     y: FOCUSED_ROOT_Y + index * FOCUSED_NODE_Y_GAP,
   }));
   const visibleNodeIds = new Set(focusedNodes.map(node => node.id));
   const focusedEdges = edges.filter(
     edge => visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to),
   );
+  const vw = Math.max(
+    FOCUSED_SUMMARY_X + FOCUSED_SUMMARY_WIDTH + 24,
+    focusedNodes.reduce((max, node) => Math.max(max, node.x + FOCUSED_SUMMARY_WIDTH + 32), 0),
+  );
   const vh = focusedNodes.reduce((max, node) => Math.max(max, node.y + 46), 84);
 
   return {
     nodes: focusedNodes,
     edges: focusedEdges,
-    vw: FOCUSED_SUMMARY_X + FOCUSED_SUMMARY_WIDTH + 24,
+    vw,
     vh,
   };
 }
@@ -649,20 +792,10 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
   };
 
   const hasHighlight = highlightedGroupId !== undefined && highlightedGroupId !== null;
-  const focusedNodes = viewMode === 'focused'
-    ? graph.nodes.filter(node => isNodeInHighlightedPath(node))
-    : [];
-  const focusedNodeIds = new Set(focusedNodes.map(node => node.id));
-  const focusedEdges = viewMode === 'focused'
-    ? graph.edges.filter(
-      edge =>
-        focusedNodeIds.has(edge.from) &&
-        focusedNodeIds.has(edge.to) &&
-        isEdgeInHighlightedPath(edge),
-    )
-    : [];
+  // 대화 보기에서도 모든 노드/엣지를 그대로 들고 들어간다 (필터링 없음).
+  // 클릭/활성 분기에 따라 다른 노드가 사라지지 않아야 한다는 요구사항.
   const renderGraph = viewMode === 'focused'
-    ? buildFocusedGraph(focusedNodes, focusedEdges)
+    ? buildFocusedGraph(graph.nodes, graph.edges)
     : graph;
   const renderNodeMap = Object.fromEntries(renderGraph.nodes.map(n => [n.id, n]));
   const orderedEdges = [...renderGraph.edges].sort(
@@ -697,6 +830,18 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
   const extraHeight = (upFrontier.length > 0 ? 32 : 0) + (downFrontier.length > 0 ? 32 : 0);
   const totalVh = renderGraph.vh + extraHeight;
 
+  // 대화 보기 요약 카드 lane x: 모든 노드의 max x + 여백.
+  // 깊은 분기 노드가 카드 위에 얹히지 않도록 노드들 오른쪽 끝 너머에 정렬한다.
+  const focusedCardX = viewMode === 'focused'
+    ? Math.max(
+        FOCUSED_SUMMARY_X,
+        ...renderGraph.nodes.map(n => n.x + getNodeWidth(n) / 2 + 16),
+      )
+    : FOCUSED_SUMMARY_X;
+  const focusedTotalVw = viewMode === 'focused'
+    ? Math.max(renderGraph.vw, focusedCardX + FOCUSED_SUMMARY_WIDTH + 24)
+    : renderGraph.vw;
+
   const renderFocusedSummaryCard = (node: GraphNode, isSelected: boolean) => {
     if (viewMode !== 'focused') return null;
 
@@ -708,7 +853,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
     return (
       <g>
         <rect
-          x={FOCUSED_SUMMARY_X}
+          x={focusedCardX}
           y={y}
           width={FOCUSED_SUMMARY_WIDTH}
           height={height}
@@ -718,7 +863,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
           strokeWidth={isSelected ? '1.6' : '1'}
         />
         <text
-          x={FOCUSED_SUMMARY_X + 10}
+          x={focusedCardX + 10}
           y={y + 16}
           fontSize="10"
           fontFamily="var(--body)"
@@ -726,7 +871,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
           fill={isPending ? GRAPH_NODE_COLORS.deleted.text : GRAPH_NODE_COLORS.default.text}
         >
           {lines.map((line, index) => (
-            <tspan key={`${node.id}-summary-${index}`} x={FOCUSED_SUMMARY_X + 10} dy={index === 0 ? 0 : FOCUSED_SUMMARY_LINE_HEIGHT}>
+            <tspan key={`${node.id}-summary-${index}`} x={focusedCardX + 10} dy={index === 0 ? 0 : FOCUSED_SUMMARY_LINE_HEIGHT}>
               {line}
             </tspan>
           ))}
@@ -737,9 +882,9 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
 
   return (
     <svg
-      width={renderGraph.vw * zoom}
+      width={focusedTotalVw * zoom}
       height={totalVh * zoom}
-      viewBox={`0 0 ${renderGraph.vw} ${totalVh}`}
+      viewBox={`0 0 ${focusedTotalVw} ${totalVh}`}
       className="block flex-shrink-0"
     >
       <defs>

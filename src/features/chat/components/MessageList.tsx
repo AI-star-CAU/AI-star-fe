@@ -161,6 +161,9 @@ const MessageList: React.FC<MessageListProps> = ({
   const endRef = useRef<HTMLDivElement>(null);
   // prepend(과거 로드) 시 스크롤 점프를 막기 위한 직전 scrollHeight 기억.
   const prependAnchorRef = useRef<number | null>(null);
+  // 노드 클릭으로 target turn 으로 막 스크롤한 뒤, targetTurnId 가 null 로 풀리는
+  // 후속 전이에서 "바닥 스크롤" effect 가 위치를 덮어쓰지 않도록 하는 1회용 가드.
+  const reachedTargetRef = useRef(false);
   const shouldShowBranchMarker =
     branchMarkerLabel !== undefined && branchStartIndex !== undefined;
   // 재생성은 가장 마지막(leaf) assistant 메시지에서만 노출한다.
@@ -189,6 +192,8 @@ const MessageList: React.FC<MessageListProps> = ({
     const el = containerRef.current;
     if (!el) return;
     if (targetTurnId != null) return;
+    // target turn 으로 막 스크롤한 직후엔 바닥으로 덮어쓰지 않는다 (1회용 가드).
+    if (reachedTargetRef.current) return;
     if (prependAnchorRef.current != null) {
       el.scrollTop = el.scrollHeight - prependAnchorRef.current;
       prependAnchorRef.current = null;
@@ -199,6 +204,10 @@ const MessageList: React.FC<MessageListProps> = ({
 
   // 대화 전환/초기 로딩 종료 시 맨 아래에서 시작.
   useEffect(() => {
+    if (reachedTargetRef.current) {
+      reachedTargetRef.current = false;
+      return;
+    }
     if (!isLoading && targetTurnId == null) {
       endRef.current?.scrollIntoView({ behavior: 'auto' });
     }
@@ -207,11 +216,15 @@ const MessageList: React.FC<MessageListProps> = ({
   useEffect(() => {
     if (targetTurnId == null || isLoading) return;
 
-    const target = containerRef.current?.querySelector<HTMLElement>(
+    // 같은 turnId 에 user/assistant 버블 두 개가 붙어 있으므로 마지막(=assistant)을 잡는다.
+    // 노드 클릭 시 "그 턴의 AI 답변"이 입력창 바로 위에 오기 원한다는 요구사항.
+    const targets = containerRef.current?.querySelectorAll<HTMLElement>(
       `[data-turn-id="${targetTurnId}"]`,
     );
+    const target = targets && targets.length > 0 ? targets[targets.length - 1] : null;
     if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      reachedTargetRef.current = true;
       onTargetTurnReached?.();
       return;
     }

@@ -39,6 +39,46 @@
 
 ---
 
+## 2026-05-28 — Claude (모든 노드 부모 엣지 보강 + 대화 보기 카드 가림 해소)
+
+**유형:** fix
+**범위:** features/graph/components/GraphPanel.tsx
+
+### 변경 내용
+- **backbone 엣지 자동 추가**: `addBackboneEdges(graphData, nodes, edges)` 헬퍼 추가. window 절단으로 직접 부모가 안 보이는 노드(예: T3, T5 만 있고 T4 가 잘려서 T5 가 부모 없는 경우)에 대해 같은 chat 의 가까운 turn → 그 chat 의 marker → parentChat 의 분기점 이하 turn → … 순으로 재귀 검색해 가장 가까운 visible 조상으로 엣지를 잇는다. 결과: 모든 노드가 root 까지의 부모 체인을 시각적으로 가짐 (root T1 만 예외).
+- **대화 보기 요약 카드 위치 동적화**: 카드 x 를 고정값(86) 대신 `max(모든 노드.x + 노드 반지름 + 16, 86)` 으로 계산. 깊은 분기 노드가 카드 위에 얹히던 문제 해소. svg viewBox/width 도 같이 갱신.
+
+### 영향 범위
+- 그래프에 endge 가 더 그려질 수 있음 (직접 부모가 안 보이는 경우). 동작 변화 없음, 시각만 보강.
+- 대화 보기 카드 lane 이 노드 들여쓰기 깊이에 따라 오른쪽으로 이동. 깊은 분기가 있으면 그래프 패널이 넓어짐.
+- 구조 보기는 외형/동작 변화 없음.
+
+### 관련
+- 관련 파일: [GraphPanel.tsx](src/features/graph/components/GraphPanel.tsx)
+
+## 2026-05-28 — Claude (그래프 두 모드 정책 + 노드 클릭 AI 답변 정렬)
+
+**유형:** feat
+**범위:** features/graph/components/GraphPanel.tsx, features/chat/components/MessageList.tsx
+
+### 변경 내용
+- **대화 보기 정책 변경**: focused 모드에서 활성 경로만 보여주던 필터 제거. 모든 분기/노드를 항상 표시하고, 노드를 `createdAt` 시간순(ASC)으로 단일 컬럼에 위→아래 배치. 동시각 분기 marker/turn 은 depth 낮은 쪽이 먼저. x 는 분기 깊이에 따라 `FOCUSED_INDENT(22px)` 만큼 들여써 같은 chat 끼리 한 lane 으로 보이게 함.
+- **GraphNode 모델 확장**: `createdAt`, `depth` 필드 추가. `buildGraph(legacy)` 와 `buildGraphFromApiData` 양쪽 모두 turn 노드는 메시지/turn 의 createdAt 으로, 분기 marker 는 `branchPointTurn.createdAt → 첫 branch turn createdAt → chat.updatedAt` 우선순위로 채움.
+- **다른 노드 클릭해도 그래프 불변**: 구조 보기/대화 보기 모두 layout 이 selectedNodeId 와 무관. highlight 만 색으로 표시.
+- **노드 클릭 → AI 답변이 입력창 바로 위**: MessageList 의 `targetTurnId` 스크롤이 `querySelector` → `querySelectorAll` + 마지막 요소로 변경 (같은 turnId 의 user/assistant 두 버블 중 assistant 선택). `block: 'center'` → `block: 'end'`. 직후 targetTurnId 가 null 로 풀리는 effect 가 바닥 스크롤로 덮어쓰지 않도록 `reachedTargetRef` 가드 추가.
+
+### 영향 범위
+- 대화 보기 외형이 "활성 경로 한 줄 + 요약 카드" → "모든 노드 시간순 + 깊이별 들여쓰기"로 바뀜. 엣지는 시간순 정렬 때문에 겹칠 수 있음 (사용자 의도).
+- 구조 보기는 동작/외형 변화 없음.
+- 노드 클릭 시 navigate 동작은 그대로, 스크롤 정렬만 변경.
+
+### 관련
+- 관련 파일:
+  - [GraphPanel.tsx](src/features/graph/components/GraphPanel.tsx)
+  - [MessageList.tsx](src/features/chat/components/MessageList.tsx)
+
+---
+
 ## 2026-05-28 — Codex (design/graph를 prototype에 병합)
 
 **유형:** feat
