@@ -2,6 +2,8 @@ import type { TitleStatus } from '../branch/types';
 
 export type SummaryStatus = 'PENDING' | 'GENERATED';
 
+export type GraphViewMode = 'structure' | 'focused';
+
 export type NodeAction =
   | { type: 'turn'; turnId: number; chatId: string; turnSequence?: number }
   | { type: 'navigate'; chatId: string };

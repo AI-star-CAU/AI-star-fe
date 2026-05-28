@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { Conversation, Message } from '../../chat/types';
-import type { GraphResponse, NodeAction } from '../types';
+import type { GraphResponse, GraphViewMode, NodeAction, SummaryStatus } from '../types';
 
 interface GraphNode {
   id: string;
@@ -14,6 +14,8 @@ interface GraphNode {
   chatId?: string;
   groupId?: string;
   isDeleted?: boolean;
+  summary?: string | null;
+  summaryStatus?: SummaryStatus;
 }
 
 interface GraphEdge {
@@ -28,6 +30,16 @@ const ROOT_Y = 40;
 const NODE_Y_GAP = 60;
 const BRANCH_X_GAP = 92;
 const BRANCH_MARKER_Y_GAP = 42;
+const FOCUSED_ROOT_X = 46;
+const FOCUSED_ROOT_Y = 42;
+const FOCUSED_NODE_Y_GAP = 78;
+const FOCUSED_SUMMARY_X = 86;
+const FOCUSED_SUMMARY_WIDTH = 226;
+const FOCUSED_SUMMARY_MIN_HEIGHT = 42;
+const FOCUSED_SUMMARY_LINE_HEIGHT = 12;
+const FOCUSED_SUMMARY_MAX_LINES = 3;
+const SUMMARY_PENDING_TEXT = '요약 생성 중...';
+const SUMMARY_EMPTY_TEXT = '요약이 아직 없습니다.';
 
 const GRAPH_NODE_COLORS = {
   selected: {
@@ -78,6 +90,75 @@ const numericId = (id: string): number => {
   return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
 };
 
+const cleanSummaryText = (value: string | null | undefined): string =>
+  value?.replace(/\s+/g, ' ').trim() ?? '';
+
+const getMessageSummary = (message: Message): string => cleanSummaryText(message.content);
+
+const getTurnLabel = (turnSequence: number, summary: string | null, status: SummaryStatus): string => {
+  if (turnSequence === 1) return 'root';
+  const cleanSummary = cleanSummaryText(summary);
+  if (!cleanSummary || status === 'PENDING') return `T${turnSequence}`;
+  return cleanSummary.slice(0, 8);
+};
+
+const getFocusedSummaryText = (node: GraphNode): string => {
+  if (node.summaryStatus === 'PENDING') return SUMMARY_PENDING_TEXT;
+  const summary = cleanSummaryText(node.summary);
+  if (summary) return summary;
+  if (node.isBranch) return node.isDeleted ? '삭제된 분기입니다. 클릭하면 복구됩니다.' : '분기 시작';
+  return SUMMARY_EMPTY_TEXT;
+};
+
+const splitSummaryLines = (
+  text: string,
+  maxChars = 24,
+  maxLines = FOCUSED_SUMMARY_MAX_LINES,
+): string[] => {
+  const words = cleanSummaryText(text).split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = '';
+
+  const pushLine = (line: string) => {
+    if (line) lines.push(line);
+  };
+
+  words.forEach(word => {
+    if (word.length > maxChars) {
+      pushLine(current);
+      current = '';
+      for (let i = 0; i < word.length; i += maxChars) {
+        lines.push(word.slice(i, i + maxChars));
+      }
+      return;
+    }
+
+    if (!current) {
+      current = word;
+      return;
+    }
+
+    if (`${current} ${word}`.length <= maxChars) {
+      current = `${current} ${word}`;
+    } else {
+      pushLine(current);
+      current = word;
+    }
+  });
+
+  pushLine(current);
+
+  if (lines.length === 0) return [SUMMARY_EMPTY_TEXT];
+  if (lines.length <= maxLines) return lines;
+
+  const clipped = lines.slice(0, maxLines);
+  const last = clipped[maxLines - 1];
+  clipped[maxLines - 1] = last.length > maxChars - 3
+    ? `${last.slice(0, Math.max(0, maxChars - 3))}...`
+    : `${last}...`;
+  return clipped;
+};
+
 function getBranchDepth(
   branchId: string,
   branchById: Map<string, NonNullable<Conversation['branches']>[number]>,
@@ -108,6 +189,8 @@ function buildMainNodes(messages: Message[], conv: Conversation | undefined) {
       turnIndex: turnNumber,
       chatId: conv?.id,
       groupId: conv?.id,
+      summary: getMessageSummary(message),
+      summaryStatus: 'GENERATED',
     });
   });
 
@@ -170,6 +253,8 @@ function buildGraph(
       isRoot: false,
       chatId: branch.id,
       groupId: branch.id,
+      summary: branch.title,
+      summaryStatus: 'GENERATED',
     });
     chatStartY.set(branch.id, markerY);
 
@@ -193,6 +278,8 @@ function buildGraph(
         turnIndex: turnNumber,
         chatId: branch.id,
         groupId: branch.id,
+        summary: getMessageSummary(message),
+        summaryStatus: 'GENERATED',
       };
 
       branchNodes.push(node);
@@ -239,18 +326,20 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
     .sort((a, b) => a.turnSequence - b.turnSequence);
 
   rootTurns.forEach((turn, i) => {
-    const label = turn.summary ? turn.summary.slice(0, 8) : `T${turn.turnSequence}`;
+    const label = getTurnLabel(turn.turnSequence, turn.summary, turn.summaryStatus);
     const node: GraphNode = {
       id: `turn-${turn.turnId}`,
       x: ROOT_X,
       y: ROOT_Y + (turn.turnSequence - 1) * NODE_Y_GAP,
-      label: turn.turnSequence === 1 ? 'root' : label,
+      label,
       isBranch: false,
       isRoot: turn.turnSequence === 1,
       turnId: turn.turnId,
       turnIndex: turn.turnSequence,
       chatId: String(turn.chatId),
       groupId: String(turn.chatId),
+      summary: turn.summary,
+      summaryStatus: turn.summaryStatus,
     };
     nodes.push(node);
     turnNodeMap.set(turn.turnId, node);
@@ -285,6 +374,8 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
       chatId: String(chat.chatId),
       groupId: String(chat.chatId),
       isDeleted: chat.isDeleted,
+      summary: chat.title,
+      summaryStatus: chat.titleStatus === 'PENDING' ? 'PENDING' : 'GENERATED',
     });
     if (branchPointNode) {
       edges.push({ from: branchPointNode.id, to: markerId, groupId: String(chat.chatId) });
@@ -295,7 +386,7 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
       .sort((a, b) => a.turnSequence - b.turnSequence);
 
     branchTurns.forEach((turn, i) => {
-      const label = turn.summary ? turn.summary.slice(0, 8) : `T${turn.turnSequence}`;
+      const label = getTurnLabel(turn.turnSequence, turn.summary, turn.summaryStatus);
       const node: GraphNode = {
         id: `turn-${turn.turnId}`,
         x: branchX,
@@ -307,6 +398,8 @@ function buildGraphFromApiData(graphData: GraphResponse): ReturnType<typeof buil
         turnIndex: turn.turnSequence,
         chatId: String(turn.chatId),
         groupId: String(turn.chatId),
+        summary: turn.summary,
+        summaryStatus: turn.summaryStatus,
       };
       nodes.push(node);
       turnNodeMap.set(turn.turnId, node);
@@ -355,6 +448,36 @@ function nodeTextFill(n: GraphNode, isSelected: boolean, isInHighlightedPath: bo
   return GRAPH_NODE_COLORS.default.text;
 }
 
+function buildFocusedGraph(nodes: GraphNode[], edges: GraphEdge[]): ReturnType<typeof buildGraph> {
+  const sortedNodes = [...nodes].sort(
+    (a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id, undefined, { numeric: true }),
+  );
+  const focusedNodes = sortedNodes.map((node, index) => ({
+    ...node,
+    x: FOCUSED_ROOT_X,
+    y: FOCUSED_ROOT_Y + index * FOCUSED_NODE_Y_GAP,
+  }));
+  const visibleNodeIds = new Set(focusedNodes.map(node => node.id));
+  const focusedEdges = edges.filter(
+    edge => visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to),
+  );
+  const vh = focusedNodes.reduce((max, node) => Math.max(max, node.y + 46), 84);
+
+  return {
+    nodes: focusedNodes,
+    edges: focusedEdges,
+    vw: FOCUSED_SUMMARY_X + FOCUSED_SUMMARY_WIDTH + 24,
+    vh,
+  };
+}
+
+function getSummaryCardHeight(lines: string[]): number {
+  return Math.max(
+    FOCUSED_SUMMARY_MIN_HEIGHT,
+    lines.length * FOCUSED_SUMMARY_LINE_HEIGHT + 18,
+  );
+}
+
 interface GraphPanelProps {
   messages: Message[];
   conv: Conversation | undefined;
@@ -365,6 +488,7 @@ interface GraphPanelProps {
   onExpand?: (fromTurnId: number, direction: 'UP' | 'DOWN') => void;
   onRestore?: (chatId: string) => void;
   zoom?: number;
+  viewMode?: GraphViewMode;
 }
 
 const GraphPanel: React.FC<GraphPanelProps> = ({
@@ -377,17 +501,16 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
   onExpand,
   onRestore,
   zoom = 1,
+  viewMode = 'structure',
 }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const graph = useMemo(
-    () => conv
-      ? buildGraph(messages, conv, branchMessagesById)
-      : graphData && graphData.turns.length > 0
-        ? buildGraphFromApiData(graphData)
-        : buildGraph(messages, conv, branchMessagesById),
+    () => graphData && graphData.turns.length > 0
+      ? buildGraphFromApiData(graphData)
+      : buildGraph(messages, conv, branchMessagesById),
     [graphData, messages, conv, branchMessagesById],
   );
-  const nodeMap = useMemo(
+  const sourceNodeMap = useMemo(
     () => Object.fromEntries(graph.nodes.map(n => [n.id, n])),
     [graph.nodes],
   );
@@ -438,6 +561,37 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
 
     return { chatIds, cutoffSequenceByChatId };
   }, [graphData, highlightedGroupId]);
+  const localHighlightPath = useMemo(() => {
+    if (!conv || !highlightedGroupId) return null;
+
+    if (highlightedGroupId === conv.id) {
+      return {
+        chatIds: new Set([conv.id]),
+        cutoffTurnIndexByChatId: new Map<string, number>(),
+      };
+    }
+
+    const branchById = new Map(conv.branches.map(branch => [branch.id, branch]));
+    let branch = branchById.get(highlightedGroupId);
+    if (!branch) return null;
+
+    const chatIds = new Set<string>();
+    const cutoffTurnIndexByChatId = new Map<string, number>();
+
+    while (branch) {
+      chatIds.add(branch.id);
+      cutoffTurnIndexByChatId.set(branch.parentConvId, branch.forkAtTurnIndex);
+
+      if (branch.parentConvId === conv.id) {
+        chatIds.add(conv.id);
+        break;
+      }
+
+      branch = branchById.get(branch.parentConvId);
+    }
+
+    return { chatIds, cutoffTurnIndexByChatId };
+  }, [conv, highlightedGroupId]);
 
   const isNodeInHighlightedPath = (node: GraphNode): boolean => {
     if (!highlightedGroupId) return false;
@@ -451,6 +605,13 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
       return cutoffSequence === undefined
         || node.isBranch
         || (node.turnIndex !== undefined && node.turnIndex <= cutoffSequence);
+    }
+    if (localHighlightPath && node.groupId) {
+      if (!localHighlightPath.chatIds.has(node.groupId)) return false;
+      const cutoffTurnIndex = localHighlightPath.cutoffTurnIndexByChatId.get(node.groupId);
+      return cutoffTurnIndex === undefined
+        || node.isBranch
+        || (node.turnIndex !== undefined && node.turnIndex <= cutoffTurnIndex);
     }
     if (node.groupId === highlightedGroupId) return true;
     return !!highlightedBranch
@@ -467,10 +628,18 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
         return false;
       }
       const cutoffSequence = apiHighlightPath.cutoffSequenceByChatId.get(edgeChatId);
-      const toNode = nodeMap[edge.to];
+      const toNode = sourceNodeMap[edge.to];
       return cutoffSequence === undefined
         || toNode?.isBranch
         || (toNode?.turnIndex !== undefined && toNode.turnIndex <= cutoffSequence);
+    }
+    if (localHighlightPath && edge.groupId) {
+      if (!localHighlightPath.chatIds.has(edge.groupId)) return false;
+      const cutoffTurnIndex = localHighlightPath.cutoffTurnIndexByChatId.get(edge.groupId);
+      const toNode = sourceNodeMap[edge.to];
+      return cutoffTurnIndex === undefined
+        || toNode?.isBranch
+        || (toNode?.turnIndex !== undefined && toNode.turnIndex <= cutoffTurnIndex);
     }
     if (edge.groupId === highlightedGroupId) return true;
     return !!highlightedBranch
@@ -480,10 +649,26 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
   };
 
   const hasHighlight = highlightedGroupId !== undefined && highlightedGroupId !== null;
-  const orderedEdges = [...graph.edges].sort(
+  const focusedNodes = viewMode === 'focused'
+    ? graph.nodes.filter(node => isNodeInHighlightedPath(node))
+    : [];
+  const focusedNodeIds = new Set(focusedNodes.map(node => node.id));
+  const focusedEdges = viewMode === 'focused'
+    ? graph.edges.filter(
+      edge =>
+        focusedNodeIds.has(edge.from) &&
+        focusedNodeIds.has(edge.to) &&
+        isEdgeInHighlightedPath(edge),
+    )
+    : [];
+  const renderGraph = viewMode === 'focused'
+    ? buildFocusedGraph(focusedNodes, focusedEdges)
+    : graph;
+  const renderNodeMap = Object.fromEntries(renderGraph.nodes.map(n => [n.id, n]));
+  const orderedEdges = [...renderGraph.edges].sort(
     (a, b) => Number(isEdgeInHighlightedPath(a)) - Number(isEdgeInHighlightedPath(b)),
   );
-  const orderedNodes = [...graph.nodes].sort((a, b) => {
+  const orderedNodes = [...renderGraph.nodes].sort((a, b) => {
     const priority = (node: GraphNode) => {
       if (node.id === selectedNodeId) return 2;
       return isNodeInHighlightedPath(node) ? 1 : 0;
@@ -510,13 +695,51 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
   const upFrontier = graphData?.frontier.up.filter(f => f.hasMore) ?? [];
   const downFrontier = graphData?.frontier.down.filter(f => f.hasMore) ?? [];
   const extraHeight = (upFrontier.length > 0 ? 32 : 0) + (downFrontier.length > 0 ? 32 : 0);
-  const totalVh = graph.vh + extraHeight;
+  const totalVh = renderGraph.vh + extraHeight;
+
+  const renderFocusedSummaryCard = (node: GraphNode, isSelected: boolean) => {
+    if (viewMode !== 'focused') return null;
+
+    const lines = splitSummaryLines(getFocusedSummaryText(node));
+    const height = getSummaryCardHeight(lines);
+    const y = node.y - height / 2;
+    const isPending = node.summaryStatus === 'PENDING';
+
+    return (
+      <g>
+        <rect
+          x={FOCUSED_SUMMARY_X}
+          y={y}
+          width={FOCUSED_SUMMARY_WIDTH}
+          height={height}
+          rx="4"
+          fill={isSelected ? '#EEF0F2' : '#FFFFFF'}
+          stroke={isSelected ? GRAPH_NODE_COLORS.selected.stroke : GRAPH_NODE_COLORS.default.stroke}
+          strokeWidth={isSelected ? '1.6' : '1'}
+        />
+        <text
+          x={FOCUSED_SUMMARY_X + 10}
+          y={y + 16}
+          fontSize="10"
+          fontFamily="var(--body)"
+          fontStyle={isPending ? 'italic' : undefined}
+          fill={isPending ? GRAPH_NODE_COLORS.deleted.text : GRAPH_NODE_COLORS.default.text}
+        >
+          {lines.map((line, index) => (
+            <tspan key={`${node.id}-summary-${index}`} x={FOCUSED_SUMMARY_X + 10} dy={index === 0 ? 0 : FOCUSED_SUMMARY_LINE_HEIGHT}>
+              {line}
+            </tspan>
+          ))}
+        </text>
+      </g>
+    );
+  };
 
   return (
     <svg
-      width={graph.vw * zoom}
+      width={renderGraph.vw * zoom}
       height={totalVh * zoom}
-      viewBox={`0 0 ${graph.vw} ${totalVh}`}
+      viewBox={`0 0 ${renderGraph.vw} ${totalVh}`}
       className="block flex-shrink-0"
     >
       <defs>
@@ -525,11 +748,11 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
         </filter>
       </defs>
       {orderedEdges.map(e => {
-        const a = nodeMap[e.from];
-        const b = nodeMap[e.to];
+        const a = renderNodeMap[e.from];
+        const b = renderNodeMap[e.to];
         if (!a || !b) return null;
         const isHighlighted = isEdgeInHighlightedPath(e);
-        const isDimmed = hasHighlight && !isHighlighted;
+        const isDimmed = viewMode === 'structure' && hasHighlight && !isHighlighted;
         return (
           <line
             key={`${e.from}-${e.to}`}
@@ -544,7 +767,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
       })}
       {upFrontier.map(f => (
         <g key={`up-${f.fromTurnId}`} onClick={() => onExpand?.(f.fromTurnId, 'UP')} style={{ cursor: 'pointer' }}>
-          <rect x={ROOT_X - 30} y={4} width={60} height={18} fill="#E5E9EA" stroke="#1A1D1F" strokeWidth={1.5} />
+          <rect x={ROOT_X - 30} y={4} width={60} height={18} fill="#F6F7F8" stroke="#111315" strokeWidth={1.5} />
           <text x={ROOT_X} y={13} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontWeight={700} letterSpacing="1.5" fill="#303438" fontFamily="var(--type)">
             ▲ 더 보기
           </text>
@@ -554,7 +777,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
       {orderedNodes.map(node => {
         const isSelected = node.id === selectedNodeId;
         const isInHighlightedPath = isNodeInHighlightedPath(node) && !isSelected;
-        const isDimmed = hasHighlight && !isSelected && !isInHighlightedPath;
+        const isDimmed = viewMode === 'structure' && hasHighlight && !isSelected && !isInHighlightedPath;
 
         if (node.isDeleted) {
           return (
@@ -580,6 +803,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
                 fontSize="8" fontFamily="var(--type)" letterSpacing="1.5" fill={GRAPH_NODE_COLORS.deleted.subtext}>
                 복구
               </text>
+              {renderFocusedSummaryCard(node, isSelected)}
             </g>
           );
         }
@@ -618,13 +842,14 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
             >
               {node.label}
             </text>
+            {renderFocusedSummaryCard(node, isSelected)}
           </g>
         );
       })}
       {downFrontier.map(f => (
         <g key={`down-${f.fromTurnId}`} onClick={() => onExpand?.(f.fromTurnId, 'DOWN')} style={{ cursor: 'pointer' }}>
-          <rect x={ROOT_X - 30} y={graph.vh + 4} width={60} height={18} fill="#E5E9EA" stroke="#1A1D1F" strokeWidth={1.5} />
-          <text x={ROOT_X} y={graph.vh + 13} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontWeight={700} letterSpacing="1.5" fill="#303438" fontFamily="var(--type)">
+          <rect x={ROOT_X - 30} y={renderGraph.vh + 4} width={60} height={18} fill="#F6F7F8" stroke="#111315" strokeWidth={1.5} />
+          <text x={ROOT_X} y={renderGraph.vh + 13} textAnchor="middle" dominantBaseline="middle" fontSize={9} fontWeight={700} letterSpacing="1.5" fill="#303438" fontFamily="var(--type)">
             ▼ 더 보기
           </text>
         </g>

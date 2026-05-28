@@ -39,6 +39,28 @@
 
 ---
 
+## 2026-05-28 — Codex (design/graph를 prototype에 병합)
+
+**유형:** feat
+**범위:** features/conversation-explorer/components, features/graph
+
+### 변경 내용
+- `design/graph` 브랜치를 `prototype`에 병합.
+- 사이드바 그래프 영역에 `대화 보기 / 구조 보기` 전환 컨트롤을 추가하고, `GraphPanel`에 `focused / structure` 뷰 모드를 연결.
+- focused 그래프에서 턴/분기 요약 카드를 함께 보여주도록 그래프 노드에 summary 정보를 반영.
+- 병합 충돌이 난 `GraphPanel.tsx`는 prototype의 그레이스케일 팔레트를 유지하면서 `design/graph`의 focused view 기능을 반영.
+
+### 영향 범위
+- 그래프 표시 UI 확장. 메시지 전송/분기 생성/API 호출 로직 변경 없음.
+- `npm run build` / `npm run lint` 통과.
+- `FILE_STRUCTURE.md` 변경 없음(신규 파일/폴더 추가 없음).
+
+### 관련
+- 병합 대상: `design/graph` → `prototype`
+- 관련 파일: [src/features/conversation-explorer/components/ConvSidebar.tsx](src/features/conversation-explorer/components/ConvSidebar.tsx), [src/features/graph/components/GraphPanel.tsx](src/features/graph/components/GraphPanel.tsx), [src/features/graph/types.ts](src/features/graph/types.ts)
+
+---
+
 ## 2026-05-28 — Codex (새 채팅 첫 응답 표시 복구)
 
 **유형:** fix
