@@ -25,6 +25,72 @@ const actionBtnStyle: React.CSSProperties = {
   transition: 'all 0.15s',
 };
 
+const iconBtnStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 30,
+  height: 30,
+  padding: 0,
+  borderRadius: 8,
+  color: 'var(--ink-3)',
+  cursor: 'pointer',
+  background: 'transparent',
+  border: 'none',
+  transition: 'background 0.15s, color 0.15s',
+};
+
+const ICON_SIZE = 16;
+const iconSvgProps = {
+  width: ICON_SIZE,
+  height: ICON_SIZE,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+};
+
+const CopyIcon: React.FC = () => (
+  <svg {...iconSvgProps} aria-hidden="true">
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+  </svg>
+);
+
+const CheckIcon: React.FC = () => (
+  <svg {...iconSvgProps} aria-hidden="true">
+    <path d="M5 12l4 4 10-10" />
+  </svg>
+);
+
+const BranchIcon: React.FC = () => (
+  <svg {...iconSvgProps} aria-hidden="true">
+    <circle cx="6" cy="5" r="2" />
+    <circle cx="6" cy="19" r="2" />
+    <circle cx="18" cy="7" r="2" />
+    <path d="M6 7v10" />
+    <path d="M18 9c0 4-6 4-6 8" />
+  </svg>
+);
+
+const RegenerateIcon: React.FC = () => (
+  <svg {...iconSvgProps} aria-hidden="true">
+    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+    <path d="M21 3v5h-5" />
+    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+    <path d="M3 21v-5h5" />
+  </svg>
+);
+
+const EditIcon: React.FC = () => (
+  <svg {...iconSvgProps} aria-hidden="true">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+  </svg>
+);
+
 const statusTextStyle: React.CSSProperties = {
   fontFamily: 'var(--body)',
   fontSize: 12,
@@ -227,13 +293,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         {!showPending && !editing && (
           <div className="flex justify-end mt-1">
             <button
+              type="button"
               onClick={() => {
                 setEditing(true);
                 setEditContent(message.content);
               }}
-              style={actionBtnStyle}
+              style={iconBtnStyle}
+              className="hover:bg-slate-800 hover:text-slate-100"
+              aria-label="메시지 수정"
+              title="메시지 수정"
             >
-              수정
+              <EditIcon />
             </button>
           </div>
         )}
@@ -262,23 +332,38 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
       {showActions && (
         <div className="flex items-center gap-1 mt-2">
-          <button onClick={handleCopy} style={actionBtnStyle}>
-            {copied ? '복사됨' : '복사'}
+          <button
+            type="button"
+            onClick={handleCopy}
+            style={iconBtnStyle}
+            className="hover:bg-slate-800 hover:text-slate-100"
+            aria-label={copied ? '복사됨' : '복사'}
+            title={copied ? '복사됨' : '복사'}
+          >
+            {copied ? <CheckIcon /> : <CopyIcon />}
           </button>
           {!!message.turnId && (
             <button
+              type="button"
               onClick={() => onBranch?.(message.id, message.conversationId)}
-              style={{ ...actionBtnStyle, color: 'var(--red-deep)' }}
+              style={{ ...iconBtnStyle, color: 'var(--red-deep)' }}
+              className="hover:bg-slate-800"
+              aria-label="분기 만들기"
+              title="분기 만들기"
             >
-              분기 만들기
+              <BranchIcon />
             </button>
           )}
           {!!message.turnId && canRegenerate && (
             <button
+              type="button"
               onClick={() => onRegenerate?.(message.id, message.conversationId)}
-              style={actionBtnStyle}
+              style={iconBtnStyle}
+              className="hover:bg-slate-800 hover:text-slate-100"
+              aria-label="다시 생성"
+              title="다시 생성"
             >
-              다시 생성
+              <RegenerateIcon />
             </button>
           )}
         </div>
