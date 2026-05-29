@@ -108,7 +108,7 @@ const BranchRow: React.FC<BranchRowProps> = ({
   return (
     <div
       className={`flex items-center gap-1 px-2 py-1.5 rounded-lg group ${
-        isActive ? 'bg-amber-500/15 text-amber-300' : 'hover:bg-slate-800/50 text-slate-400 hover:text-slate-200'
+        isActive ? 'bg-slate-600 text-slate-200' : 'hover:bg-slate-800/50 text-slate-400 hover:text-slate-200'
       }`}
       style={indent ? { marginLeft: indent } : undefined}
     >
@@ -117,14 +117,14 @@ const BranchRow: React.FC<BranchRowProps> = ({
         <button
           type="button"
           onClick={e => { e.stopPropagation(); onToggleCollapse(branch.id); }}
-          className="flex-shrink-0 p-0.5 -ml-0.5 text-amber-500 hover:text-amber-300"
+          className="flex-shrink-0 p-0.5 -ml-0.5 text-slate-400 hover:text-slate-200"
           aria-label={isCollapsed ? '하위 분기 펼치기' : '하위 분기 접기'}
         >
           <DisclosureTriangle open={!isCollapsed} />
         </button>
       ) : (
         // 말단 분기: 작은 삼각형 마커(문서 아이콘 대체)
-        <span className="flex-shrink-0 w-4 flex justify-center text-amber-500/60" aria-hidden="true">
+        <span className="flex-shrink-0 w-4 flex justify-center text-slate-500/60" aria-hidden="true">
           <DisclosureTriangle open={false} />
         </span>
       )}
