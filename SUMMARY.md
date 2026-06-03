@@ -39,6 +39,81 @@
 
 ---
 
+## 2026-06-03 — Claude (FE 아키텍처 보고서에 리팩토링 #3·#4·#5 적용 결과 반영)
+
+**유형:** docs
+**범위:** FE_ARCHITECTURE_REPORT.md
+
+### 변경 내용
+- `FE_ARCHITECTURE_REPORT.md` 가 #3·#4·#5 를 "후보"로만 서술하던 것을 **현재 적용 완료 상태**로 갱신.
+- §11 각 Refactoring 항목에 상태 블록(✅ 적용 완료 / ⏸ 후속 과제)과 진행 현황 배너를 추가.
+- §4.2(의존 그래프), §4.3(CBO), §6.1(SRP), §8.3(Interface Separation), §9(REP/CCP/CRP), §14(요약)에서 이미 해소된 사실 진술을 "해소됨"으로 정정.
+- 문서 헤더에 갱신 메모 추가.
+
+### 영향 범위
+- 문서만 수정. 코드 변경 없음.
+- #1·#2·#6·#7 은 후속 과제로 명확히 표기(미적용 상태 유지).
+
+### 관련
+- 관련 파일: [FE_ARCHITECTURE_REPORT.md](./FE_ARCHITECTURE_REPORT.md)
+
+## 2026-06-03 — Claude (FE 아키텍처 보고서 §11 기반 안전 리팩토링 #3·#4·#5)
+
+**유형:** refactor
+**범위:** features/branch, features/chat, features/graph, features/usage, features/conversation-explorer, shared/api
+
+### 변경 내용
+- **Refactoring #3 (Branch mutation hook 신설):** `ConversationList.BranchRow` 가 직접 호출하던 `branchApi.updateBranch` / `branchApi.deleteBranch` / `queryClient.invalidateQueries` 를 `features/branch/hooks/useUpdateBranch.ts`, `features/branch/hooks/useDeleteBranch.ts` 로 분리. BranchRow 는 hook 의 `updateBranch`/`deleteBranch` 만 호출하고, 실패 시 제목 rollback·confirming 해제 UX 는 그대로 컴포넌트가 유지.
+- **Refactoring #4 (공통 API schema 를 shared 로 이동):** `apiEnvelope`, `pageResponseSchema`, `TitleStatusSchema`, `SummaryStatusSchema` 를 `shared/api/schemas.ts` 로 통합. graph/branch/chat 에 중복 정의돼 있던 `apiEnvelope` 와, 특정 feature 에 있던 status/page 스키마를 한 곳으로 모으고 모든 import 경로를 shared 로 갱신. feature 간 schema 의존(graph→branch, explorer→branch/graph, usage→graph)을 제거.
+- **Refactoring #5 (SSE 처리 통합):** `shared/api/sse.ts` 에 공통 파서 `parseSseBlock` 와 스트림 제너레이터 `parseSseStream` 를 두고 `streamSSE` 가 이를 사용하도록 정리. `features/chat/api/messageStream.ts` 는 중복 `parseSseBlock`/버퍼 루프를 제거하고 `parseSseStream` 을 소비하며 chat 전용 event 매핑(`turn_started`/`chunk`/`turn_completed`/`cancelled`/`error`/`done`)만 담당.
+
+### 영향 범위
+- 동작 변경 없음(구조 개선 전용). UI/라우팅/SSE 스트리밍/그래프/분기 생성·수정·삭제/사용량 결과 동일.
+- Zod 검증 로직·스키마 정의 내용은 동일(정의 위치만 이동). `apiEnvelope` 등을 feature schema 에서 import 하던 코드는 모두 `shared/api/schemas` 로 변경됨 — 새 코드는 공통 스키마를 shared 에서 가져올 것.
+- `messageStream` 의 `streamMessage` 시그니처(`signal` 포함)와 throw/handler 계약은 그대로 유지. SSE 소비 시 reader lock 해제(`releaseLock`)가 공통 제너레이터에서 일관되게 수행됨(기존 `streamSSE` 와 동일 패턴).
+- 검증: `npm run lint` 통과, `npm run build`(tsc -b + vite build) 통과(246 modules).
+
+### 후속 작업(TODO, 이번 변경에서 제외)
+- Refactoring #6: 비명세 API `branchApi.restoreBranch`(`POST /chats/{id}/restore`) 는 BE 명세 확인이 필요하므로 이번에 제거하지 않음. 명세 확정 후 유지/제거 결정 필요.
+- Refactoring #1·#2·#7(`ChatLayout`/`ConvSidebar`/`GraphPanel` 분해)은 위험도가 높아 이번 범위에서 제외. 별도 계획으로 진행 권장.
+
+### 관련
+- 관련 파일: [shared/api/schemas.ts](./src/shared/api/schemas.ts), [shared/api/sse.ts](./src/shared/api/sse.ts), [features/branch/hooks/useUpdateBranch.ts](./src/features/branch/hooks/useUpdateBranch.ts), [features/branch/hooks/useDeleteBranch.ts](./src/features/branch/hooks/useDeleteBranch.ts), [features/chat/api/messageStream.ts](./src/features/chat/api/messageStream.ts)
+
+## 2026-06-03 — Codex (FE 아키텍처 보고서 강의자료 기반 보강)
+
+**유형:** docs
+**범위:** FE_ARCHITECTURE_REPORT.md
+
+### 변경 내용
+- `FE_ARCHITECTURE_REPORT.md`가 백엔드 보고서 형식에만 기대지 않도록 강의자료별 평가 프레임을 추가.
+- `1 개요`, `2 Process`, `4 요구 분석`, `5 요구 모델링`, `6 설계 원리`, `6 설계 원리II`, `Architecture Design and Patterm`의 핵심 개념을 FE 분석 질문과 직접 매핑.
+- Design Work Process, 기능/비기능 요구 매핑, 결합도/응집도 강의 정의, 아키텍처 스타일과 디자인 패턴 구분, SAAM/ATAM식 평가 시나리오를 보강.
+
+### 영향 범위
+- 문서만 수정. 코드 변경 없음.
+- 기존 보고서의 결론은 유지하되, 근거를 강의자료 중심으로 재정렬함.
+
+### 관련
+- 관련 파일: [FE_ARCHITECTURE_REPORT.md](./FE_ARCHITECTURE_REPORT.md)
+
+## 2026-06-03 — Codex (FE 아키텍처 분석 보고서 추가)
+
+**유형:** docs
+**범위:** FE_ARCHITECTURE_REPORT.md, FILE_STRUCTURE.md
+
+### 변경 내용
+- 백엔드 아키텍처 보고서 형식에 맞춰 `FE_ARCHITECTURE_REPORT.md`를 신규 작성.
+- 강의 설계 원리 기준으로 FE의 아키텍처 스타일, 모듈 분할 근거, 결합도/응집도, SOLID, 디자인 패턴, 품질 속성, 리팩토링 후보를 정리.
+- 신규 루트 문서 추가에 맞춰 `FILE_STRUCTURE.md` 루트 파일 목록에 보고서 항목을 추가.
+
+### 영향 범위
+- 문서만 추가/수정. 코드 변경 없음.
+- prototype 브랜치의 현재 FE 구조를 기준으로 분석함.
+
+### 관련
+- 관련 파일: [FE_ARCHITECTURE_REPORT.md](./FE_ARCHITECTURE_REPORT.md), [FILE_STRUCTURE.md](./FILE_STRUCTURE.md)
+
 ## 2026-05-28 — Claude (모든 노드 부모 엣지 보강 + 대화 보기 카드 가림 해소)
 
 **유형:** fix

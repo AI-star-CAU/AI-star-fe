@@ -1,6 +1,7 @@
 import { apiClient } from '../../../shared/api/client';
 import { ENDPOINTS } from '../../../shared/api/endpoints';
-import { apiEnvelope, ExplorerPageSchema, ExplorerTreeSchema } from './schemas';
+import { apiEnvelope } from '../../../shared/api/schemas';
+import { ExplorerPageSchema, ExplorerTreeSchema } from './schemas';
 import type { ExplorerPage, ExplorerPageParams, ExplorerTree } from '../types';
 
 export const explorerApi = {

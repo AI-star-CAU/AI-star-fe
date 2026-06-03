@@ -21,6 +21,7 @@ AI-star-fe/
 ├── README.md                # 프로젝트 기본 안내
 ├── CLAUDE.md                # LLM 작업 규칙
 ├── SUMMARY.md               # 변경 사항 요약
+├── FE_ARCHITECTURE_REPORT.md # 강의 설계 원리 기반 FE 아키텍처 분석 보고서
 └── FILE_STRUCTURE.md        # 파일 구조 문서
 ```
 
@@ -81,7 +82,9 @@ src/
 │   │   ├── hooks/           # 분기 hooks
 │   │   │   ├── useBranchMessages.ts # 여러 분기의 메시지 조회
 │   │   │   ├── useChatTitle.ts # re-export shim → graph/hooks/useChatTitle.ts
-│   │   │   └── useCreateBranch.ts # 분기 생성 mutation hook (ChatLayout 에서 추출)
+│   │   │   ├── useCreateBranch.ts # 분기 생성 mutation hook (ChatLayout 에서 추출)
+│   │   │   ├── useUpdateBranch.ts # 분기 제목 수정 mutation hook (BranchRow 에서 추출)
+│   │   │   └── useDeleteBranch.ts # 분기 삭제 mutation hook (BranchRow 에서 추출)
 │   │   └── types.ts         # 분기 타입
 │   │
 │   ├── chat/                # 채팅/메시지 기능
@@ -183,11 +186,12 @@ src/
 │   ├── api/                 # 공용 API 인프라
 │   │   ├── ApiError.ts      # 표준 API 오류 클래스
 │   │   ├── apiResponse.ts   # BE ApiResponse 래퍼 타입
+│   │   ├── schemas.ts       # 공통 zod 스키마(apiEnvelope/pageResponse/Title·Summary status)
 │   │   ├── client.ts        # fetch 기반 HTTP 클라이언트
 │   │   ├── endpoints.ts     # API endpoint 상수
 │   │   ├── errorCodes.ts    # BE 오류 코드와 사용자 메시지 매핑
 │   │   ├── parseHttpError.ts # HTTP 오류 응답 파싱
-│   │   ├── sse.ts           # 범용 SSE stream helper
+│   │   ├── sse.ts           # 범용 SSE 파서/stream helper (parseSseBlock·parseSseStream·streamSSE)
 │   │   └── interceptors/    # API 공통 후처리
 │   │       └── authInterceptor.ts # 인증 만료 처리
 │   ├── components/          # 공용 UI 컴포넌트

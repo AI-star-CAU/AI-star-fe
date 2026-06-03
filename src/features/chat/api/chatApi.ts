@@ -4,12 +4,11 @@ import {
   mapChatListItemToConversation,
   mapTurnListToMessages,
 } from './chatMappers';
+import { apiEnvelope, pageResponseSchema } from '../../../shared/api/schemas';
 import {
-  apiEnvelope,
   CancelMessageResponseSchema,
   ChatListItemResponseSchema,
   CreateChatResponseSchema,
-  pageResponseSchema,
   TurnPageResponseSchema,
 } from './schemas';
 import type {

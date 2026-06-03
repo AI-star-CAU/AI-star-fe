@@ -1,6 +1,5 @@
 import { z } from 'zod';
-
-export const TitleStatusSchema = z.enum(['PENDING', 'GENERATED', 'USER_EDITED']);
+import { TitleStatusSchema } from '../../../shared/api/schemas';
 
 export const CreateBranchResponseSchema = z.object({
   chatId: z.number(),
@@ -14,11 +13,3 @@ export const CreateBranchResponseSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
-
-export const apiEnvelope = <T extends z.ZodTypeAny>(resultSchema: T) =>
-  z.object({
-    isSuccess: z.boolean(),
-    code: z.string(),
-    message: z.string(),
-    result: resultSchema,
-  });

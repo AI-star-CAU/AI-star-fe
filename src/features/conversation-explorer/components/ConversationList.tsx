@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import Button from '../../../shared/components/ui/Button';
 import SearchPanel from '../../search/components/SearchPanel';
-import { branchApi } from '../../branch/api/branchApi';
+import { useUpdateBranch } from '../../branch/hooks/useUpdateBranch';
+import { useDeleteBranch } from '../../branch/hooks/useDeleteBranch';
 import type { Branch } from '../../branch/types';
 import type { Conversation } from '../../chat/types';
 
@@ -75,7 +75,8 @@ const BranchRow: React.FC<BranchRowProps> = ({
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [title, setTitle] = useState(branch.title);
-  const queryClient = useQueryClient();
+  const { updateBranch } = useUpdateBranch();
+  const { deleteBranch } = useDeleteBranch();
 
   const handleRename = async () => {
     const trimmed = title.trim();
@@ -85,8 +86,7 @@ const BranchRow: React.FC<BranchRowProps> = ({
       return;
     }
     try {
-      await branchApi.updateBranch(Number(branch.id), { title: trimmed });
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      await updateBranch(Number(branch.id), { title: trimmed });
     } catch {
       setTitle(branch.title);
     }
@@ -95,8 +95,7 @@ const BranchRow: React.FC<BranchRowProps> = ({
 
   const handleDelete = async () => {
     try {
-      await branchApi.deleteBranch(Number(branch.id));
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      await deleteBranch(Number(branch.id));
     } catch {
       setConfirming(false);
     }

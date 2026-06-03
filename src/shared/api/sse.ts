@@ -9,7 +9,11 @@ export interface SSEEvent {
 
 type SseMethod = 'POST' | 'PATCH';
 
-function parseSseBlock(block: string): SSEEvent | null {
+/**
+ * `event:`/`data:` 블록(빈 줄 구분)을 파싱한다. data 는 여러 줄일 수 있으며,
+ * `:` 로 시작하는 주석 줄은 무시한다. 데이터가 없는 블록은 null 을 반환한다.
+ */
+export function parseSseBlock(block: string): SSEEvent | null {
   let event = 'message';
   const dataLines: string[] = [];
 
@@ -27,28 +31,14 @@ function parseSseBlock(block: string): SSEEvent | null {
   return { event, data: dataLines.join('\n') };
 }
 
-export async function* streamSSE(
-  path: string,
-  body?: unknown,
-  method: SseMethod = 'POST',
+/**
+ * Response body reader 를 빈 줄(\n\n, CRLF 허용)로 끊어 SSEEvent 를 순서대로 방출한다.
+ * 스트림이 done 없이 끝나도 남은 버퍼(tail)를 마지막으로 파싱한다.
+ * 공통 SSE 파서/스트림 처리 — feature 는 이 위에서 event 매핑만 담당한다.
+ */
+export async function* parseSseStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
 ): AsyncGenerator<SSEEvent> {
-  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-  const response = await fetch(`${env.apiBaseUrl}${path}`, {
-    method,
-    headers: {
-      Accept: 'text/event-stream',
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
-
-  // 스트리밍 시작 전 에러는 ApiResponse JSON 으로 온다 (명세 §2.5).
-  if (!response.ok || !response.body) {
-    throw await parseHttpError(response, 'SSE 요청에 실패했어요.');
-  }
-
-  const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
 
@@ -74,4 +64,28 @@ export async function* streamSSE(
   } finally {
     reader.releaseLock();
   }
+}
+
+export async function* streamSSE(
+  path: string,
+  body?: unknown,
+  method: SseMethod = 'POST',
+): AsyncGenerator<SSEEvent> {
+  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  const response = await fetch(`${env.apiBaseUrl}${path}`, {
+    method,
+    headers: {
+      Accept: 'text/event-stream',
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
+
+  // 스트리밍 시작 전 에러는 ApiResponse JSON 으로 온다 (명세 §2.5).
+  if (!response.ok || !response.body) {
+    throw await parseHttpError(response, 'SSE 요청에 실패했어요.');
+  }
+
+  yield* parseSseStream(response.body.getReader());
 }
