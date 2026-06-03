@@ -1,6 +1,7 @@
 import { apiClient } from '../../../shared/api/client';
 import { ENDPOINTS } from '../../../shared/api/endpoints';
-import { apiEnvelope, UsageInfoSchema } from './schemas';
+import { apiEnvelope } from '../../../shared/api/schemas';
+import { UsageInfoSchema } from './schemas';
 import type { UsageInfo } from '../types';
 
 export const usageApi = {

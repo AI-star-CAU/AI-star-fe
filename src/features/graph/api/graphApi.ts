@@ -1,7 +1,7 @@
 import { apiClient } from '../../../shared/api/client';
 import { ENDPOINTS } from '../../../shared/api/endpoints';
+import { apiEnvelope } from '../../../shared/api/schemas';
 import {
-  apiEnvelope,
   ExpandGraphResponseSchema,
   GraphResponseSchema,
 } from './schemas';

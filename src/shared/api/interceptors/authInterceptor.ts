@@ -1,4 +1,5 @@
-import { STORAGE_KEYS } from '../../constants/storageKeys';
+import { clearAuthToken } from '../../storage/tokenStorage';
+import { clearAuthUser } from '../../storage/userStorage';
 import { AUTH_BROKEN_CODES } from '../errorCodes';
 import type { ApiError } from '../ApiError';
 
@@ -16,12 +17,8 @@ export function handleAuthBroken(error: ApiError): boolean {
   if (error.status !== 401) return false;
   if (!error.code || !AUTH_BROKEN_CODES.has(error.code)) return false;
 
-  try {
-    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
-  } catch {
-    // localStorage 접근 실패는 무시 (예: SecurityError).
-  }
+  clearAuthToken();
+  clearAuthUser();
 
   const alreadyOnLogin =
     typeof window !== 'undefined' && window.location.pathname === '/';

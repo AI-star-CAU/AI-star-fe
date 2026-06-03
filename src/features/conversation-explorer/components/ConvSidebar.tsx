@@ -1,19 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import ConversationList from './ConversationList';
 import GraphPanel from '../../graph/components/GraphPanel';
-import { branchApi } from '../../branch/api/branchApi';
-import { graphApi } from '../../graph/api/graphApi';
+import { useOptimisticGraphMerge } from '../hooks/useOptimisticGraphMerge';
 import { useBranchMessages } from '../../branch/hooks/useBranchMessages';
-import { useGraph } from '../../graph/hooks/useGraph';
 import { useMessages } from '../../chat/hooks/useMessages';
 import { useDeleteChat } from '../../chat/hooks/useDeleteChat';
 import { useResizeDrag } from '../../../shared/hooks/useResizeDrag';
 import ResizeHandle from '../../../shared/components/layout/ResizeHandle';
 import type { Conversation, Message } from '../../chat/types';
 import type { CreateBranchResponse } from '../../branch/types';
-import type { GraphResponse, GraphViewMode, NodeAction } from '../../graph/types';
+import type { GraphViewMode, NodeAction } from '../../graph/types';
 
 interface ConvSidebarProps {
   conversations: Conversation[];
@@ -25,70 +22,6 @@ interface ConvSidebarProps {
   width: number;
   graphRootId?: string | null;
   optimisticBranch?: CreateBranchResponse | null;
-}
-
-function mergeOptimisticBranch(
-  graphData: GraphResponse,
-  optimisticBranch?: CreateBranchResponse | null,
-): GraphResponse {
-  if (
-    !optimisticBranch ||
-    graphData.rootChatId !== optimisticBranch.rootChatId ||
-    graphData.chats.some(chat => chat.chatId === optimisticBranch.chatId)
-  ) {
-    return graphData;
-  }
-
-  const parentChat = graphData.chats.find(
-    chat => chat.chatId === optimisticBranch.parentId,
-  );
-
-  return {
-    ...graphData,
-    chats: [
-      ...graphData.chats,
-      {
-        chatId: optimisticBranch.chatId,
-        title: optimisticBranch.title ?? '제목없음',
-        titleStatus: optimisticBranch.titleStatus,
-        parentChatId: optimisticBranch.parentId,
-        branchPointTurnId: optimisticBranch.branchPointTurnId,
-        depth: (parentChat?.depth ?? 0) + 1,
-        isDeleted: false,
-        lastTurnId: null,
-        updatedAt: optimisticBranch.updatedAt,
-      },
-    ],
-    turns: graphData.turns.map(turn =>
-      turn.turnId === optimisticBranch.branchPointTurnId
-        ? { ...turn, isBranchPoint: true }
-        : turn,
-    ),
-  };
-}
-
-function mergeGraphSnapshots(
-  previous: GraphResponse | undefined,
-  next: GraphResponse,
-): GraphResponse {
-  if (!previous || previous.rootChatId !== next.rootChatId) {
-    return next;
-  }
-
-  const activeChatIds = new Set(next.chats.map(chat => chat.chatId));
-
-  const turnsById = new Map(
-    previous.turns
-      .filter(turn => activeChatIds.has(turn.chatId))
-      .map(turn => [turn.turnId, turn]),
-  );
-  next.turns.forEach(turn => turnsById.set(turn.turnId, turn));
-
-  return {
-    ...next,
-    chats: next.chats,
-    turns: [...turnsById.values()],
-  };
 }
 
 const ConvSidebar: React.FC<ConvSidebarProps> = ({
@@ -103,7 +36,6 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   optimisticBranch,
 }) => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>();
   const [graphZoom, setGraphZoom] = useState(1);
   const [graphViewMode, setGraphViewMode] = useState<GraphViewMode>('structure');
@@ -116,7 +48,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     )?.id ?? null,
     [activeId, conversations],
   );
-  const activeParentId = graphRootId ?? activeParentIdFromList;
+  const activeParentId = activeParentIdFromList ?? graphRootId ?? null;
   const visibleExpandedId = expandedId === undefined ? activeParentId : expandedId;
   const graphConversation = useMemo(
     () => conversations.find(conversation => conversation.id === activeParentId),
@@ -195,60 +127,18 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     [conversations, deleteChat, activeId, navigate],
   );
 
-  const graphRequestId = activeParentId;
-  const numericChatId = graphRequestId ? Number(graphRequestId) : null;
-  const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
+  // Graph API는 path chatId를 기준으로 center turn을 고른다.
+  // 브랜치 화면에서는 root가 아니라 현재 branch id로 조회해야 해당 분기 경로가 보인다.
+  const graphRequestId = activeId === 'new' ? activeParentId : activeId;
+  const numericGraphChatId = graphRequestId ? Number(graphRequestId) : null;
+  const validGraphChatId =
+    numericGraphChatId !== null && !isNaN(numericGraphChatId) ? numericGraphChatId : null;
   const {
-    data: baseGraphData,
-    isFetching: isGraphFetching,
-    isError: isGraphError,
-    error: graphError,
-  } = useGraph(
-    validChatId,
-    undefined,
-    { up: 100, down: 100, includeDeleted: true },
-  );
-  const [mergedGraphData, setMergedGraphData] = React.useState<typeof baseGraphData>(undefined);
-
-  React.useEffect(() => {
-    if (!baseGraphData) {
-      setMergedGraphData(undefined);
-      return;
-    }
-
-    const nextGraphData = mergeOptimisticBranch(baseGraphData, optimisticBranch);
-    setMergedGraphData(prev => mergeGraphSnapshots(prev, nextGraphData));
-  }, [baseGraphData, optimisticBranch]);
-
-  const handleRestore = useCallback(async (chatId: string) => {
-    const numericId = Number(chatId);
-    if (isNaN(numericId)) return;
-    await branchApi.restoreBranch(numericId);
-    if (validChatId) {
-      setMergedGraphData(undefined);
-      await queryClient.invalidateQueries({ queryKey: ['graph', validChatId], exact: false });
-      await queryClient.invalidateQueries({ queryKey: ['conversations'] });
-    }
-  }, [queryClient, validChatId]);
-
-  const handleExpand = useCallback(async (fromTurnId: number, direction: 'UP' | 'DOWN') => {
-    if (!validChatId) return;
-    const result = await graphApi.expandGraph(validChatId, {
-      fromTurnId,
-      direction,
-      includeDeleted: true,
-    });
-    setMergedGraphData(prev => {
-      if (!prev) return prev;
-      const existingIds = new Set(prev.turns.map(t => t.turnId));
-      const newTurns = result.turns.filter(t => !existingIds.has(t.turnId));
-      const updatedFrontier = {
-        up: direction === 'UP' ? result.frontier.up : prev.frontier.up,
-        down: direction === 'DOWN' ? result.frontier.down : prev.frontier.down,
-      };
-      return { ...prev, turns: [...prev.turns, ...newTurns], frontier: updatedFrontier };
-    });
-  }, [validChatId]);
+    mergedGraphData,
+    isGraphFetching,
+    handleExpand,
+    graphErrorMessage,
+  } = useOptimisticGraphMerge(validGraphChatId, optimisticBranch);
 
   const handleCreateConversation = useCallback(() => {
     navigate('/chat/new');
@@ -279,15 +169,9 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     }
   }, [navigate]);
 
-  const graphErrorMessage = isGraphError
-    ? graphError instanceof Error && graphError.message
-      ? graphError.message
-      : '그래프를 불러오지 못했습니다.'
-    : null;
-
   return (
     <aside
-      className="bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out"
+      className="bg-ui-surface-muted border-r border-ui-line flex flex-col flex-shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out"
       style={{ width: isOpen ? width : 0 }}
     >
       <ConversationList
@@ -304,25 +188,25 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 
       <ResizeHandle direction="y" onMouseDown={onVerticalDrag} />
 
-      <div className="flex-1 min-h-[220px] overflow-hidden flex flex-col border-t border-slate-800">
+      <div className="flex-1 min-h-[220px] overflow-hidden flex flex-col border-t border-ui-line">
         <div className="px-4 py-2 flex-shrink-0 flex items-center justify-between gap-2">
           <p className="section-label">분기 구조</p>
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setGraphZoom(value => Math.max(0.6, Math.round((value - 0.1) * 10) / 10))}
-              className="w-6 h-6 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              className="w-6 h-6 rounded-md bg-ui-surface-subtle text-ui-text-muted hover:bg-ui-surface-strong hover:text-ui-text transition-colors"
               aria-label="그래프 축소"
             >
               -
             </button>
-            <span className="w-10 text-center text-[10px] font-semibold text-slate-500">
+            <span className="w-10 text-center text-[10px] font-semibold text-ui-text-faint">
               {Math.round(graphZoom * 100)}%
             </span>
             <button
               type="button"
               onClick={() => setGraphZoom(value => Math.min(1.8, Math.round((value + 0.1) * 10) / 10))}
-              className="w-6 h-6 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              className="w-6 h-6 rounded-md bg-ui-surface-subtle text-ui-text-muted hover:bg-ui-surface-strong hover:text-ui-text transition-colors"
               aria-label="그래프 확대"
             >
               +
@@ -330,14 +214,14 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
           </div>
         </div>
         <div className="px-4 pb-2 flex-shrink-0">
-          <div className="grid grid-cols-2 overflow-hidden rounded-md border border-slate-800 bg-slate-950">
+          <div className="grid grid-cols-2 overflow-hidden rounded-md border border-ui-line bg-ui-surface">
             <button
               type="button"
               onClick={() => setGraphViewMode('focused')}
               className={`h-7 text-[10px] font-semibold transition-colors ${
                 graphViewMode === 'focused'
-                  ? 'bg-cyan-500/20 text-cyan-700'
-                  : 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-300'
+                  ? 'bg-ui-accent-muted/20 text-ui-accent'
+                  : 'text-ui-text-faint hover:bg-ui-surface-subtle/60 hover:text-ui-text-muted'
               }`}
               aria-pressed={graphViewMode === 'focused'}
             >
@@ -348,8 +232,8 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
               onClick={() => setGraphViewMode('structure')}
               className={`h-7 text-[10px] font-semibold transition-colors ${
                 graphViewMode === 'structure'
-                  ? 'bg-cyan-500/20 text-cyan-700'
-                  : 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-300'
+                  ? 'bg-ui-accent-muted/20 text-ui-accent'
+                  : 'text-ui-text-faint hover:bg-ui-surface-subtle/60 hover:text-ui-text-muted'
               }`}
               aria-pressed={graphViewMode === 'structure'}
             >
@@ -374,7 +258,6 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
             onNodeClick={handleNodeClick}
             graphData={isGraphFetching && !mergedGraphData ? undefined : mergedGraphData}
             onExpand={handleExpand}
-            onRestore={handleRestore}
             zoom={graphZoom}
             viewMode={graphViewMode}
           />

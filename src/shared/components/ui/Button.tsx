@@ -18,12 +18,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-cyan-500 text-slate-950 hover:bg-cyan-400',
-  ghost: 'text-slate-300 border border-slate-700 hover:bg-slate-800 hover:border-slate-600',
+  primary: 'bg-ui-accent-muted text-ui-text-inverse hover:bg-ui-accent-soft',
+  ghost: 'text-ui-text-muted border border-ui-line-muted hover:bg-ui-surface-subtle hover:border-ui-line-strong',
   danger: 'text-red-400 border border-red-500/30 hover:bg-red-500/10 hover:border-red-500/60',
-  menu: 'text-slate-300 hover:bg-slate-700/50 text-left justify-start',
-  iconGhost: 'text-slate-400 hover:bg-slate-800',
-  avatar: 'bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950 hover:opacity-80',
+  menu: 'text-ui-text-muted hover:bg-ui-surface-strong/50 text-left justify-start',
+  iconGhost: 'text-ui-text-subtle hover:bg-ui-surface-subtle',
+  avatar: 'bg-gradient-to-br from-ui-accent-soft to-ui-accent-muted text-ui-text-inverse hover:opacity-80',
   custom: '',
 };
 

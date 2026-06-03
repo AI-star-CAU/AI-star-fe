@@ -4,14 +4,14 @@ import {
   mapChatListItemToConversation,
   mapTurnListToMessages,
 } from './chatMappers';
+import { apiEnvelope, pageResponseSchema } from '../../../shared/api/schemas';
 import {
-  apiEnvelope,
   CancelMessageResponseSchema,
   ChatListItemResponseSchema,
   CreateChatResponseSchema,
-  pageResponseSchema,
   TurnPageResponseSchema,
 } from './schemas';
+import { DEFAULT_LLM_OPTION } from '../constants/llm';
 import type {
   CancelMessageResponse,
   ChatMetaResponse,
@@ -23,8 +23,8 @@ import type {
 } from '../types';
 
 const DEFAULT_CHAT_OPTIONS = {
-  llmProvider: 'OPENAI',
-  llmModel: 'gpt-4o-mini',
+  llmProvider: DEFAULT_LLM_OPTION.provider,
+  llmModel: DEFAULT_LLM_OPTION.model,
 } as const satisfies Pick<CreateChatRequest, 'llmProvider' | 'llmModel'>;
 
 export const chatApi = {

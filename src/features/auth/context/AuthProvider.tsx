@@ -20,8 +20,8 @@ import {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, INITIAL_AUTH_STATE);
 
-  // 새로고침 시 localStorage 에 저장된 토큰/유저로 세션 복원.
-  // token 은 client.ts 에서 localStorage 로부터 직접 읽어 Authorization 헤더에 붙인다.
+  // 새로고침 시 storage 에 저장된 유저로 세션 복원.
+  // token 은 shared/storage/tokenStorage 를 통해 API 계층에서 Authorization 헤더에 붙인다.
   useEffect(() => {
     dispatch({ type: 'RESTORE', user: readSavedUser() });
   }, []);

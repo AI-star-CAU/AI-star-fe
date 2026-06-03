@@ -26,7 +26,6 @@ export const ENDPOINTS = {
     delete: (chatId: number) => `/chats/${chatId}`,
     graph: (chatId: number) => `/chats/${chatId}/graph`,
     graphExpand: (chatId: number) => `/chats/${chatId}/graph/expand`,
-    restore: (chatId: number) => `/chats/${chatId}/restore`,
   },
   // Phase 4 §2: 대화 탐색기 트리.
   explorer: {

@@ -16,7 +16,7 @@ interface ToastProps {
 const TYPE_CLASS: Record<ToastType, string> = {
   success: 'border-emerald-500/30 bg-emerald-950/95 text-emerald-100',
   error: 'border-red-500/30 bg-red-950/95 text-red-100',
-  info: 'border-slate-600/40 bg-slate-900/95 text-slate-100',
+  info: 'border-ui-line-strong/40 bg-ui-surface-muted/95 text-ui-text',
 };
 
 const Toast: React.FC<ToastProps> = ({ toast, onClose }) => (

@@ -1,5 +1,5 @@
 import { env } from '../config/env';
-import { STORAGE_KEYS } from '../constants/storageKeys';
+import { readAuthToken } from '../storage/tokenStorage';
 import { ApiError } from './ApiError';
 import { parseHttpError } from './parseHttpError';
 
@@ -17,7 +17,7 @@ function buildHeaders(options: RequestOptions): HeadersInit {
     headers.set('Content-Type', 'application/json');
   }
   if (options.auth !== false) {
-    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    const token = readAuthToken();
     if (token) headers.set('Authorization', `Bearer ${token}`);
   }
   return headers;

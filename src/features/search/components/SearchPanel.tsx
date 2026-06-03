@@ -21,11 +21,11 @@ const SearchPanel: React.FC = () => {
   const { hits, isLoading, isEmpty } = useConversationSearch(query);
 
   return (
-    <section className="border-b border-slate-800 flex-shrink-0">
+    <section className="border-b border-ui-line flex-shrink-0">
       <button
         type="button"
         onClick={() => setIsOpen(prev => !prev)}
-        className="section-label w-full px-4 py-2 flex items-center gap-1.5 text-left hover:text-slate-300 transition-colors"
+        className="section-label w-full px-4 py-2 flex items-center gap-1.5 text-left hover:text-ui-text-muted transition-colors"
       >
         <SectionTriangle open={isOpen} />
         검색

@@ -1,6 +1,7 @@
 import { apiClient } from '../../../shared/api/client';
 import { ENDPOINTS } from '../../../shared/api/endpoints';
-import { apiEnvelope, CreateBranchResponseSchema } from './schemas';
+import { apiEnvelope } from '../../../shared/api/schemas';
+import { CreateBranchResponseSchema } from './schemas';
 import type { CreateBranchRequest, CreateBranchResponse, UpdateBranchRequest } from '../types';
 
 export const branchApi = {
@@ -18,11 +19,5 @@ export const branchApi = {
 
   async deleteBranch(chatId: number): Promise<void> {
     await apiClient.delete<unknown>(ENDPOINTS.branch.delete(chatId));
-  },
-
-  async restoreBranch(chatId: number): Promise<CreateBranchResponse> {
-    const raw = await apiClient.post<unknown>(ENDPOINTS.branch.restore(chatId));
-    const parsed = apiEnvelope(CreateBranchResponseSchema).parse(raw);
-    return parsed.result;
   },
 };

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { PATHS } from '../app/router/routes';
 import { LLM_OPTIONS } from '../features/chat/constants/llm';
-import { LANGUAGE_OPTIONS, THEME_OPTIONS } from '../features/settings/constants';
+import { DEFAULT_SETTINGS, LANGUAGE_OPTIONS, THEME_OPTIONS } from '../features/settings/constants';
 import SettingsSelect from '../features/settings/components/SettingsSelect';
 import { useSettings } from '../features/settings/hooks/useSettings';
 import type { LlmModel } from '../features/chat/types';
@@ -85,9 +85,9 @@ const SettingsPage: React.FC = () => {
 
   const handleReset = () => {
     updateSettings({
-      defaultLlmModel: LLM_OPTIONS[0].model,
-      themeMode: 'system',
-      language: 'ko',
+      defaultLlmModel: DEFAULT_SETTINGS.defaultLlmModel,
+      themeMode: DEFAULT_SETTINGS.themeMode,
+      language: DEFAULT_SETTINGS.language,
     });
   };
 

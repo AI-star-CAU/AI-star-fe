@@ -1,7 +1,4 @@
 import { z } from 'zod';
-import { apiEnvelope } from '../../graph/api/schemas';
-
-export { apiEnvelope };
 
 export const WarningLevelSchema = z.enum(['NONE', 'WARN', 'CRITICAL']);
 

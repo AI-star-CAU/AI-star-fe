@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import { TitleStatusSchema } from '../../branch/api/schemas';
-import { apiEnvelope } from '../../graph/api/schemas';
-
-export { apiEnvelope };
+import { TitleStatusSchema } from '../../../shared/api/schemas';
 
 export const ExplorerNodeSchema = z.object({
   chatId: z.number(),

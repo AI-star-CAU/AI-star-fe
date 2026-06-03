@@ -1,8 +1,9 @@
 import { env } from '../../../shared/config/env';
-import { STORAGE_KEYS } from '../../../shared/constants/storageKeys';
 import { ApiError } from '../../../shared/api/client';
 import { parseHttpError } from '../../../shared/api/parseHttpError';
 import { ENDPOINTS } from '../../../shared/api/endpoints';
+import { parseSseStream, type SSEEvent } from '../../../shared/api/sse';
+import { readAuthToken } from '../../../shared/storage/tokenStorage';
 import type {
   TurnStartedData,
   ChunkData,
@@ -19,28 +20,6 @@ export interface StreamHandlers {
   onCancelled?: (d: CancelledData) => void;
 }
 
-interface SseEvent {
-  event: string;
-  data: string;
-}
-
-/** `event:`/`data:` 블록(빈 줄 구분)을 파싱한다. data 는 여러 줄일 수 있다. */
-function parseSseBlock(block: string): SseEvent | null {
-  let event = 'message';
-  const dataLines: string[] = [];
-  for (const rawLine of block.split('\n')) {
-    const line = rawLine.replace(/\r$/, '');
-    if (line.startsWith(':')) continue; // SSE 주석
-    const idx = line.indexOf(':');
-    const field = idx === -1 ? line : line.slice(0, idx);
-    const value = idx === -1 ? '' : line.slice(idx + 1).replace(/^ /, '');
-    if (field === 'event') event = value;
-    else if (field === 'data') dataLines.push(value);
-  }
-  if (dataLines.length === 0) return null;
-  return { event, data: dataLines.join('\n') };
-}
-
 function safeJson<T>(raw: string): T | null {
   try {
     return JSON.parse(raw) as T;
@@ -55,6 +34,9 @@ function safeJson<T>(raw: string): T | null {
  * - 스트리밍 중 에러: SSE `event: error` → ApiError throw (retryable 포함)
  * - 취소: SSE `event: cancelled` → onCancelled 호출 (부분 content 보존)
  * done 이벤트 수신 시 정상 종료.
+ *
+ * 공통 SSE 파서/스트림 처리는 shared/api/sse 의 parseSseStream 에 위임하고,
+ * 여기서는 chat 전용 event → handler 매핑만 담당한다.
  */
 export async function streamMessage(
   chatId: number,
@@ -62,7 +44,7 @@ export async function streamMessage(
   handlers: StreamHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
-  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  const token = readAuthToken();
   const res = await fetch(
     `${env.apiBaseUrl}${ENDPOINTS.chat.messages(chatId)}`,
     {
@@ -82,11 +64,7 @@ export async function streamMessage(
     throw await parseHttpError(res, '메시지 전송에 실패했어요.');
   }
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  const handleEvent = (evt: SseEvent) => {
+  const handleEvent = (evt: SSEEvent) => {
     switch (evt.event) {
       case 'turn_started': {
         const d = safeJson<TurnStartedData>(evt.data);
@@ -125,24 +103,8 @@ export async function streamMessage(
     }
   };
 
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    let sep: number;
-    // 이벤트는 빈 줄(\n\n)로 구분된다. CRLF 도 허용.
-    while ((sep = buffer.search(/\r?\n\r?\n/)) !== -1) {
-      const block = buffer.slice(0, sep);
-      buffer = buffer.slice(sep + buffer.match(/\r?\n\r?\n/)![0].length);
-      const evt = parseSseBlock(block);
-      if (!evt) continue;
-      if (evt.event === 'done') return;
-      handleEvent(evt);
-    }
+  for await (const evt of parseSseStream(res.body.getReader())) {
+    if (evt.event === 'done') return;
+    handleEvent(evt);
   }
-
-  // 스트림이 done 없이 끝난 경우 남은 버퍼 처리
-  const tail = parseSseBlock(buffer);
-  if (tail && tail.event !== 'done') handleEvent(tail);
 }

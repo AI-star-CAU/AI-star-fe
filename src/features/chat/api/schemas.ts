@@ -2,8 +2,13 @@ import { z } from 'zod';
 
 export const MessageStatusSchema = z.enum(['STREAMING', 'COMPLETED', 'CANCELED', 'FAILED']);
 export const SenderTypeSchema = z.enum(['USER', 'ASSISTANT']);
-export const LlmProviderSchema = z.enum(['OPENAI', 'GOOGLE', 'ANTHROPIC']);
-export const LlmModelSchema = z.enum(['gpt-4o-mini', 'gemini-2.0-flash', 'claude-3.5-sonnet']);
+export const LlmProviderSchema = z.enum(['LOCAL', 'OPENAI', 'GOOGLE', 'ANTHROPIC']);
+export const LlmModelSchema = z.enum([
+  'local-default',
+  'gpt-4o-mini',
+  'gemini-2.0-flash',
+  'claude-3.5-sonnet',
+]);
 
 export const ChatMessageResponseSchema = z.object({
   messageId: z.number(),
@@ -61,21 +66,3 @@ export const CancelMessageResponseSchema = z.object({
   content: z.string().nullable(),
   answerToken: z.number().nullable(),
 });
-
-export const apiEnvelope = <T extends z.ZodTypeAny>(resultSchema: T) =>
-  z.object({
-    isSuccess: z.boolean(),
-    code: z.string(),
-    message: z.string(),
-    result: resultSchema,
-  });
-
-/** 명세 §0.7 / §2.2: Spring Page<T> 형태의 Offset 페이징 응답. */
-export const pageResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
-  z.object({
-    content: z.array(itemSchema),
-    page: z.number(),
-    size: z.number(),
-    totalElements: z.number(),
-    totalPages: z.number(),
-  });

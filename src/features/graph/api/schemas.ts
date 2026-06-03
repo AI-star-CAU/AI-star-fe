@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { TitleStatusSchema } from '../../branch/api/schemas';
-
-export const SummaryStatusSchema = z.enum(['PENDING', 'GENERATED']);
+import {
+  TitleStatusSchema,
+  SummaryStatusSchema,
+} from '../../../shared/api/schemas';
 
 export const ChatNodeDtoSchema = z.object({
   chatId: z.number(),
@@ -54,11 +55,3 @@ export const ExpandGraphResponseSchema = z.object({
   turns: z.array(TurnNodeDtoSchema),
   frontier: FrontierDtoSchema,
 });
-
-export const apiEnvelope = <T extends z.ZodTypeAny>(resultSchema: T) =>
-  z.object({
-    isSuccess: z.boolean(),
-    code: z.string(),
-    message: z.string(),
-    result: resultSchema,
-  });

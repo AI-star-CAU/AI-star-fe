@@ -299,7 +299,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 setEditContent(message.content);
               }}
               style={iconBtnStyle}
-              className="hover:bg-slate-800 hover:text-slate-100"
+              className="hover:bg-ui-surface-subtle hover:text-ui-text"
               aria-label="메시지 수정"
               title="메시지 수정"
             >
@@ -336,7 +336,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             type="button"
             onClick={handleCopy}
             style={iconBtnStyle}
-            className="hover:bg-slate-800 hover:text-slate-100"
+            className="hover:bg-ui-surface-subtle hover:text-ui-text"
             aria-label={copied ? '복사됨' : '복사'}
             title={copied ? '복사됨' : '복사'}
           >
@@ -347,7 +347,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               type="button"
               onClick={() => onBranch?.(message.id, message.conversationId)}
               style={{ ...iconBtnStyle, color: 'var(--red-deep)' }}
-              className="hover:bg-slate-800"
+              className="hover:bg-ui-surface-subtle"
               aria-label="분기 만들기"
               title="분기 만들기"
             >
@@ -359,7 +359,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               type="button"
               onClick={() => onRegenerate?.(message.id, message.conversationId)}
               style={iconBtnStyle}
-              className="hover:bg-slate-800 hover:text-slate-100"
+              className="hover:bg-ui-surface-subtle hover:text-ui-text"
               aria-label="다시 생성"
               title="다시 생성"
             >

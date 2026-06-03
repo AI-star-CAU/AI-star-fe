@@ -18,13 +18,13 @@ const LlmModelSelect: React.FC<LlmModelSelectProps> = ({
   onChange,
   disabled = false,
 }) => (
-  <label className="flex items-center gap-2 text-xs text-slate-500">
+  <label className="flex items-center gap-2 text-xs text-ui-text-faint">
     <span>모델</span>
     <select
       value={value}
       onChange={e => onChange(e.target.value as LlmModel)}
       disabled={disabled}
-      className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-60"
+      className="bg-ui-surface-subtle border border-ui-line-muted rounded-lg px-2.5 py-1.5 text-xs text-ui-text-muted focus:outline-none focus:ring-2 focus:ring-ui-accent-muted disabled:opacity-60"
     >
       {LLM_OPTIONS.map(opt => (
         <option key={opt.model} value={opt.model}>
