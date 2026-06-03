@@ -227,14 +227,14 @@ Data Coupling < Stamp Coupling < Control Coupling < Common Coupling < Content Co
 
 | 파일/모듈 | Ce (사용함) | Ca (사용됨) | 평가 |
 |---|---:|---:|---|
-| `ChatLayout.tsx` | 매우 높음 | 1 route | **Ce 과다**. 데이터/상태 coordinator 책임이 비대. |
-| `ConvSidebar.tsx` | 높음 | 1 page | 탐색기, 그래프, branch, chat 로직 혼합. |
-| `GraphPanel.tsx` | 중~높음 | 1 sidebar | 시각화 책임은 명확하지만 1000줄 이상으로 내부 복잡도 과다. |
+| `ChatLayout.tsx` | 매우 높음 | 1 route | ~~Ce 과다~~. **✅ #1 적용**: 파생 상태를 4개 hook(useChatRouteState/useActiveConversation/useBranchContext/useLiveMessageMerge)으로 분해, 화면 조립만 남김. |
+| `ConvSidebar.tsx` | 높음 | 1 page | ~~탐색기·그래프·branch·chat 로직 혼합~~. **✅ #2 적용(핵심)**: 그래프 fetch/병합/확장/복구를 `useOptimisticGraphMerge` 로 분리. |
+| `GraphPanel.tsx` | 중~높음 | 1 sidebar | ~~1000줄 이상 내부 복잡도 과다~~. **✅ #7 적용**: builder/layout/상수/타입을 모듈 분리(약 1060→430줄). |
 | `apiClient` | 낮음 | many | 안정 모듈. 공통 HTTP facade 로 적절. |
 | `apiEnvelope` | 낮음 | many | 안정 모듈. **✅ #4 적용으로 `shared/api/schemas` 로 이동** (기존엔 `graph` feature 에 위치). |
 | `useUsage` | 낮음 | 2~3 | 기능 단위 hook 으로 양호. |
 
-가장 큰 refactoring 대상은 `ChatLayout`, `ConvSidebar`, `GraphPanel` 이다 (`ConversationList.BranchRow` 는 #3 적용으로 해소).
+가장 큰 refactoring 대상이던 `ChatLayout`, `ConvSidebar`, `GraphPanel`, `ConversationList.BranchRow` 는 각각 #1·#2·#7·#3 적용으로 핵심 로직이 hook/순수 모듈로 분해되었다(JSX 재배치형 일부 하위 항목은 보류).
 
 ---
 
@@ -272,10 +272,10 @@ Coincidental < Logical < Temporal < Procedural < Communicational < Sequential < 
 | `useUsage`, `usageApi`, `UsageMeter` | 양호. 조회/API/UI 역할이 비교적 분리됨. |
 | `apiClient` | 양호. HTTP 요청 공통화에 집중. |
 | `AuthProvider` | 대체로 양호. 인증 상태와 세션 저장을 담당. 단 `memberApi.getMe/deleteMe` 까지 포함되어 auth/member 경계가 약간 겹침. |
-| `ChatLayout` | 위반 가능성 큼. 채팅 화면 조립, 메시지 병합, 분기 prefix 계산, 그래프 라벨 계산, 라우팅, 전송 실패 복구 등 책임이 많다. |
-| `ConvSidebar` | 위반 가능성 큼. 탐색기 UI + 그래프 조회/병합 + 복구/확장 + 삭제 + resize 를 담당한다. |
+| `ChatLayout` | ~~위반 가능성 큼~~. **✅ #1 적용으로 완화** — 메시지 병합/분기 계산/그래프 라벨/라우트 상태를 hook 으로 분리, 화면 조립 + 전송/분기/재생성 핸들러만 남김. |
+| `ConvSidebar` | ~~위반 가능성 큼~~. **✅ #2 적용(핵심)으로 완화** — 그래프 조회/병합/복구/확장을 `useOptimisticGraphMerge` 로 분리(패널 UI 분리는 보류). |
 | `ConversationList.BranchRow` | ~~위반. row 렌더링과 API mutation/cache invalidation 을 동시에 수행~~. **✅ #3 적용으로 해소** — mutation 은 `useUpdateBranch`/`useDeleteBranch` hook 으로 분리, row 는 presentation 에 집중. |
-| `GraphPanel` | 위반 가능성. 그래프 데이터 변환, layout, SVG 렌더링, zoom/view mode interaction 이 한 파일에 집중. |
+| `GraphPanel` | ~~위반 가능성. 데이터 변환·layout·SVG 렌더·interaction 집중~~. **✅ #7 적용으로 완화** — 데이터 변환(`graphBuilders`)·layout(`graphLayout`)·상수/타입을 모듈 분리, 컴포넌트는 렌더/하이라이트만 담당. |
 
 ### 6.2 OCP - Open/Closed Principle
 
@@ -416,11 +416,11 @@ Coincidental < Logical < Temporal < Procedural < Communicational < Sequential < 
 
 강의 metric 기준 우선순위. 1~5 는 구조 개선 효과가 크고, 6 이후는 점진 개선 후보이다.
 
-> **진행 현황 (2026-06-03):** Refactoring **#3·#4·#5 는 적용 완료**(안전 리팩토링 — 동작/문구/API contract 변경 없음, `npm run lint`·`npm run build` 통과). #1·#2·#7(대형 컴포넌트 분해)은 위험도가 높아, #6(`restoreBranch` 명세 정합성)은 BE 명세 확인이 필요해 **후속 과제**로 남겨 두었다. 각 항목의 상태는 아래 블록 인용으로 표기한다.
+> **진행 현황 (2026-06-03):** Refactoring **#1·#2·#3·#4·#5·#7 적용 완료**(안전 리팩토링 — 동작/문구/API contract 변경 없음, `npm run lint`·`npm run build` 통과). #1·#2·#7(대형 컴포넌트)은 동작 보존을 위해 **hook/순수 모듈 추출 위주**로 분해했고, JSX 재배치가 필요한 일부 하위 제안(`ChatMainPanel`, `GraphSidebarPanel`/`ConversationExplorerPanel`, `graphRendering`/`useGraphViewport`)은 렌더 구조 변경 위험이 있어 **보류**했다. **#6(`restoreBranch` 명세 정합성)** 만 BE 명세 확인이 필요해 후속 과제로 남는다. 각 항목의 상태는 아래 블록 인용으로 표기한다.
 
 ### Refactoring #1 - `ChatLayout` 분해 (SRP, Cohesion)
 
-> **상태: ⏸ 후속 과제** (대형 컴포넌트 분해, 위험도 높음 — 이번 범위에서 제외).
+> **상태: ✅ 적용 완료 (2026-06-03).** 파생 상태를 4개 hook 으로 분해: `pages/chat/hooks/useChatRouteState`(활성 대화 id / turnId 파라미터 정리), `useActiveConversation`(목록 + chatMeta fallback), `useBranchContext`(활성 분기 / 부모 메시지 / 분기 마커 라벨), `useLiveMessageMerge`(history + send/regenerate/edit live 병합). 각 hook 은 기존 `useMemo` 본문과 **의존성 배열을 그대로** 옮겨 메모이제이션 동작이 동일하다. 핸들러(handleBranch/Send/Regenerate)와 JSX 는 byte 단위로 보존했다. (제안의 `ChatMainPanel` JSX 분리는 렌더 구조 변경 위험이 있어 보류.)
 
 **문제**: `ChatLayout.tsx` 가 400줄 이상이며, route state, message state, live stream merge, branch prefix, graph label, send/regenerate/edit handler 를 모두 처리한다.
 
@@ -442,7 +442,7 @@ ChatLayout
 
 ### Refactoring #2 - `ConvSidebar` 를 탐색기와 그래프 컨테이너로 분리
 
-> **상태: ⏸ 후속 과제** (대형 컴포넌트 분해, 위험도 높음 — 이번 범위에서 제외).
+> **상태: ✅ 적용(핵심) (2026-06-03).** 그래프 스냅샷 조회·낙관적 병합·확장·복구·에러 처리 로직을 `features/conversation-explorer/hooks/useOptimisticGraphMerge` 로 분리했다(`mergeOptimisticBranch`/`mergeGraphSnapshots` 헬퍼 포함 이동). ConvSidebar 는 이 hook 만 호출하고 JSX 는 byte 단위로 보존했다. `restoreBranch`(비명세 API, #6)는 **동작 변경 없이 그대로** 옮겼다. (제안의 `GraphSidebarPanel`/`ConversationExplorerPanel` JSX 분리는 패널 JSX 재배치 위험이 있어 보류 — `ConversationList` 가 이미 탐색기 목록 패널 역할을 한다.)
 
 **문제**: `ConvSidebar` 가 conversation list, graph data merge, graph expand, restore, delete, resize, navigation 을 모두 담당한다.
 
@@ -529,7 +529,7 @@ shared/api/schemas.ts
 
 ### Refactoring #7 - `GraphPanel` 분해
 
-> **상태: ⏸ 후속 과제** (대형 컴포넌트 분해, 위험도 높음 — 이번 범위에서 제외).
+> **상태: ✅ 적용 완료 (2026-06-03).** 순수 모듈을 분리: `graphTypes`(GraphNode/GraphEdge/BuiltGraph), `graphConstants`(좌표·색 팔레트), `graphBuilders`(buildGraph/buildGraphFromApiData/addBackboneEdges + 색 함수), `graphLayout`(focused 레이아웃·요약 카드 helper). `GraphPanel.tsx` 는 컴포넌트(하이라이트 경로 계산 + SVG 렌더)만 남아 약 1060줄 → 약 430줄. 옮긴 함수는 모듈 레벨 순수 함수라 hook/상태 영향이 없고, 컴포넌트 본문은 byte 단위로 보존했다. (제안의 `graphRendering.tsx`/`useGraphViewport.ts` 렌더 분리는 컴포넌트 상태 결합이 커 보류.)
 
 **문제**: 1000줄 이상이며 graph build, layout, edge 보정, focused/structure view, SVG render, interaction 이 섞여 있다.
 
@@ -641,7 +641,7 @@ shared/storage/
 | DIP | B | API facade 는 좋음. feature 간 concrete dependency 는 개선 필요. |
 | 아키텍처 적합성 | B+ | Layered + Client-Server + Component + Event-driven 조합은 FE 요구에 적절. |
 
-**한 줄 요약**: 현재 FE는 기능 중심 계층 구조와 공통 API 인프라를 갖춘 좋은 출발점이다. 다만 prototype 단계에서 빠르게 기능을 붙이면서 `ChatLayout`, `ConvSidebar`, `GraphPanel` 에 orchestration 과 UI/데이터 책임이 집중되었다. **Refactoring #3~#5 는 2026-06-03 안전 리팩토링으로 적용 완료**(BranchRow mutation hook 분리, 공통 schema `shared/api/schemas` 통합, SSE 파서/스트림 통합)했고, 남은 #1·#2·#7(대형 컴포넌트 분해)까지 적용하면 강의 metric 기준으로 고응집·저결합 구조에 훨씬 가까워진다.
+**한 줄 요약**: 현재 FE는 기능 중심 계층 구조와 공통 API 인프라를 갖춘 좋은 출발점이다. prototype 단계에서 `ChatLayout`, `ConvSidebar`, `GraphPanel` 에 orchestration 과 UI/데이터 책임이 집중됐었으나, **2026-06-03 안전 리팩토링으로 #1~#5·#7 을 적용**(대형 컴포넌트의 파생 상태·그래프 로직·데이터/레이아웃을 hook/순수 모듈로 분해, BranchRow mutation hook, 공통 schema `shared/api/schemas` 통합, SSE 파서/스트림 통합)해 강의 metric 기준 고응집·저결합 구조에 한층 가까워졌다. 남은 것은 #6(`restoreBranch` 명세 정합성, BE 확인 필요)과 JSX 재배치형 하위 항목뿐이다.
 
 ---
 

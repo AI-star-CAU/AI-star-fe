@@ -51,9 +51,14 @@ src/
 │   ├── MyPage.tsx           # 사용자 정보와 사용 현황 화면
 │   ├── SettingsPage.tsx     # 환경 설정 화면
 │   └── chat/                # 채팅 라우트 화면 조각
-│       ├── ChatLayout.tsx   # 채팅 화면 상태/데이터 조립, 사이드바/본문 배치
+│       ├── ChatLayout.tsx   # 채팅 화면 조립(hook 으로 파생 상태 위임), 사이드바/본문 배치
 │       ├── ConversationView.tsx # 기존 대화 메시지 목록과 입력 영역
-│       └── NewChatLanding.tsx # 새 대화 시작 화면
+│       ├── NewChatLanding.tsx # 새 대화 시작 화면
+│       └── hooks/           # ChatLayout 파생 상태 hooks (ChatLayout 에서 추출)
+│           ├── useChatRouteState.ts # 활성 대화 id / turnId 검색 파라미터
+│           ├── useActiveConversation.ts # 목록 + chatMeta fallback
+│           ├── useBranchContext.ts # 활성 분기 / 부모 메시지 / 분기 마커 라벨
+│           └── useLiveMessageMerge.ts # history + send/regenerate/edit live 병합
 │
 ├── features/                # 기능 단위 모듈
 │   ├── auth/                # 인증 기능
@@ -123,7 +128,8 @@ src/
 │   │   │   ├── ConversationList.tsx # 최근 대화/분기 트리 목록
 │   │   │   └── ConvSidebar.tsx # 좌측 사이드바와 그래프 영역 조립
 │   │   ├── hooks/           # 대화 탐색 hooks
-│   │   │   └── useConversations.ts # 탐색기 트리 → Conversation[] 조회 hook
+│   │   │   ├── useConversations.ts # 탐색기 트리 → Conversation[] 조회 hook
+│   │   │   └── useOptimisticGraphMerge.ts # 그래프 스냅샷 조회/낙관적 병합/확장/복구 (ConvSidebar 에서 추출)
 │   │   ├── utils/           # 탐색기 유틸
 │   │   │   └── explorerMappers.ts # 탐색기 평탄 노드 → Conversation/Branch 변환
 │   │   └── types.ts         # 탐색기 타입(ExplorerNode/Tree/Page)
@@ -134,7 +140,11 @@ src/
 │   │   │   └── schemas.ts   # 그래프 API zod 스키마
 │   │   ├── components/      # 그래프 UI
 │   │   │   ├── GraphLegend.tsx # 그래프 범례
-│   │   │   └── GraphPanel.tsx # 그래프 시각화 패널
+│   │   │   ├── GraphPanel.tsx # 그래프 시각화 패널(렌더/하이라이트 조립)
+│   │   │   ├── graphTypes.ts  # GraphNode/GraphEdge/BuiltGraph 내부 타입 (GraphPanel 에서 추출)
+│   │   │   ├── graphConstants.ts # 레이아웃 좌표/색 팔레트 상수 (GraphPanel 에서 추출)
+│   │   │   ├── graphBuilders.ts # API/로컬 데이터 → 노드/엣지 빌더 + 색 함수 (GraphPanel 에서 추출)
+│   │   │   └── graphLayout.ts # 대화 보기(focused) 레이아웃/요약 카드 helper (GraphPanel 에서 추출)
 │   │   ├── hooks/           # 그래프 hooks
 │   │   │   ├── useCollapsedBranches.ts # 접힌 분기 계산
 │   │   │   ├── useChatTitle.ts # 비동기 제목 상태 갱신 hook (branch에서 이동)

@@ -1,19 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import ConversationList from './ConversationList';
 import GraphPanel from '../../graph/components/GraphPanel';
-import { branchApi } from '../../branch/api/branchApi';
-import { graphApi } from '../../graph/api/graphApi';
+import { useOptimisticGraphMerge } from '../hooks/useOptimisticGraphMerge';
 import { useBranchMessages } from '../../branch/hooks/useBranchMessages';
-import { useGraph } from '../../graph/hooks/useGraph';
 import { useMessages } from '../../chat/hooks/useMessages';
 import { useDeleteChat } from '../../chat/hooks/useDeleteChat';
 import { useResizeDrag } from '../../../shared/hooks/useResizeDrag';
 import ResizeHandle from '../../../shared/components/layout/ResizeHandle';
 import type { Conversation, Message } from '../../chat/types';
 import type { CreateBranchResponse } from '../../branch/types';
-import type { GraphResponse, GraphViewMode, NodeAction } from '../../graph/types';
+import type { GraphViewMode, NodeAction } from '../../graph/types';
 
 interface ConvSidebarProps {
   conversations: Conversation[];
@@ -25,70 +22,6 @@ interface ConvSidebarProps {
   width: number;
   graphRootId?: string | null;
   optimisticBranch?: CreateBranchResponse | null;
-}
-
-function mergeOptimisticBranch(
-  graphData: GraphResponse,
-  optimisticBranch?: CreateBranchResponse | null,
-): GraphResponse {
-  if (
-    !optimisticBranch ||
-    graphData.rootChatId !== optimisticBranch.rootChatId ||
-    graphData.chats.some(chat => chat.chatId === optimisticBranch.chatId)
-  ) {
-    return graphData;
-  }
-
-  const parentChat = graphData.chats.find(
-    chat => chat.chatId === optimisticBranch.parentId,
-  );
-
-  return {
-    ...graphData,
-    chats: [
-      ...graphData.chats,
-      {
-        chatId: optimisticBranch.chatId,
-        title: optimisticBranch.title ?? '제목없음',
-        titleStatus: optimisticBranch.titleStatus,
-        parentChatId: optimisticBranch.parentId,
-        branchPointTurnId: optimisticBranch.branchPointTurnId,
-        depth: (parentChat?.depth ?? 0) + 1,
-        isDeleted: false,
-        lastTurnId: null,
-        updatedAt: optimisticBranch.updatedAt,
-      },
-    ],
-    turns: graphData.turns.map(turn =>
-      turn.turnId === optimisticBranch.branchPointTurnId
-        ? { ...turn, isBranchPoint: true }
-        : turn,
-    ),
-  };
-}
-
-function mergeGraphSnapshots(
-  previous: GraphResponse | undefined,
-  next: GraphResponse,
-): GraphResponse {
-  if (!previous || previous.rootChatId !== next.rootChatId) {
-    return next;
-  }
-
-  const activeChatIds = new Set(next.chats.map(chat => chat.chatId));
-
-  const turnsById = new Map(
-    previous.turns
-      .filter(turn => activeChatIds.has(turn.chatId))
-      .map(turn => [turn.turnId, turn]),
-  );
-  next.turns.forEach(turn => turnsById.set(turn.turnId, turn));
-
-  return {
-    ...next,
-    chats: next.chats,
-    turns: [...turnsById.values()],
-  };
 }
 
 const ConvSidebar: React.FC<ConvSidebarProps> = ({
@@ -103,7 +36,6 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   optimisticBranch,
 }) => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>();
   const [graphZoom, setGraphZoom] = useState(1);
   const [graphViewMode, setGraphViewMode] = useState<GraphViewMode>('structure');
@@ -199,56 +131,12 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   const numericChatId = graphRequestId ? Number(graphRequestId) : null;
   const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
   const {
-    data: baseGraphData,
-    isFetching: isGraphFetching,
-    isError: isGraphError,
-    error: graphError,
-  } = useGraph(
-    validChatId,
-    undefined,
-    { up: 100, down: 100, includeDeleted: true },
-  );
-  const [mergedGraphData, setMergedGraphData] = React.useState<typeof baseGraphData>(undefined);
-
-  React.useEffect(() => {
-    if (!baseGraphData) {
-      setMergedGraphData(undefined);
-      return;
-    }
-
-    const nextGraphData = mergeOptimisticBranch(baseGraphData, optimisticBranch);
-    setMergedGraphData(prev => mergeGraphSnapshots(prev, nextGraphData));
-  }, [baseGraphData, optimisticBranch]);
-
-  const handleRestore = useCallback(async (chatId: string) => {
-    const numericId = Number(chatId);
-    if (isNaN(numericId)) return;
-    await branchApi.restoreBranch(numericId);
-    if (validChatId) {
-      setMergedGraphData(undefined);
-      await queryClient.invalidateQueries({ queryKey: ['graph', validChatId], exact: false });
-      await queryClient.invalidateQueries({ queryKey: ['conversations'] });
-    }
-  }, [queryClient, validChatId]);
-
-  const handleExpand = useCallback(async (fromTurnId: number, direction: 'UP' | 'DOWN') => {
-    if (!validChatId) return;
-    const result = await graphApi.expandGraph(validChatId, {
-      fromTurnId,
-      direction,
-      includeDeleted: true,
-    });
-    setMergedGraphData(prev => {
-      if (!prev) return prev;
-      const existingIds = new Set(prev.turns.map(t => t.turnId));
-      const newTurns = result.turns.filter(t => !existingIds.has(t.turnId));
-      const updatedFrontier = {
-        up: direction === 'UP' ? result.frontier.up : prev.frontier.up,
-        down: direction === 'DOWN' ? result.frontier.down : prev.frontier.down,
-      };
-      return { ...prev, turns: [...prev.turns, ...newTurns], frontier: updatedFrontier };
-    });
-  }, [validChatId]);
+    mergedGraphData,
+    isGraphFetching,
+    handleRestore,
+    handleExpand,
+    graphErrorMessage,
+  } = useOptimisticGraphMerge(validChatId, optimisticBranch);
 
   const handleCreateConversation = useCallback(() => {
     navigate('/chat/new');
@@ -278,12 +166,6 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
       navigate(`/chat/${action.chatId}`);
     }
   }, [navigate]);
-
-  const graphErrorMessage = isGraphError
-    ? graphError instanceof Error && graphError.message
-      ? graphError.message
-      : '그래프를 불러오지 못했습니다.'
-    : null;
 
   return (
     <aside

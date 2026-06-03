@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useConversations } from '../../features/conversation-explorer/hooks/useConversations';
-import { useChatMeta } from '../../features/chat/hooks/useChatMeta';
 import { useMessages } from '../../features/chat/hooks/useMessages';
 import { useSendMessage } from '../../features/chat/hooks/useSendMessage';
 import { useRegenerate } from '../../features/chat/hooks/useRegenerate';
 import { useEditMessage } from '../../features/chat/hooks/useEditMessage';
 import { useCreateBranch } from '../../features/branch/hooks/useCreateBranch';
-import { useGraph } from '../../features/graph/hooks/useGraph';
-import {
-  getForkTurnIndexByTurnId,
-  getMessagesThroughFork,
-  removePreTurnAssistantMessages,
-} from '../../features/chat/utils/messageHelpers';
+import { useChatRouteState } from './hooks/useChatRouteState';
+import { useActiveConversation } from './hooks/useActiveConversation';
+import { useBranchContext } from './hooks/useBranchContext';
+import { useLiveMessageMerge } from './hooks/useLiveMessageMerge';
 import ChatHeader from '../../features/chat/components/ChatHeader';
 import ConvSidebar from '../../features/conversation-explorer/components/ConvSidebar';
 import { LLM_OPTIONS, DEFAULT_LLM_OPTION } from '../../features/chat/constants/llm';
@@ -22,7 +19,7 @@ import ResizeHandle from '../../shared/components/layout/ResizeHandle';
 import { useResizeDrag } from '../../shared/hooks/useResizeDrag';
 import { chatPath } from '../../app/router/routes';
 import { readSettings } from '../../features/settings/utils/settingsStorage';
-import type { Branch, CreateBranchResponse } from '../../features/branch/types';
+import type { CreateBranchResponse } from '../../features/branch/types';
 import NewChatLanding from './NewChatLanding';
 import ConversationView from './ConversationView';
 
@@ -35,12 +32,17 @@ import ConversationView from './ConversationView';
  *
  * 라우터를 분기하지 않고 한 페이지 안에서 조건부 렌더링을 한다.
  * (사이드바가 항상 같은 데이터를 필요로 하므로 라우트 분할의 이득이 적음.)
+ *
+ * 파생 상태는 다음 훅으로 분리되어 있다 (동작 동일, 구조만 분해):
+ *  - useChatRouteState      활성 대화 id / turnId 검색 파라미터
+ *  - useActiveConversation  conversations + chatMeta fallback
+ *  - useBranchContext       활성 분기 / 부모 메시지 / 분기 마커 라벨
+ *  - useLiveMessageMerge    history + send/regenerate/edit live 메시지 병합
  */
 const ChatLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { convId } = useParams<{ convId: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { user, logout } = useAuth();
+  const { activeConvId, targetTurnId, handleTargetTurnReached } = useChatRouteState();
 
   const [input, setInput] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -56,14 +58,6 @@ const ChatLayout: React.FC = () => {
   );
 
   const { size: sidebarWidth, onMouseDown: onSidebarResize } = useResizeDrag(240, 'x', 160, 480);
-
-  const activeConvId = convId ?? 'new';
-  const targetTurnId = useMemo(() => {
-    const raw = searchParams.get('turnId');
-    if (!raw) return undefined;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : undefined;
-  }, [searchParams]);
 
   const { data: conversations = [], isLoading: convsLoading } = useConversations();
   const {
@@ -99,184 +93,35 @@ const ChatLayout: React.FC = () => {
     liveMessages: editLiveMessages = [],
   } = useEditMessage(activeConvId);
 
-  const listConv = useMemo(
-    () => conversations.find(c => c.id === activeConvId),
-    [conversations, activeConvId],
-  );
-  // 명세 §2.3: 목록에 아직 없는(갓 생성된) chat 은 메타 조회로 보강.
-  const { data: chatMeta, isLoading: chatMetaLoading } = useChatMeta(
-    activeConvId === 'new' ? '' : activeConvId,
-  );
-  const activeConv = useMemo<typeof listConv>(() => {
-    if (listConv) return listConv;
-    if (!chatMeta) return undefined;
-    return {
-      id: String(chatMeta.chatId),
-      title: chatMeta.title ?? '제목없음',
-      preview: '아직 메시지가 없습니다.',
-      createdAt: chatMeta.createdAt,
-      turnCount: 0,
-      lastMessageAt: null,
-      llmProvider: chatMeta.llmProvider,
-      llmModel: chatMeta.llmModel,
-      branches: [],
-    };
-  }, [listConv, chatMeta]);
-  const graphRootId = useMemo(() => {
-    if (activeConvId === 'new') return null;
-    if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {
-      return String(optimisticBranch.rootChatId);
-    }
-    if (
-      chatMeta &&
-      String(chatMeta.chatId) === activeConvId &&
-      chatMeta.rootChatId != null
-    ) {
-      return String(chatMeta.rootChatId);
-    }
-    return activeConvId;
-  }, [activeConvId, optimisticBranch, chatMeta]);
-  const listedActiveBranch = useMemo(
-    () => conversations.flatMap(c => c.branches).find(branch => branch.id === activeConvId),
-    [conversations, activeConvId],
-  );
-  const metaBranchParentId = useMemo(() => {
-    if (listedActiveBranch) return listedActiveBranch.parentConvId;
-    if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {
-      return String(optimisticBranch.parentId);
-    }
-    if (
-      chatMeta &&
-      String(chatMeta.chatId) === activeConvId &&
-      chatMeta.parentId != null
-    ) {
-      return String(chatMeta.parentId);
-    }
-    return null;
-  }, [listedActiveBranch, optimisticBranch, activeConvId, chatMeta]);
-  const metaBranchPointTurnId = useMemo(() => {
-    if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {
-      return optimisticBranch.branchPointTurnId;
-    }
-    // Phase 4 §2.1: 탐색기에서 내려온 분기 노드는 branchPointTurnId 를 갖는다.
-    if (listedActiveBranch?.branchPointTurnId != null) {
-      return listedActiveBranch.branchPointTurnId;
-    }
-    if (
-      chatMeta &&
-      String(chatMeta.chatId) === activeConvId &&
-      chatMeta.branchPointTurnId != null
-    ) {
-      return chatMeta.branchPointTurnId;
-    }
-    return null;
-  }, [optimisticBranch, activeConvId, chatMeta, listedActiveBranch]);
-  const { data: parentMessages = [], isLoading: parentMsgsLoading } = useMessages(
-    metaBranchParentId ?? '',
-  );
-  const activeBranch = useMemo<Branch | undefined>(() => {
-    // Phase 4 §2.1: 탐색기에서 온 분기는 turn 인덱스를 모르므로(forkAtTurnIndex=0)
-    // branchPointTurnId + 부모 메시지로 정확한 fork 위치를 항상 재계산한다.
-    if (!metaBranchParentId || metaBranchPointTurnId == null) {
-      return listedActiveBranch ?? undefined;
-    }
-
-    const parentForkIndex =
-      getForkTurnIndexByTurnId(
-        removePreTurnAssistantMessages(parentMessages),
-        metaBranchPointTurnId,
-      ) ?? 1;
-
-    return {
-      id: activeConvId,
-      parentConvId: metaBranchParentId,
-      title: listedActiveBranch?.title ?? activeConv?.title ?? '제목없음',
-      forkAtTurnIndex: parentForkIndex,
-      depth: listedActiveBranch?.depth,
-      branchPointTurnId: metaBranchPointTurnId,
-    };
-  }, [
-    listedActiveBranch,
-    metaBranchParentId,
-    metaBranchPointTurnId,
-    parentMessages,
+  const { chatMeta, chatMetaLoading, activeConv } = useActiveConversation(
+    conversations,
     activeConvId,
+  );
+
+  const {
+    graphRootId,
+    activeBranch,
+    parentMessages,
+    parentMsgsLoading,
+    activeBranchMarkerLabel,
+  } = useBranchContext({
+    conversations,
+    activeConvId,
+    optimisticBranch,
+    chatMeta,
     activeConv,
-  ]);
-  const activeParentConv = useMemo(
-    () => conversations.find(conversation => conversation.id === activeBranch?.parentConvId),
-    [activeBranch, conversations],
-  );
-  const activeBranchNumber = useMemo(
-    () => {
-      if (!activeBranch) return null;
-      if (!activeParentConv) return 1;
-      const index = activeParentConv.branches.findIndex(branch => branch.id === activeBranch.id);
-      return index >= 0 ? index + 1 : 1;
-    },
-    [activeBranch, activeParentConv],
-  );
-  // GraphPanel 과 동일한 정렬(depth ASC, chatId ASC)로 B{n} 컬럼을 매긴다.
-  // useGraph 캐시 키가 동일하면 ConvSidebar 와 fetch 를 공유한다.
-  const graphChatIdNum = useMemo(() => {
-    if (activeConvId === 'new') return null;
-    const n = Number(activeConvId);
-    return Number.isFinite(n) ? n : null;
-  }, [activeConvId]);
-  const { data: branchLabelGraphData } = useGraph(graphChatIdNum);
-  const activeBranchMarkerLabel = useMemo(() => {
-    if (!activeBranch) return undefined;
-    const chats = branchLabelGraphData?.chats;
-    if (chats && chats.length > 0) {
-      const sorted = [...chats].sort((a, b) => a.depth - b.depth || a.chatId - b.chatId);
-      const rootChat = sorted.find(c => c.parentChatId === null);
-      if (rootChat) {
-        let col = 0;
-        for (const chat of sorted) {
-          if (chat.chatId === rootChat.chatId) continue;
-          col += 1;
-          if (String(chat.chatId) === activeBranch.id) return `B${col}`;
-        }
-      }
-    }
-    return activeBranchNumber ? `B${activeBranchNumber}` : 'B1';
-  }, [activeBranch, activeBranchNumber, branchLabelGraphData]);
-  // 히스토리(§2.4 무한스크롤) + 진행 중인 스트리밍 턴(liveMessages)을 합친다.
-  // 'new' → /chat/{id} 직후 useMessages 가 진행 중 턴을 history 로 가져오면
-  // liveMessages 와 중복으로 보이므로, turn_started 이후 매칭되는 id 는 제거한다.
-  const messages = useMemo(() => {
-    const liveMessages = [
-      ...sendLiveMessages,
-      ...regenerateLiveMessages,
-      ...editLiveMessages,
-    ].filter(message => message.conversationId === activeConvId);
-    if (liveMessages.length === 0) return history;
-    const liveIds = new Set(liveMessages.map(m => m.id));
-    const dedupedHistory = history.filter(h => !liveIds.has(h.id));
-    return [...dedupedHistory, ...liveMessages];
-  }, [history, sendLiveMessages, regenerateLiveMessages, editLiveMessages, activeConvId]);
-  const visibleMessages = useMemo(
-    () => {
-      const normalizedMessages = removePreTurnAssistantMessages(messages);
-      if (!activeBranch) {
-        return {
-          messages: normalizedMessages,
-          branchStartIndex: undefined,
-        };
-      }
+  });
 
-      const parentPrefixMessages = getMessagesThroughFork(
-        removePreTurnAssistantMessages(parentMessages),
-        activeBranch.forkAtTurnIndex,
-      );
+  const { messages, visibleMessages } = useLiveMessageMerge({
+    history,
+    sendLiveMessages,
+    regenerateLiveMessages,
+    editLiveMessages,
+    activeConvId,
+    activeBranch,
+    parentMessages,
+  });
 
-      return {
-        messages: [...parentPrefixMessages, ...normalizedMessages],
-        branchStartIndex: parentPrefixMessages.length,
-      };
-    },
-    [activeBranch, parentMessages, messages],
-  );
   const isMessagesLoading = msgsLoading || (!!activeBranch && parentMsgsLoading);
 
   const isNewChatEmpty =
@@ -286,14 +131,6 @@ const ChatLayout: React.FC = () => {
   const handleLoadOlder = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const handleTargetTurnReached = useCallback(() => {
-    setSearchParams(current => {
-      const next = new URLSearchParams(current);
-      next.delete('turnId');
-      return next;
-    }, { replace: true });
-  }, [setSearchParams]);
 
   const isKnownConvId = useMemo(
     () =>
