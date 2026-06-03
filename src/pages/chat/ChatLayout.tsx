@@ -192,7 +192,7 @@ const ChatLayout: React.FC = () => {
   }, [visibleMessages.messages, regenerate]);
 
   return (
-    <div className="h-screen flex flex-col bg-slate-950 overflow-hidden">
+    <div className="h-screen flex flex-col bg-ui-surface overflow-hidden">
       <ChatHeader
         userName={user?.name}
         userEmail={user?.email}

@@ -39,6 +39,32 @@
 
 ---
 
+## 2026-06-03 — Codex (FE 안전 리팩토링 #6·#8·#9·#10)
+
+**유형:** refactor
+**범위:** shared/storage, shared/api, features/branch, features/graph, features/conversation-explorer, styles, docs
+
+### 변경 내용
+- **Refactoring #6 (비명세 restore 정리):** BE 명세/구현에 없는 `POST /chats/{id}/restore` 호출 경로 제거.
+  - `ENDPOINTS.branch.restore`, `branchApi.restoreBranch`, `useOptimisticGraphMerge.handleRestore`, `GraphPanel.onRestore` props/click action 삭제.
+  - 삭제된 graph node 는 계속 표시하되 보조 문구를 `복구`에서 `삭제됨`으로 변경.
+- **Refactoring #8 (semantic color token):** `--color-surface`, `--color-text`, `--color-line`, `--color-accent` 계열 token 및 Tailwind `ui-*` theme 색 추가.
+  - 앱 코드의 `bg-slate-*`/`text-cyan-*`/`border-slate-*` 직접 사용을 `bg-ui-surface`, `text-ui-text-*`, `border-ui-line`, `bg-ui-accent-*` 등으로 교체.
+- **Refactoring #9 (shim 정리):** 사용처 없는 compatibility shim 삭제.
+  - 삭제: `src/mocks/messages.ts`, `src/mocks/conversations.ts`, `src/app/providers/toastEvents.ts`, `src/features/auth/api/memberApi.ts`, `src/features/branch/hooks/useChatTitle.ts`.
+- **Refactoring #10 (storage 경계 통합):** `shared/storage/localStorage.ts`, `tokenStorage.ts`, `userStorage.ts`, `settingsStorage.ts` 신설.
+  - auth/settings/API client/SSE/messageStream/authInterceptor 의 직접 `localStorage` 접근을 shared storage helper 사용으로 변경.
+- `FE_ARCHITECTURE_REPORT.md` §4·§6·§8·§9·§10·§11·§12·§14 에 #6·#8·#9·#10 적용 결과 반영.
+
+### 영향 범위
+- 비명세 복구 버튼/호출만 제거. 삭제된 분기 시각화, 그래프 확장, 채팅/분기 생성·수정·삭제, SSE 스트리밍 계약은 유지.
+- 기존 `slate/cyan/teal` theme alias 는 호환용으로 남아 있지만 앱 코드의 공식 색 사용처는 semantic `ui-*` class 로 이동.
+- 새 storage 정책 변경 시 `shared/storage/*` 중심으로 수정하면 됨.
+- 검증: `npm run lint` 통과, `npm run build`(tsc -b + vite build) 통과(258 modules). dev 서버 `http://127.0.0.1:5173/` 기동 확인. Browser 플러그인은 현재 사용 가능한 브라우저 목록이 비어 있어 화면 자동 검증은 진행하지 못함.
+
+### 관련
+- 관련 파일: [FE_ARCHITECTURE_REPORT.md](./FE_ARCHITECTURE_REPORT.md), [storage](./src/shared/storage), [endpoints.ts](./src/shared/api/endpoints.ts), [branchApi.ts](./src/features/branch/api/branchApi.ts), [useOptimisticGraphMerge.ts](./src/features/conversation-explorer/hooks/useOptimisticGraphMerge.ts), [GraphPanel.tsx](./src/features/graph/components/GraphPanel.tsx), [index.css](./src/styles/index.css)
+
 ## 2026-06-03 — Claude (대형 컴포넌트 안전 분해 #1·#2·#7 + 보고서 반영)
 
 **유형:** refactor

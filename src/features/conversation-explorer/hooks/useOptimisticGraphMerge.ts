@@ -1,6 +1,4 @@
 import React, { useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { branchApi } from '../../branch/api/branchApi';
 import { graphApi } from '../../graph/api/graphApi';
 import { useGraph } from '../../graph/hooks/useGraph';
 import type { GraphResponse } from '../../graph/types';
@@ -71,17 +69,13 @@ function mergeGraphSnapshots(
 }
 
 /**
- * 그래프 스냅샷 조회 + 낙관적 분기 병합 + 확장/복구 + 에러 메시지.
+ * 그래프 스냅샷 조회 + 낙관적 분기 병합 + 확장 + 에러 메시지.
  * (ConvSidebar 에서 추출 — 동작 동일)
- *
- * 주의: handleRestore 는 명세에 없는 POST /chats/{id}/restore(restoreBranch)를
- * 사용한다. BE 명세 확인 전까지 동작을 그대로 보존한다(Refactoring #6).
  */
 export function useOptimisticGraphMerge(
   validChatId: number | null,
   optimisticBranch?: CreateBranchResponse | null,
 ) {
-  const queryClient = useQueryClient();
   const {
     data: baseGraphData,
     isFetching: isGraphFetching,
@@ -103,17 +97,6 @@ export function useOptimisticGraphMerge(
     const nextGraphData = mergeOptimisticBranch(baseGraphData, optimisticBranch);
     setMergedGraphData(prev => mergeGraphSnapshots(prev, nextGraphData));
   }, [baseGraphData, optimisticBranch]);
-
-  const handleRestore = useCallback(async (chatId: string) => {
-    const numericId = Number(chatId);
-    if (isNaN(numericId)) return;
-    await branchApi.restoreBranch(numericId);
-    if (validChatId) {
-      setMergedGraphData(undefined);
-      await queryClient.invalidateQueries({ queryKey: ['graph', validChatId], exact: false });
-      await queryClient.invalidateQueries({ queryKey: ['conversations'] });
-    }
-  }, [queryClient, validChatId]);
 
   const handleExpand = useCallback(async (fromTurnId: number, direction: 'UP' | 'DOWN') => {
     if (!validChatId) return;
@@ -140,5 +123,5 @@ export function useOptimisticGraphMerge(
       : '그래프를 불러오지 못했습니다.'
     : null;
 
-  return { mergedGraphData, isGraphFetching, handleRestore, handleExpand, graphErrorMessage };
+  return { mergedGraphData, isGraphFetching, handleExpand, graphErrorMessage };
 }

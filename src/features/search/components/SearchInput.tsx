@@ -21,7 +21,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
   return (
     <div className="relative">
       <svg
-        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"
+        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ui-text-faint pointer-events-none"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -36,7 +36,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-10 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-400/50"
+        className="w-full pl-10 pr-3 py-2 rounded-xl bg-ui-surface-muted border border-ui-line-muted text-ui-text placeholder:text-ui-text-faint focus:outline-none focus:border-ui-accent-soft/50"
         aria-label="대화 검색"
       />
     </div>

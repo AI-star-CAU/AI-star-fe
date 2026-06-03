@@ -30,19 +30,19 @@ class AppErrorBoundary extends React.Component<
     if (!this.state.error) return this.props.children;
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 px-6">
+      <div className="min-h-screen flex items-center justify-center bg-ui-surface text-ui-text px-6">
         <div className="max-w-md w-full text-center space-y-4">
           <h1 className="text-2xl font-bold">화면을 그리는 중 문제가 발생했어요</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ui-text-subtle">
             새로고침하면 보통 해결돼요. 같은 문제가 반복되면 알려주세요.
           </p>
-          <pre className="text-xs text-slate-500 bg-slate-900/60 rounded p-3 overflow-auto text-left">
+          <pre className="text-xs text-ui-text-faint bg-ui-surface-muted/60 rounded p-3 overflow-auto text-left">
             {this.state.error.message}
           </pre>
           <button
             type="button"
             onClick={this.handleReload}
-            className="rounded-xl bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
+            className="rounded-xl bg-ui-accent-soft px-5 py-2 text-sm font-semibold text-ui-text-inverse hover:bg-ui-surface-raised"
           >
             새로고침
           </button>

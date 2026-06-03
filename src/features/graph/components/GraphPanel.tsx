@@ -36,7 +36,6 @@ interface GraphPanelProps {
   onNodeClick?: (action: NodeAction) => void;
   graphData?: GraphResponse;
   onExpand?: (fromTurnId: number, direction: 'UP' | 'DOWN') => void;
-  onRestore?: (chatId: string) => void;
   zoom?: number;
   viewMode?: GraphViewMode;
 }
@@ -49,7 +48,6 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
   onNodeClick,
   graphData,
   onExpand,
-  onRestore,
   zoom = 1,
   viewMode = 'structure',
 }) => {
@@ -382,8 +380,8 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
 
         if (node.isDeleted) {
           return (
-            <g key={node.id} style={{ cursor: onRestore ? 'pointer' : 'default' }}
-              onClick={() => node.chatId && onRestore?.(node.chatId)}
+            <g key={node.id}
+              style={{ cursor: 'default' }}
               opacity={isDimmed ? 0.28 : 1}
               filter={isDimmed ? 'url(#graph-dim-blur)' : undefined}>
               <rect
@@ -402,7 +400,7 @@ const GraphPanel: React.FC<GraphPanelProps> = ({
               </text>
               <text x={node.x} y={node.y + 16} textAnchor="middle" dominantBaseline="middle"
                 fontSize="8" fontFamily="var(--type)" letterSpacing="1.5" fill={GRAPH_NODE_COLORS.deleted.subtext}>
-                복구
+                삭제됨
               </text>
               {renderFocusedSummaryCard(node, isSelected)}
             </g>

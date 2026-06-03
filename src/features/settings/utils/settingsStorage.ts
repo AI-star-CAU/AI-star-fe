@@ -1,4 +1,7 @@
-import { STORAGE_KEYS } from '../../../shared/constants/storageKeys';
+import {
+  readStoredSettings,
+  saveStoredSettings,
+} from '../../../shared/storage/settingsStorage';
 import { LLM_OPTIONS } from '../../chat/constants/llm';
 import { DEFAULT_SETTINGS } from '../constants';
 import type { InterfaceLanguage, ThemeMode, UserSettings } from '../types';
@@ -25,15 +28,9 @@ function normalizeSettings(value: Partial<UserSettings> | null): UserSettings {
 }
 
 export function readSettings(): UserSettings {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (!raw) return DEFAULT_SETTINGS;
-    return normalizeSettings(JSON.parse(raw) as Partial<UserSettings>);
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
+  return normalizeSettings(readStoredSettings<Partial<UserSettings>>());
 }
 
 export function saveSettings(settings: UserSettings): void {
-  localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+  saveStoredSettings(settings);
 }

@@ -20,10 +20,4 @@ export const branchApi = {
   async deleteBranch(chatId: number): Promise<void> {
     await apiClient.delete<unknown>(ENDPOINTS.branch.delete(chatId));
   },
-
-  async restoreBranch(chatId: number): Promise<CreateBranchResponse> {
-    const raw = await apiClient.post<unknown>(ENDPOINTS.branch.restore(chatId));
-    const parsed = apiEnvelope(CreateBranchResponseSchema).parse(raw);
-    return parsed.result;
-  },
 };

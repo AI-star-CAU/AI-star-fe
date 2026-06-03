@@ -1,9 +1,9 @@
 import { env } from '../../../shared/config/env';
-import { STORAGE_KEYS } from '../../../shared/constants/storageKeys';
 import { ApiError } from '../../../shared/api/client';
 import { parseHttpError } from '../../../shared/api/parseHttpError';
 import { ENDPOINTS } from '../../../shared/api/endpoints';
 import { parseSseStream, type SSEEvent } from '../../../shared/api/sse';
+import { readAuthToken } from '../../../shared/storage/tokenStorage';
 import type {
   TurnStartedData,
   ChunkData,
@@ -44,7 +44,7 @@ export async function streamMessage(
   handlers: StreamHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
-  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  const token = readAuthToken();
   const res = await fetch(
     `${env.apiBaseUrl}${ENDPOINTS.chat.messages(chatId)}`,
     {

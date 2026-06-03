@@ -133,7 +133,6 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
   const {
     mergedGraphData,
     isGraphFetching,
-    handleRestore,
     handleExpand,
     graphErrorMessage,
   } = useOptimisticGraphMerge(validChatId, optimisticBranch);
@@ -169,7 +168,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 
   return (
     <aside
-      className="bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out"
+      className="bg-ui-surface-muted border-r border-ui-line flex flex-col flex-shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out"
       style={{ width: isOpen ? width : 0 }}
     >
       <ConversationList
@@ -186,25 +185,25 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
 
       <ResizeHandle direction="y" onMouseDown={onVerticalDrag} />
 
-      <div className="flex-1 min-h-[220px] overflow-hidden flex flex-col border-t border-slate-800">
+      <div className="flex-1 min-h-[220px] overflow-hidden flex flex-col border-t border-ui-line">
         <div className="px-4 py-2 flex-shrink-0 flex items-center justify-between gap-2">
           <p className="section-label">분기 구조</p>
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setGraphZoom(value => Math.max(0.6, Math.round((value - 0.1) * 10) / 10))}
-              className="w-6 h-6 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              className="w-6 h-6 rounded-md bg-ui-surface-subtle text-ui-text-muted hover:bg-ui-surface-strong hover:text-ui-text transition-colors"
               aria-label="그래프 축소"
             >
               -
             </button>
-            <span className="w-10 text-center text-[10px] font-semibold text-slate-500">
+            <span className="w-10 text-center text-[10px] font-semibold text-ui-text-faint">
               {Math.round(graphZoom * 100)}%
             </span>
             <button
               type="button"
               onClick={() => setGraphZoom(value => Math.min(1.8, Math.round((value + 0.1) * 10) / 10))}
-              className="w-6 h-6 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              className="w-6 h-6 rounded-md bg-ui-surface-subtle text-ui-text-muted hover:bg-ui-surface-strong hover:text-ui-text transition-colors"
               aria-label="그래프 확대"
             >
               +
@@ -212,14 +211,14 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
           </div>
         </div>
         <div className="px-4 pb-2 flex-shrink-0">
-          <div className="grid grid-cols-2 overflow-hidden rounded-md border border-slate-800 bg-slate-950">
+          <div className="grid grid-cols-2 overflow-hidden rounded-md border border-ui-line bg-ui-surface">
             <button
               type="button"
               onClick={() => setGraphViewMode('focused')}
               className={`h-7 text-[10px] font-semibold transition-colors ${
                 graphViewMode === 'focused'
-                  ? 'bg-cyan-500/20 text-cyan-700'
-                  : 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-300'
+                  ? 'bg-ui-accent-muted/20 text-ui-accent'
+                  : 'text-ui-text-faint hover:bg-ui-surface-subtle/60 hover:text-ui-text-muted'
               }`}
               aria-pressed={graphViewMode === 'focused'}
             >
@@ -230,8 +229,8 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
               onClick={() => setGraphViewMode('structure')}
               className={`h-7 text-[10px] font-semibold transition-colors ${
                 graphViewMode === 'structure'
-                  ? 'bg-cyan-500/20 text-cyan-700'
-                  : 'text-slate-500 hover:bg-slate-800/60 hover:text-slate-300'
+                  ? 'bg-ui-accent-muted/20 text-ui-accent'
+                  : 'text-ui-text-faint hover:bg-ui-surface-subtle/60 hover:text-ui-text-muted'
               }`}
               aria-pressed={graphViewMode === 'structure'}
             >
@@ -256,7 +255,6 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
             onNodeClick={handleNodeClick}
             graphData={isGraphFetching && !mergedGraphData ? undefined : mergedGraphData}
             onExpand={handleExpand}
-            onRestore={handleRestore}
             zoom={graphZoom}
             viewMode={graphViewMode}
           />

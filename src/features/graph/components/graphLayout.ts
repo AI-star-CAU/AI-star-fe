@@ -18,7 +18,7 @@ export const getFocusedSummaryText = (node: GraphNode): string => {
   if (node.summaryStatus === 'PENDING') return SUMMARY_PENDING_TEXT;
   const summary = cleanSummaryText(node.summary);
   if (summary) return summary;
-  if (node.isBranch) return node.isDeleted ? '삭제된 분기입니다. 클릭하면 복구됩니다.' : '분기 시작';
+  if (node.isBranch) return node.isDeleted ? '삭제된 분기입니다.' : '분기 시작';
   return SUMMARY_EMPTY_TEXT;
 };
 

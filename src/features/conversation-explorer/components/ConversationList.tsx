@@ -41,7 +41,7 @@ const SKELETON_ROWS = [1, 2, 3];
 const ConversationSkeleton: React.FC = () => (
   <div className="space-y-2 px-2">
     {SKELETON_ROWS.map(row => (
-      <div key={row} className="h-12 bg-slate-800/50 rounded-xl animate-pulse" />
+      <div key={row} className="h-12 bg-ui-surface-subtle/50 rounded-xl animate-pulse" />
     ))}
   </div>
 );
@@ -107,7 +107,7 @@ const BranchRow: React.FC<BranchRowProps> = ({
   return (
     <div
       className={`flex items-center gap-1 px-2 py-1.5 rounded-lg group ${
-        isActive ? 'bg-amber-500/15 text-amber-300' : 'hover:bg-slate-800/50 text-slate-400 hover:text-slate-200'
+        isActive ? 'bg-amber-500/15 text-amber-300' : 'hover:bg-ui-surface-subtle/50 text-ui-text-subtle hover:text-ui-text-muted'
       }`}
       style={indent ? { marginLeft: indent } : undefined}
     >
@@ -138,7 +138,7 @@ const BranchRow: React.FC<BranchRowProps> = ({
             if (e.key === 'Enter') handleRename();
             if (e.key === 'Escape') { setTitle(branch.title); setEditing(false); }
           }}
-          className="flex-1 min-w-0 text-xs bg-slate-700 text-slate-100 rounded px-1 outline-none"
+          className="flex-1 min-w-0 text-xs bg-ui-surface-strong text-ui-text rounded px-1 outline-none"
           maxLength={100}
         />
       ) : (
@@ -155,7 +155,7 @@ const BranchRow: React.FC<BranchRowProps> = ({
         <button
           type="button"
           onClick={e => { e.stopPropagation(); setEditing(true); }}
-          className="opacity-0 group-hover:opacity-100 transition p-0.5 rounded hover:text-slate-200 flex-shrink-0"
+          className="opacity-0 group-hover:opacity-100 transition p-0.5 rounded hover:text-ui-text-muted flex-shrink-0"
           aria-label="제목 수정"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,7 +191,7 @@ const BranchRow: React.FC<BranchRowProps> = ({
           <button
             type="button"
             onClick={e => { e.stopPropagation(); setConfirming(false); }}
-            className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 hover:bg-slate-600"
+            className="text-[10px] px-1.5 py-0.5 rounded bg-ui-surface-strong text-ui-text-subtle hover:bg-ui-surface-raised"
           >
             취소
           </button>
@@ -199,7 +199,7 @@ const BranchRow: React.FC<BranchRowProps> = ({
       )}
 
       {!editing && !confirming && branch.forkAtTurnIndex > 0 && (
-        <span className="text-[10px] text-slate-600 flex-shrink-0">T{branch.forkAtTurnIndex}</span>
+        <span className="text-[10px] text-ui-text-soft flex-shrink-0">T{branch.forkAtTurnIndex}</span>
       )}
     </div>
   );
@@ -258,7 +258,7 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
       >
         <div className="flex items-start gap-1.5">
           {hasBranches ? (
-            <span className="mt-0.5 flex-shrink-0 text-slate-500">
+            <span className="mt-0.5 flex-shrink-0 text-ui-text-faint">
               <DisclosureTriangle open={isExpanded} />
             </span>
           ) : (
@@ -266,7 +266,7 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
           )}
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold truncate pr-6">{conversation.title}</p>
-            <p className="text-xs text-slate-600 truncate mt-0.5">{conversation.preview}</p>
+            <p className="text-xs text-ui-text-soft truncate mt-0.5">{conversation.preview}</p>
           </div>
         </div>
       </button>
@@ -275,7 +275,7 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
         type="button"
         onClick={() => onDeleteConversation(conversation.id)}
         aria-label="대화 삭제"
-        className="absolute top-2 right-2 opacity-0 group-hover/conv:opacity-100 transition text-slate-600 hover:text-red-400 p-1 rounded-md hover:bg-slate-800"
+        className="absolute top-2 right-2 opacity-0 group-hover/conv:opacity-100 transition text-ui-text-soft hover:text-red-400 p-1 rounded-md hover:bg-ui-surface-subtle"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -284,7 +284,7 @@ const ConversationRow: React.FC<ConversationRowProps> = ({
       </button>
 
       {hasBranches && isExpanded && (
-        <div className="ml-3 mt-0.5 space-y-0.5 border-l border-slate-700/60 pl-2">
+        <div className="ml-3 mt-0.5 space-y-0.5 border-l border-ui-line-muted/60 pl-2">
           {visibleBranches.map(branch => (
             <BranchRow
               key={branch.id}
@@ -331,7 +331,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
       <button
         type="button"
         onClick={() => setIsRecentOpen(prev => !prev)}
-        className="section-label px-4 py-2 flex items-center gap-1.5 text-left hover:text-slate-300 transition-colors"
+        className="section-label px-4 py-2 flex items-center gap-1.5 text-left hover:text-ui-text-muted transition-colors"
       >
         <DisclosureTriangle open={isRecentOpen} />
         최근 대화
@@ -342,7 +342,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
           {isLoading ? (
             <ConversationSkeleton />
           ) : conversations.length === 0 ? (
-            <p className="text-xs text-slate-600 px-3 py-4 text-center">대화가 없습니다</p>
+            <p className="text-xs text-ui-text-soft px-3 py-4 text-center">대화가 없습니다</p>
           ) : (
             conversations.map(conversation => (
               <ConversationRow

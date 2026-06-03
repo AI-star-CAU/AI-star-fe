@@ -1,5 +1,5 @@
 import { env } from '../config/env';
-import { STORAGE_KEYS } from '../constants/storageKeys';
+import { readAuthToken } from '../storage/tokenStorage';
 import { parseHttpError } from './parseHttpError';
 
 export interface SSEEvent {
@@ -71,7 +71,7 @@ export async function* streamSSE(
   body?: unknown,
   method: SseMethod = 'POST',
 ): AsyncGenerator<SSEEvent> {
-  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  const token = readAuthToken();
   const response = await fetch(`${env.apiBaseUrl}${path}`, {
     method,
     headers: {
