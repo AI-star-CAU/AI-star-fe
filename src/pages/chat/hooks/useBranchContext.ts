@@ -30,10 +30,24 @@ export function useBranchContext({
   chatMeta,
   activeConv,
 }: UseBranchContextParams) {
+  const listedRootId = useMemo(
+    () => conversations.find(conversation =>
+      conversation.id === activeConvId ||
+      conversation.branches.some(branch => branch.id === activeConvId)
+    )?.id ?? null,
+    [conversations, activeConvId],
+  );
+  const listedActiveBranch = useMemo(
+    () => conversations.flatMap(c => c.branches).find(branch => branch.id === activeConvId),
+    [conversations, activeConvId],
+  );
   const graphRootId = useMemo(() => {
     if (activeConvId === 'new') return null;
     if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {
       return String(optimisticBranch.rootChatId);
+    }
+    if (listedRootId) {
+      return listedRootId;
     }
     if (
       chatMeta &&
@@ -43,11 +57,7 @@ export function useBranchContext({
       return String(chatMeta.rootChatId);
     }
     return activeConvId;
-  }, [activeConvId, optimisticBranch, chatMeta]);
-  const listedActiveBranch = useMemo(
-    () => conversations.flatMap(c => c.branches).find(branch => branch.id === activeConvId),
-    [conversations, activeConvId],
-  );
+  }, [activeConvId, optimisticBranch, listedRootId, chatMeta]);
   const metaBranchParentId = useMemo(() => {
     if (listedActiveBranch) return listedActiveBranch.parentConvId;
     if (optimisticBranch && String(optimisticBranch.chatId) === activeConvId) {

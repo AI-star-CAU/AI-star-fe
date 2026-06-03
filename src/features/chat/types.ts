@@ -7,8 +7,9 @@ export type SenderType = 'USER' | 'ASSISTANT';
 export type MessageStatus = 'STREAMING' | 'COMPLETED' | 'CANCELED' | 'FAILED';
 
 /** 명세 §2.1 요청 본문 enum. */
-export type LlmProvider = 'OPENAI' | 'GOOGLE' | 'ANTHROPIC';
+export type LlmProvider = 'LOCAL' | 'OPENAI' | 'GOOGLE' | 'ANTHROPIC';
 export type LlmModel =
+  | 'local-default'
   | 'gpt-4o-mini'
   | 'gemini-2.0-flash'
   | 'claude-3.5-sonnet';

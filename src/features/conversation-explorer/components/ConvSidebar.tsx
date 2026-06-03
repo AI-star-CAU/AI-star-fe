@@ -48,7 +48,7 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     )?.id ?? null,
     [activeId, conversations],
   );
-  const activeParentId = graphRootId ?? activeParentIdFromList;
+  const activeParentId = activeParentIdFromList ?? graphRootId ?? null;
   const visibleExpandedId = expandedId === undefined ? activeParentId : expandedId;
   const graphConversation = useMemo(
     () => conversations.find(conversation => conversation.id === activeParentId),
@@ -127,15 +127,18 @@ const ConvSidebar: React.FC<ConvSidebarProps> = ({
     [conversations, deleteChat, activeId, navigate],
   );
 
-  const graphRequestId = activeParentId;
-  const numericChatId = graphRequestId ? Number(graphRequestId) : null;
-  const validChatId = numericChatId !== null && !isNaN(numericChatId) ? numericChatId : null;
+  // Graph API는 path chatId를 기준으로 center turn을 고른다.
+  // 브랜치 화면에서는 root가 아니라 현재 branch id로 조회해야 해당 분기 경로가 보인다.
+  const graphRequestId = activeId === 'new' ? activeParentId : activeId;
+  const numericGraphChatId = graphRequestId ? Number(graphRequestId) : null;
+  const validGraphChatId =
+    numericGraphChatId !== null && !isNaN(numericGraphChatId) ? numericGraphChatId : null;
   const {
     mergedGraphData,
     isGraphFetching,
     handleExpand,
     graphErrorMessage,
-  } = useOptimisticGraphMerge(validChatId, optimisticBranch);
+  } = useOptimisticGraphMerge(validGraphChatId, optimisticBranch);
 
   const handleCreateConversation = useCallback(() => {
     navigate('/chat/new');

@@ -2,8 +2,13 @@ import { z } from 'zod';
 
 export const MessageStatusSchema = z.enum(['STREAMING', 'COMPLETED', 'CANCELED', 'FAILED']);
 export const SenderTypeSchema = z.enum(['USER', 'ASSISTANT']);
-export const LlmProviderSchema = z.enum(['OPENAI', 'GOOGLE', 'ANTHROPIC']);
-export const LlmModelSchema = z.enum(['gpt-4o-mini', 'gemini-2.0-flash', 'claude-3.5-sonnet']);
+export const LlmProviderSchema = z.enum(['LOCAL', 'OPENAI', 'GOOGLE', 'ANTHROPIC']);
+export const LlmModelSchema = z.enum([
+  'local-default',
+  'gpt-4o-mini',
+  'gemini-2.0-flash',
+  'claude-3.5-sonnet',
+]);
 
 export const ChatMessageResponseSchema = z.object({
   messageId: z.number(),
